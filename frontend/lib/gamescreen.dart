@@ -150,7 +150,7 @@ class _GameScreenState extends State<GameScreen> {
                       ),
                     ),
                     Text(
-                      _counter > 0 ? "times" : "time",
+                      _counter > 1 ? "times" : "time",
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.primaryContainer,
                       ),
