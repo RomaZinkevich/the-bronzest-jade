@@ -3,3 +3,15 @@ services:
     build: backend
     ports:
       - "8080:8080"
+
+  database-migrations:
+    image: flyway/flyway:10
+    env_file:
+      - project.env
+    depends_on:
+      - postgres
+    volumes:
+      - ./database-migrations:/flyway/sql
+    command: -connectRetries=60 -baselineOnMigrate=true migrate
+    labels:
+      - "traefik.enable=false"
