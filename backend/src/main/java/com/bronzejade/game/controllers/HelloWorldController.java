@@ -9,11 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class HelloWorldController {
 
-    @GetMapping
-    public ResponseEntity<String> helloWorld() {
-        return ResponseEntity.ok("Hello World");
-    }
-
     // WebSocket message handler
     @MessageMapping("/hello")
     @SendTo("/topic/greetings")
