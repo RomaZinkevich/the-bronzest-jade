@@ -1,5 +1,22 @@
 services:
+  postgres:
+    image: 'postgres:latest'
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '127.0.0.1:${DB_PORT}:${DB_PORT}'
   springboot:
     build: backend
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      URL: postgres
     ports:
       - "8080:8080"
+volumes:
+  pgdata:
