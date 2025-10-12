@@ -23,6 +23,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Theme.of(context).colorScheme.primary,
       automaticallyImplyLeading: true,
       toolbarHeight: 90,
+      elevation: 4,
+      shadowColor: Colors.black,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
