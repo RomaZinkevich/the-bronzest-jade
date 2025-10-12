@@ -43,8 +43,8 @@ class MainMenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        playerName: "Guest player",
-        playerId: "#1234",
+        playerName: "GUEST PLAYER",
+        playerId: "#123456",
         onSettingsPressed: () {},
       ),
       body: Center(

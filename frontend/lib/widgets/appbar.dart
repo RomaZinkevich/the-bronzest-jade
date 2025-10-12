@@ -8,21 +8,21 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   const CustomAppBar({
     super.key,
-    this.profilePicture = "assets/bg.jpg",
+    this.profilePicture = "assets/icons/default_user.png",
     required this.playerName,
     required this.playerId,
     required this.onSettingsPressed,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(80);
+  Size get preferredSize => const Size.fromHeight(90);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      backgroundColor: Theme.of(context).colorScheme.primary,
       automaticallyImplyLeading: true,
-      toolbarHeight: 80,
+      toolbarHeight: 90,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -31,12 +31,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             icon: Icon(
               Icons.settings_rounded,
               size: 40,
-              color: Theme.of(context).colorScheme.secondary,
+              color: Theme.of(context).colorScheme.tertiary,
               shadows: [
                 Shadow(
                   color: Colors.black54,
-                  offset: Offset(2, 2),
-                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                  blurRadius: 6,
                 ),
               ],
             ),
@@ -49,7 +49,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 children: [
                   Text(
                     playerName,
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Theme.of(context).colorScheme.tertiary,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withAlpha(50),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
                   ),
                   Text(
                     playerId,
@@ -61,7 +72,27 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ],
               ),
               SizedBox(width: 12),
-              CircleAvatar(radius: 25),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(50),
+                      blurRadius: 2,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Theme.of(context).colorScheme.tertiary,
+                  child: CircleAvatar(
+                    radius: 25,
+                    foregroundImage: AssetImage(profilePicture),
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+              ),
             ],
           ),
         ],

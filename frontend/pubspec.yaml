@@ -21,6 +21,7 @@ flutter:
   uses-material-design: true
   assets:
   - assets/bg.jpg
+  - assets/icons/default_user.png
 
 
 
