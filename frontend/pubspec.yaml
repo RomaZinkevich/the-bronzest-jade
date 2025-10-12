@@ -1,5 +1,5 @@
-name: frontend
-description: "A new Flutter project."
+name: guess_who
+description: "Guess who? game"
 publish_to: 'none'
 
 version: 1.0.0+1

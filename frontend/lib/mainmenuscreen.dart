@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:frontend/gamescreen.dart';
+import 'package:guess_who/gamescreen.dart';
+import 'package:guess_who/widgets/appbar.dart';
 
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
@@ -41,10 +42,10 @@ class MainMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Main Menu'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        automaticallyImplyLeading: true,
+      appBar: CustomAppBar(
+        playerName: "Guest player",
+        playerId: "#1234",
+        onSettingsPressed: () {},
       ),
       body: Center(
         child: Column(
