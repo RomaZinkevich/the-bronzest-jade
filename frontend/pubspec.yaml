@@ -23,8 +23,10 @@ flutter:
     - assets/bg.jpg
     - assets/main_menu.png
     - assets/main_logo.png
+
     - assets/icons/default_user.png
     - assets/icons/find_room.png
+    - assets/icons/join_submit.png
   fonts:
   - family: BowlbyOneSC
     fonts:

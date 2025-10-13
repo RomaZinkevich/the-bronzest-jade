@@ -13,8 +13,8 @@ class AppTheme {
         primary: sage,
         onPrimary: Colors.white,
 
-        primaryContainer: teal,
-        onPrimaryContainer: black,
+        secondary: teal,
+        onSecondaryContainer: black,
 
         tertiary: cream,
         onTertiary: black,

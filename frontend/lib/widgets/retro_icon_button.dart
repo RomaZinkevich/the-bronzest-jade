@@ -7,7 +7,8 @@ class RetroIconButton extends StatelessWidget {
   final Color? borderColor;
   final IconData? icon;
   final String? imagePath;
-  final double size;
+  final EdgeInsets? margin;
+  final double padding;
   final double iconSize;
   final double borderWidth;
 
@@ -19,7 +20,8 @@ class RetroIconButton extends StatelessWidget {
     this.borderColor,
     this.icon,
     this.imagePath,
-    this.size = 80,
+    this.margin = const EdgeInsets.all(0),
+    this.padding = 8,
     this.iconSize = 40,
     this.borderWidth = 4,
   }) : assert(
@@ -44,15 +46,18 @@ class RetroIconButton extends StatelessWidget {
       content = Icon(icon, size: iconSize, color: iColor);
     }
 
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: bgColor,
-        foregroundColor: iconColor,
-        padding: EdgeInsets.all(8),
-        elevation: 2,
+    return Container(
+      margin: margin,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: bgColor,
+          foregroundColor: iconColor,
+          padding: EdgeInsets.all(padding),
+          elevation: 2,
+        ),
+        onPressed: onPressed,
+        child: content,
       ),
-      onPressed: onPressed,
-      child: content,
     );
   }
 }
