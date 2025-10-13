@@ -71,13 +71,12 @@ class MainMenuScreen extends StatelessWidget {
 
                 RetroButton(
                   text: "PLAY LOCAL",
-                  fontSize: 18,
 
                   icon: Icons.videogame_asset,
-                  iconSize: 40,
+                  iconSize: 35,
                   iconAtEnd: true,
 
-                  padding: EdgeInsets.symmetric(horizontal: 25, vertical: 15),
+                  padding: EdgeInsets.symmetric(horizontal: 25, vertical: 12),
 
                   onPressed: () {
                     Navigator.push(

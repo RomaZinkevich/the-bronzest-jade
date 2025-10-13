@@ -29,6 +29,7 @@ class AppTheme {
         onSurface: black,
       ),
       useMaterial3: true,
+      fontFamily: "BowlbyOneSC",
     );
   }
 }

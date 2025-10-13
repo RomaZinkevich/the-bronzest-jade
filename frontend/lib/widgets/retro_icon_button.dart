@@ -49,6 +49,7 @@ class RetroIconButton extends StatelessWidget {
         backgroundColor: bgColor,
         foregroundColor: iconColor,
         padding: EdgeInsets.all(8),
+        elevation: 2,
       ),
       onPressed: onPressed,
       child: content,
