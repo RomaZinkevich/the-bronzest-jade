@@ -38,10 +38,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                () {
-                  debugPrint("hello");
-                  SystemNavigator.pop();
-                };
+                SystemNavigator.pop();
               },
               child: Text(
                 "Quit",
