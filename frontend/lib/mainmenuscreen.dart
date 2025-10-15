@@ -61,7 +61,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Please enter a room code"),
+          content: const Text(
+            "Please enter a room code",
+            textAlign: TextAlign.center,
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -143,7 +146,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               BoxShadow(
                                 color: Theme.of(context).colorScheme.secondary,
                                 blurRadius: 4,
-                                spreadRadius: -4,
+                                spreadRadius: -2,
                               ),
                             ],
                           ),
@@ -176,6 +179,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
                       RetroIconButton(
                         onPressed: _joinWithCode,
+                        tooltip: "Join with code",
                         imagePath: "assets/icons/join_submit.png",
                         iconSize: 65,
                         padding: 0,
@@ -213,6 +217,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
                     RetroIconButton(
                       onPressed: () {},
+                      tooltip: "Find rooms",
                       imagePath: "assets/icons/find_room.png",
                       iconSize: 55,
                       padding: 6,

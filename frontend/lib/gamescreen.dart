@@ -86,6 +86,7 @@ class _GameScreenState extends State<GameScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.primary,
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.tertiary),
         title: Text(
           "Game Screen",
           style: TextStyle(color: Theme.of(context).colorScheme.tertiary),

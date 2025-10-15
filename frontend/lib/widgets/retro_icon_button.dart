@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 class RetroIconButton extends StatelessWidget {
+  final String? tooltip;
   final VoidCallback onPressed;
   final Color? backgroundColor;
   final Color? iconColor;
@@ -15,6 +16,7 @@ class RetroIconButton extends StatelessWidget {
   const RetroIconButton({
     super.key,
     required this.onPressed,
+    this.tooltip = "Button",
     this.backgroundColor,
     this.iconColor,
     this.borderColor,
@@ -46,17 +48,21 @@ class RetroIconButton extends StatelessWidget {
       content = Icon(icon, size: iconSize, color: iColor);
     }
 
-    return Container(
-      margin: margin,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: bgColor,
-          foregroundColor: iconColor,
-          padding: EdgeInsets.all(padding),
-          elevation: 2,
+    return Tooltip(
+      message: tooltip,
+      margin: EdgeInsets.only(top: 10),
+      child: Container(
+        margin: margin,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: bgColor,
+            foregroundColor: iconColor,
+            padding: EdgeInsets.all(padding),
+            elevation: 2,
+          ),
+          onPressed: onPressed,
+          child: content,
         ),
-        onPressed: onPressed,
-        child: content,
       ),
     );
   }
