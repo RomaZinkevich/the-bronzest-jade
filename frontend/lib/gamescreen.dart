@@ -85,17 +85,15 @@ class _GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text("Game Screen"),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.tertiary),
+        title: Text(
+          "Game Screen",
+          style: TextStyle(color: Theme.of(context).colorScheme.tertiary),
+        ),
       ),
       body: Stack(
         children: [
-          SizedBox.expand(
-            child: const Image(
-              image: AssetImage("assets/bg.jpg"),
-              fit: BoxFit.cover,
-            ),
-          ),
           Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,

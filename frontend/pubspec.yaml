@@ -1,5 +1,5 @@
-name: frontend
-description: "A new Flutter project."
+name: guess_who
+description: "Guess who? game"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -20,7 +20,19 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-  - assets/bg.jpg
+    - assets/bg.jpg
+    - assets/main_menu.png
+    - assets/main_logo.png
+
+    - assets/icons/default_user.png
+    - assets/icons/find_room.png
+    - assets/icons/join_submit.png
+  fonts:
+  - family: BowlbyOneSC
+    fonts:
+      - asset: fonts/BowlbyOneSC-Regular.ttf
+
+
 
 
 
