@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:guess_who/gamescreen.dart';
 import 'package:guess_who/widgets/appbar.dart';
+import 'package:guess_who/widgets/popup_menu.dart';
 import 'package:guess_who/widgets/retro_button.dart';
 import 'package:guess_who/widgets/retro_icon_button.dart';
 
@@ -66,6 +67,122 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         ),
       );
     }
+  }
+
+  void _showCreateRoomMenu() {
+    PopupMenu.show(
+      context: context,
+      title: "Create a Room",
+      items: [
+        RetroPopupMenuItem(
+          text: "Public Room",
+          icon: Icons.public,
+          onTap: () {
+            debugPrint("Creating public room");
+          },
+        ),
+
+        RetroPopupMenuItem(
+          text: "Private Room",
+          icon: Icons.lock,
+          onTap: () {
+            debugPrint("Creating friends only room");
+          },
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+        ),
+      ],
+    );
+  }
+
+  void _showFindRoomsMenu() {
+    PopupMenu.show(
+      context: context,
+      title: "Find Rooms",
+      items: [
+        RetroPopupMenuItem(
+          text: "Browse Public",
+          icon: Icons.search,
+          onTap: () {
+            debugPrint("Browsing public rooms");
+            Future.delayed(const Duration(milliseconds: 300), () {
+              _showRoomList();
+            });
+          },
+        ),
+
+        RetroPopupMenuItem(
+          text: "Friends' Rooms",
+          icon: Icons.people,
+          onTap: () {
+            debugPrint("Finding Friends Room");
+          },
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+        ),
+      ],
+    );
+  }
+
+  void _showRoomList() {
+    final mockRooms = [
+      {
+        'name': 'Epic Showdown',
+        'code': 'ABC123',
+        'players': 2,
+        'maxPlayers': 4,
+        'isPrivate': false,
+      },
+      {
+        'name': 'Friends Game',
+        'code': 'XYZ789',
+        'players': 3,
+        'maxPlayers': 4,
+        'isPrivate': true,
+      },
+      {
+        'name': 'Quick Match',
+        'code': 'QWE456',
+        'players': 1,
+        'maxPlayers': 2,
+        'isPrivate': false,
+      },
+      {
+        'name': 'Tournament Finals',
+        'code': 'ZXC999',
+        'players': 4,
+        'maxPlayers': 4,
+        'isPrivate': false,
+      },
+      {
+        'name': 'Chill Game',
+        'code': 'ASD111',
+        'players': 1,
+        'maxPlayers': 3,
+        'isPrivate': false,
+      },
+    ];
+
+    PopupMenu.show(
+      context: context,
+      title: "Available Rooms",
+      customContent: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ...mockRooms.map(
+            (room) => RoomListItem(
+              roomName: room["name"] as String,
+              roomCode: room["code"] as String,
+              playerCount: room["players"] as int,
+              maxPlayers: room["maxPlayers"] as int,
+              isPrivate: room["isPrivate"] as bool,
+              onJoin: () {
+                debugPrint("Joining room: ${room["code"]}");
+              },
+            ),
+          ),
+        ],
+      ),
+      maxHeight: MediaQuery.of(context).size.height * 0.7,
+    );
   }
 
   @override
@@ -147,9 +264,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(100),
                                 boxShadow: [
-                                  const BoxShadow(
-                                    color: Color.fromARGB(255, 91, 123, 118),
-                                  ),
+                                  const BoxShadow(color: Color(0xFF5B7B76)),
                                   BoxShadow(
                                     color: Theme.of(
                                       context,
@@ -219,15 +334,13 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           backgroundColor: Theme.of(
                             context,
                           ).colorScheme.primary,
-                          onPressed: () {
-                            // Navigate to create room
-                          },
+                          onPressed: _showCreateRoomMenu,
                         ),
 
                         SizedBox(width: 8),
 
                         RetroIconButton(
-                          onPressed: () {},
+                          onPressed: _showFindRoomsMenu,
                           tooltip: "Find rooms",
                           imagePath: "assets/icons/find_room.png",
                           iconSize: 55,
