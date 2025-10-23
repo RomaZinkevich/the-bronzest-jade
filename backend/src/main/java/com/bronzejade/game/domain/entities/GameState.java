@@ -2,6 +2,8 @@ package com.bronzejade.game.domain.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.util.UUID;
 
@@ -19,10 +21,12 @@ public class GameState {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Room room;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "turn_player_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private RoomPlayer turnPlayer;
 
     private Integer roundNumber;
