@@ -8,10 +8,22 @@ services:
       - pgdata:/var/lib/postgresql/data
     ports:
       - '127.0.0.1:${DB_PORT}:${DB_PORT}'
+  database-migrations:
+    image: flyway/flyway:10
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    volumes:
+      - ./database-migrations:/flyway/sql
+    command: -connectRetries=60 -baselineOnMigrate=true migrate
+    labels:
+      - "traefik.enable=false"
   springboot:
     build: backend
     depends_on:
       - postgres
+      - database-migrations
     env_file:
       - .env
     environment:
