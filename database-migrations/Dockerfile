@@ -1,2 +1,2 @@
 FROM flyway/flyway:10
-COPY ./sql /flyway/sql
+COPY ./V*.sql /flyway/sql/
