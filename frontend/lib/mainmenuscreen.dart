@@ -147,7 +147,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(100),
                                 boxShadow: [
-                                  const BoxShadow(color: Colors.black54),
+                                  const BoxShadow(
+                                    color: Color.fromARGB(255, 91, 123, 118),
+                                  ),
                                   BoxShadow(
                                     color: Theme.of(
                                       context,
