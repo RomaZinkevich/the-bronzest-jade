@@ -2,17 +2,15 @@ package com.bronzejade.game.service;
 
 import com.bronzejade.game.repositories.RoomRepository;
 import com.bronzejade.game.templates.Room;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class RoomService {
-    private RoomRepository roomRepo;
-
-    public RoomService(RoomRepository roomRepo) {
-        this.roomRepo = roomRepo;
-    }
+    private final RoomRepository roomRepo;
 
     public Room createRoom(String participant1) {
         String code = UUID.randomUUID().toString().substring(0, 6);
