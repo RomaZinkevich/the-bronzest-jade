@@ -8,6 +8,7 @@ class RetroButton extends StatelessWidget {
   final Color? borderColor;
   final IconData? icon;
   final bool iconAtEnd;
+  final double iconSpacing;
   final double fontSize;
   final double iconSize;
   final EdgeInsets? padding;
@@ -25,6 +26,7 @@ class RetroButton extends StatelessWidget {
     this.iconAtEnd = true,
     this.fontSize = 16,
     this.iconSize = 42,
+    this.iconSpacing = 12,
     this.padding,
     this.borderRadius = 100,
     this.borderWidth = 4,
@@ -53,12 +55,12 @@ class RetroButton extends StatelessWidget {
                     color: fgColor,
                   ),
                 ),
-                SizedBox(width: 12),
+                SizedBox(width: iconSpacing),
                 Icon(icon, size: iconSize, color: fgColor),
               ]
             : [
                 Icon(icon, size: iconSize, color: fgColor),
-                SizedBox(width: 12),
+                SizedBox(width: iconSpacing),
                 Text(
                   text,
                   style: TextStyle(
