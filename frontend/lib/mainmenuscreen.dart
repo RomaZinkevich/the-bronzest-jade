@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:guess_who/gamescreen.dart';
@@ -104,9 +106,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           icon: Icons.search,
           onTap: () {
             debugPrint("Browsing public rooms");
-            Future.delayed(const Duration(milliseconds: 300), () {
-              _showRoomList();
-            });
+            _showRoomList();
           },
         ),
 
@@ -122,8 +122,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     );
   }
 
-  void _showRoomList() {
-    final mockRooms = [
+  Future<List<Map<String, dynamic>>> _fetchRooms() async {
+    final randomNum = Random.secure().nextInt(5);
+    await Future.delayed(Duration(seconds: randomNum));
+
+    return [
       {
         'name': 'Epic Showdown',
         'code': 'ABC123',
@@ -160,26 +163,140 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         'isPrivate': false,
       },
     ];
+  }
 
-    PopupMenu.show(
+  void _showRoomList() {
+    PopupMenu.show<List<Map<String, dynamic>>>(
       context: context,
       title: "Available Rooms",
-      customContent: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ...mockRooms.map(
-            (room) => RoomListItem(
-              roomName: room["name"] as String,
-              roomCode: room["code"] as String,
-              playerCount: room["players"] as int,
-              maxPlayers: room["maxPlayers"] as int,
-              isPrivate: room["isPrivate"] as bool,
-              onJoin: () {
-                debugPrint("Joining room: ${room["code"]}");
-              },
-            ),
-          ),
-        ],
+      customContent: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _fetchRooms(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Padding(
+              padding: EdgeInsets.all(40.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
+                    ),
+                    strokeWidth: 4,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Text(
+                    "Fetching available rooms...",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Padding(
+              padding: const EdgeInsets.all(40.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Text(
+                    "Failed to load rooms",
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Text(
+                    "Please try again later",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.all(40.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.inbox_rounded,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Text(
+                    "No rooms available",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Text(
+                    "Create a room to get started!",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final rooms = snapshot.data!;
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: rooms
+                .map(
+                  (room) => RoomListItem(
+                    roomName: room["name"] as String,
+                    roomCode: room["code"] as String,
+                    playerCount: room["players"] as int,
+                    maxPlayers: room["maxPlayers"] as int,
+                    isPrivate: room["isPrivate"] as bool,
+                    onJoin: () {
+                      debugPrint("Joining room: ${room["code"]}");
+                    },
+                  ),
+                )
+                .toList(),
+          );
+        },
       ),
       maxHeight: MediaQuery.of(context).size.height * 0.7,
     );

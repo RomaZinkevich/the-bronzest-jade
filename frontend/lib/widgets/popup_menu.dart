@@ -49,12 +49,12 @@ class PopupMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
 
       child: Container(
         constraints: BoxConstraints(
           maxHeight: maxHeight ?? MediaQuery.of(context).size.height * 0.8,
         ),
-
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.tertiary,
@@ -118,12 +118,19 @@ class PopupMenu extends StatelessWidget {
               const SizedBox(height: 20),
 
               RetroButton(
-                text: "close",
+                text: "Close",
                 fontSize: 18,
+
+                icon: Icons.exit_to_app_rounded,
+                iconAtEnd: true,
+                iconSize: 20,
+                iconSpacing: 10,
+
                 padding: const EdgeInsets.symmetric(
                   horizontal: 30,
                   vertical: 12,
                 ),
+                borderRadius: 10,
                 backgroundColor: Theme.of(context).colorScheme.error,
                 foregroundColor: Theme.of(context).colorScheme.tertiary,
                 onPressed: () {
