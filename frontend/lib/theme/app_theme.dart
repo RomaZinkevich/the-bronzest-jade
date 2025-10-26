@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class AppTheme {
   static const Color cream = Color(0xFFFFF6E0);
   static const Color teal = Color(0xFF779792);
+  static const Color tealShadow = Color(0xFF5B7B76);
   static const Color sage = Color(0xFFA5B49D);
   static const Color coral = Color(0xFFC66859);
   static const Color black = Color(0xFF000000);
@@ -15,6 +16,7 @@ class AppTheme {
 
         secondary: teal,
         onSecondaryContainer: black,
+        shadow: tealShadow,
 
         tertiary: cream,
         onTertiary: black,
