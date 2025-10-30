@@ -20,5 +20,5 @@ public class CharacterSetDto {
     private String createdBy;
     private Boolean isPublic;
     private LocalDateTime createdAt;
-    private Set<Character> characters = new HashSet<>();
+    private Set<CharacterDto> characters = new HashSet<>();
 }

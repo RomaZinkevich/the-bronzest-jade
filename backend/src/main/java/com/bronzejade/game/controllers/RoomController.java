@@ -1,7 +1,10 @@
 package com.bronzejade.game.controllers;
 
+import com.bronzejade.game.domain.dtos.CreateRoomRequest;
+import com.bronzejade.game.domain.dtos.RoomDto;
 import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
+import com.bronzejade.game.mapper.RoomMapper;
 import com.bronzejade.game.service.RoomService;
 import com.bronzejade.game.domain.entities.Room;
 import lombok.RequiredArgsConstructor;
@@ -17,13 +20,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RoomController {
     private final RoomService roomService;
+    private final RoomMapper roomMapper;
 
     @PostMapping
-    public ResponseEntity<Room> createRoom(@RequestBody Map<String, String> request) {
+    public ResponseEntity<RoomDto> createRoom(@RequestBody CreateRoomRequest createRoomRequest) {
         try {
-            UUID hostId = UUID.fromString(request.get("hostId"));
-            Room room = roomService.createRoom(hostId);
-            return ResponseEntity.ok(room);
+            Room room = roomService.createRoom(createRoomRequest);
+            RoomDto roomDto = roomMapper.toDto(room);
+            return ResponseEntity.ok(roomDto);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }

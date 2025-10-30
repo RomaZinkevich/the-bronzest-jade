@@ -3,6 +3,7 @@ package com.bronzejade.game.controllers;
 import com.bronzejade.game.domain.dtos.ConnectionInfoDto;
 import com.bronzejade.game.service.RoomPlayerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -29,8 +30,8 @@ public class RoomWsController {
     private ConnectionInfoDto retriveConnectionInfo(SimpMessageHeaderAccessor accessor) {
         String roomId =  (String) accessor.getSessionAttributes().get("roomId");
         String playerId =  (String) accessor.getSessionAttributes().get("playerId");
-        if (roomId == null || playerId == null) throw new IllegalArgumentException("Room or Player ID is null");
-        if (!roomPlayerService.isInRoom(UUID.fromString(roomId), UUID.fromString(playerId))) throw new IllegalArgumentException("Player is not in the room");
+        if (roomId == null || playerId == null) throw new MessagingException("Room or Player ID is null");
+        if (!roomPlayerService.isInRoom(UUID.fromString(roomId), UUID.fromString(playerId))) throw new MessagingException("Player is not in the room");
         ConnectionInfoDto connectionInfoDto = new ConnectionInfoDto();
         connectionInfoDto.setRoomId(roomId);
         connectionInfoDto.setPlayerId(playerId);

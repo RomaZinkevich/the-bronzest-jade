@@ -6,6 +6,7 @@ import com.bronzejade.game.domain.entities.Room;
 import com.bronzejade.game.mapper.CharacterSetMapper;
 import com.bronzejade.game.service.CharacterSetService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,5 +31,12 @@ public class CharacterSetController {
         Set<CharacterSet> characterSets = characterSetService.getCharacterSets();
         Set<CharacterSetDto> characterSetDtos = characterSets.stream().map(characterSetMapper::toDto).collect(Collectors.toSet());
         return ResponseEntity.ok(characterSetDtos);
+    }
+
+    @GetMapping(path="/{id}")
+    public ResponseEntity<CharacterSetDto> getCharacterSet(@PathVariable UUID id) {
+        CharacterSet characterSet = characterSetService.getCharacterSet(id);
+        CharacterSetDto dto = characterSetMapper.toDto(characterSet);
+        return ResponseEntity.ok(dto);
     }
 }
