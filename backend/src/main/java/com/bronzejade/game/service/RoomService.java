@@ -7,6 +7,7 @@ import com.bronzejade.game.repositories.RoomPlayerRepository;
 import com.bronzejade.game.repositories.RoomRepository;
 import com.bronzejade.game.domain.entities.Room;
 import com.bronzejade.game.domain.RoomStatus;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ public class RoomService {
     private final RoomPlayerRepository roomPlayerRepo;
     private final GameStateRepository gameStateRepo;
 
+    @Transactional
     public Room createRoom(UUID hostId) {
         Room room = Room.builder()
                 .hostId(hostId)
@@ -35,7 +37,7 @@ public class RoomService {
                 .room(savedRoom)
                 .userId(hostId)
                 .isHost(true)
-                .isReady(true) // Host is ready from the beginning
+                .isReady(false)
                 .joinedAt(LocalDateTime.now())
                 .build();
 
