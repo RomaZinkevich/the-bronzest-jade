@@ -34,6 +34,11 @@ public class RoomPlayer {
     @Column(nullable = false)
     private boolean isReady;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "character_to_guess_id")
+    @OnDelete(action = OnDeleteAction.RESTRICT)
+    private Character characterToGuess;
+
     @Column(nullable = false)
     private LocalDateTime joinedAt;
 

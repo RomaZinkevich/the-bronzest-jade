@@ -1,5 +1,7 @@
 package com.bronzejade.game.service;
 
+import com.bronzejade.game.domain.dtos.CreateRoomRequest;
+import com.bronzejade.game.domain.entities.CharacterSet;
 import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.repositories.GameStateRepository;
@@ -21,11 +23,15 @@ public class RoomService {
     private final RoomRepository roomRepo;
     private final RoomPlayerRepository roomPlayerRepo;
     private final GameStateRepository gameStateRepo;
+    private final CharacterSetService characterSetService;
 
     @Transactional
-    public Room createRoom(UUID hostId) {
+    public Room createRoom(CreateRoomRequest createRoomRequest) {
+        CharacterSet characterSet = characterSetService.getCharacterSet(createRoomRequest.getCharacterSetId());
+        UUID hostId =  createRoomRequest.getHostId();
         Room room = Room.builder()
                 .hostId(hostId)
+                .characterSet(characterSet)
                 .maxPlayers(2)
                 .status(RoomStatus.WAITING)
                 .build();

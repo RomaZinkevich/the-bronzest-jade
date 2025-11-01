@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.util.Random;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -38,6 +41,11 @@ public class Room {
     @Max(2)
     @Column(nullable = false)
     private int maxPlayers;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "character_set_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.RESTRICT)
+    private CharacterSet characterSet;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;

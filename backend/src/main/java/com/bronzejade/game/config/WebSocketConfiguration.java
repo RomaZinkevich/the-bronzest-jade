@@ -4,6 +4,7 @@ import com.bronzejade.game.service.RoomPlayerService;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -69,7 +70,7 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
                         UUID roomId = UUID.fromString((String) accessor.getSessionAttributes().get("roomId"));
 
                         if (!roomPlayerService.isInRoom(roomId, playerId)) {
-                            throw new IllegalArgumentException("Access to this room is forbidden.");
+                            throw new MessagingException("Access to this room is forbidden.");
                         }
                     }
                 }
