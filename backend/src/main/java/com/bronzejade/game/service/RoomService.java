@@ -140,6 +140,11 @@ public class RoomService {
     public RoomPlayer togglePlayerReady(UUID roomId, UUID playerId) {
         RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
                 .orElseThrow(() -> new RuntimeException("Player not found in room"));
+        if (player.getCharacterToGuess() == null) { throw new IllegalStateException("Player didn't select character"); }
+
+        Room room = roomRepo.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+        if (room.getStatus() != RoomStatus.WAITING) {throw new IllegalArgumentException("Room is not in waiting process");}
 
         player.setReady(!player.isReady());
         return roomPlayerRepo.save(player);

@@ -1,15 +1,17 @@
 package com.bronzejade.game.controllers;
 
 import com.bronzejade.game.domain.dtos.ConnectionInfoDto;
+import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.service.RoomPlayerService;
+import com.bronzejade.game.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.UUID;
 
@@ -19,15 +21,31 @@ public class RoomWsController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final RoomPlayerService roomPlayerService;
+    private final RoomService roomService;
 
     @MessageMapping("/join")
     public void handleMessage(SimpMessageHeaderAccessor accessor) {
-        ConnectionInfoDto connectionInfoDto = retriveConnectionInfo(accessor);
+        ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
         String message = messageCrafter(" has joined room", connectionInfoDto.getPlayerId());
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
     }
 
-    private ConnectionInfoDto retriveConnectionInfo(SimpMessageHeaderAccessor accessor) {
+    @MessageMapping("/ready")
+    public void toggleReady(SimpMessageHeaderAccessor accessor) {
+        ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
+        RoomPlayer roomPlayer = roomService.togglePlayerReady(UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
+        String message = messageCrafter(" is " + (!roomPlayer.isReady() ? "not " : "") + "ready", connectionInfoDto.getPlayerId());
+        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
+    }
+
+    @MessageExceptionHandler
+    @SendToUser("/queue/errors")
+    public String handleException(Exception ex) {
+        System.out.println("Error: " + ex.getMessage());
+        return ex.getMessage();
+    }
+
+    private ConnectionInfoDto retrieveConnectionInfo(SimpMessageHeaderAccessor accessor) {
         String roomId =  (String) accessor.getSessionAttributes().get("roomId");
         String playerId =  (String) accessor.getSessionAttributes().get("playerId");
         if (roomId == null || playerId == null) throw new MessagingException("Room or Player ID is null");
