@@ -2,9 +2,11 @@ package com.bronzejade.game.controllers;
 
 import com.bronzejade.game.domain.dtos.CreateRoomRequest;
 import com.bronzejade.game.domain.dtos.RoomDto;
+import com.bronzejade.game.domain.dtos.RoomPlayerDto;
 import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.mapper.RoomMapper;
+import com.bronzejade.game.mapper.RoomPlayerMapper;
 import com.bronzejade.game.service.RoomService;
 import com.bronzejade.game.domain.entities.Room;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ import java.util.UUID;
 public class RoomController {
     private final RoomService roomService;
     private final RoomMapper roomMapper;
+    private final RoomPlayerMapper roomPlayerMapper;
 
     @PostMapping
     public ResponseEntity<RoomDto> createRoom(@RequestBody CreateRoomRequest createRoomRequest) {
@@ -44,13 +47,27 @@ public class RoomController {
     }
 
     @PostMapping("/join/{roomCode}")
-    public ResponseEntity<Room> joinRoom(@PathVariable String roomCode, @RequestBody Map<String, String> request) {
+    public ResponseEntity<RoomDto> joinRoom(@PathVariable String roomCode, @RequestBody Map<String, String> request) {
         try {
             UUID playerId = UUID.fromString(request.get("playerId"));
             Room room = roomService.joinRoom(roomCode, playerId);
-            return ResponseEntity.ok(room);
+            RoomDto roomDto = roomMapper.toDto(room);
+            return ResponseEntity.ok(roomDto);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @PostMapping("/{id}/select-character")
+    public ResponseEntity<RoomPlayerDto> selectCharacter(@PathVariable UUID id, @RequestBody Map<String, String> request) {
+        try {
+            UUID playerId = UUID.fromString(request.get("playerId"));
+            UUID characterId = UUID.fromString(request.get("characterId"));
+            RoomPlayer player = roomService.selectCharacter(id, playerId, characterId);
+            RoomPlayerDto roomPlayerdto = roomPlayerMapper.toDto(player);
+            return ResponseEntity.ok(roomPlayerdto);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 
