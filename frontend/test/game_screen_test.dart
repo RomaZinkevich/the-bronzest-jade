@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:guess_who/gamescreen.dart';
+import 'package:guess_who/screens/gamescreen.dart';
 
 void main() {
   Future<void> pumpGameScreen(WidgetTester tester) async {

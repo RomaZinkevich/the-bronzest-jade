@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:guess_who/gamescreen.dart';
+import 'package:guess_who/screens/gamescreen.dart';
 import 'package:guess_who/widgets/appbar.dart';
 import 'package:guess_who/widgets/popup_menu.dart';
 import 'package:guess_who/widgets/retro_button.dart';
