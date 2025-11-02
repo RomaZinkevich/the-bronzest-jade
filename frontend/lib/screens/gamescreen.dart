@@ -458,28 +458,28 @@ class _GameScreenState extends State<GameScreen> {
         // ],
       ),
       body: _buildBody(),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.only(top: 15, bottom: 45),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary,
-          border: Border(
-            top: BorderSide(
-              color: Theme.of(context).colorScheme.tertiary,
-              width: 5,
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child:
-            _currentPhase != GamePhase.characterSelection &&
-                _currentPhase != GamePhase.gameOver
-            ? Row(
+      bottomNavigationBar:
+          _currentPhase != GamePhase.characterSelection &&
+              _currentPhase != GamePhase.gameOver
+          ? Container(
+              padding: EdgeInsets.only(top: 15, bottom: 45),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).colorScheme.tertiary,
+                    width: 5,
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   RetroButton(
@@ -511,9 +511,9 @@ class _GameScreenState extends State<GameScreen> {
                     icon: Icons.swap_horiz_rounded,
                   ),
                 ],
-              )
-            : null,
-      ),
+              ),
+            )
+          : null,
     );
   }
 
