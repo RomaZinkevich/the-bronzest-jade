@@ -10,5 +10,5 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FinishGameRequest {
-    private UUID winnderId;
+    private UUID winnerId;
 }

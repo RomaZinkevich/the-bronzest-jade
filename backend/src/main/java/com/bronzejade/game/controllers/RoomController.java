@@ -2,6 +2,11 @@ package com.bronzejade.game.controllers;
 
 import com.bronzejade.game.domain.dtos.CreateRoomRequest;
 import com.bronzejade.game.domain.dtos.SelectCharacterRequest;
+import com.bronzejade.game.domain.dtos.JoinRoomRequest;
+import com.bronzejade.game.domain.dtos.LeaveRoomRequest;
+import com.bronzejade.game.domain.dtos.ToggleReadyRequest;
+import com.bronzejade.game.domain.dtos.FinishGameRequest;
+import com.bronzejade.game.domain.dtos.UpdateGameRequest;
 import com.bronzejade.game.domain.dtos.RoomDto;
 import com.bronzejade.game.domain.dtos.RoomPlayerDto;
 import com.bronzejade.game.domain.entities.GameState;
@@ -50,7 +55,7 @@ public class RoomController {
     @PostMapping("/join/{roomCode}")
     public ResponseEntity<RoomDto> joinRoom(@PathVariable String roomCode, @RequestBody JoinRoomRequest joinRequest) {
         try {
-            UUID playerId = joinRequest.getPlayerId;
+            UUID playerId = joinRequest.getPlayerId();
             Room room = roomService.joinRoom(roomCode, playerId);
             RoomDto roomDto = roomMapper.toDto(room);
             return ResponseEntity.ok(roomDto);
@@ -123,7 +128,7 @@ public class RoomController {
         try {
             UUID turnPlayerId = updateRequest.getTurnPlayerId();
             String currentQuestion = updateRequest.getCurrentQuestion();
-            String lastAnswer = updateRequest.lastAnswer();
+            String lastAnswer = updateRequest.getLastAnswer();
 
             GameState gameState = roomService.updateGameState(id, turnPlayerId, currentQuestion, lastAnswer);
             return ResponseEntity.ok(gameState);
