@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:guess_who/data/game_data.dart';
 import 'package:guess_who/models/character.dart';
 import 'package:guess_who/widgets/retro_button.dart';
@@ -506,6 +507,7 @@ class _GameScreenState extends State<GameScreen> {
     return Column(
       children: [
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.secondary,
@@ -517,29 +519,48 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (_player1SelectedCharacter != null)
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.tertiary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.check_circle_rounded,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
+              if (_player1SelectedCharacter != null) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                    SizedBox(width: 14),
+                    Text(
+                      "Player 1 picked a character",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
+                    ),
+                  ],
                 ),
-              Expanded(
-                child: Text(
-                  "$currentPlayerName: Pick your secret character",
-                  style: TextStyle(
-                    fontSize: 16,
+                SizedBox(height: 20),
+              ],
+
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.check_box_outline_blank_rounded,
                     color: Theme.of(context).colorScheme.tertiary,
                   ),
-                ),
+                  SizedBox(width: 14),
+                  Text(
+                    "$currentPlayerName picks a character",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
