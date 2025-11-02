@@ -2,6 +2,7 @@ package com.bronzejade.game.service;
 
 import com.bronzejade.game.domain.dtos.CreateRoomRequest;
 import com.bronzejade.game.domain.entities.CharacterSet;
+import com.bronzejade.game.domain.entities.Character;
 import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.repositories.GameStateRepository;
@@ -194,7 +195,7 @@ public class RoomService {
             throw new RuntimeException("Character not found in room's character set");
         }
 
-        com.bronzejade.game.domain.entities.Character character = characterSet.getCharacters().stream()
+        Character character = characterSet.getCharacters().stream()
                 .filter(c -> c.getId().equals(characterId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Character not found"));

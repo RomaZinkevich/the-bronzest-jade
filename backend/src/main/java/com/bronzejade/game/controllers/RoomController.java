@@ -1,6 +1,7 @@
 package com.bronzejade.game.controllers;
 
 import com.bronzejade.game.domain.dtos.CreateRoomRequest;
+import com.bronzejade.game.domain.dtos.SelectCharacterRequest;
 import com.bronzejade.game.domain.dtos.RoomDto;
 import com.bronzejade.game.domain.dtos.RoomPlayerDto;
 import com.bronzejade.game.domain.entities.GameState;
@@ -47,9 +48,9 @@ public class RoomController {
     }
 
     @PostMapping("/join/{roomCode}")
-    public ResponseEntity<RoomDto> joinRoom(@PathVariable String roomCode, @RequestBody Map<String, String> request) {
+    public ResponseEntity<RoomDto> joinRoom(@PathVariable String roomCode, @RequestBody JoinRoomRequest joinRequest) {
         try {
-            UUID playerId = UUID.fromString(request.get("playerId"));
+            UUID playerId = joinRequest.getPlayerId;
             Room room = roomService.joinRoom(roomCode, playerId);
             RoomDto roomDto = roomMapper.toDto(room);
             return ResponseEntity.ok(roomDto);
@@ -59,10 +60,10 @@ public class RoomController {
     }
 
     @PostMapping("/{id}/select-character")
-    public ResponseEntity<RoomPlayerDto> selectCharacter(@PathVariable UUID id, @RequestBody Map<String, String> request) {
+    public ResponseEntity<RoomPlayerDto> selectCharacter(@PathVariable UUID id, @RequestBody SelectCharacterRequest characterRequest) {
         try {
-            UUID playerId = UUID.fromString(request.get("playerId"));
-            UUID characterId = UUID.fromString(request.get("characterId"));
+            UUID playerId = characterRequest.getPlayerId();
+            UUID characterId = characterRequest.getCharacterId();
             RoomPlayer player = roomService.selectCharacter(id, playerId, characterId);
             RoomPlayerDto roomPlayerdto = roomPlayerMapper.toDto(player);
             return ResponseEntity.ok(roomPlayerdto);
@@ -72,9 +73,9 @@ public class RoomController {
     }
 
     @PostMapping("/{id}/leave")
-    public ResponseEntity<Room> leaveRoom(@PathVariable UUID id, @RequestBody Map<String, String> request) {
+    public ResponseEntity<Room> leaveRoom(@PathVariable UUID id, @RequestBody LeaveRoomRequest leaveRequest) {
         try {
-            UUID playerId = UUID.fromString(request.get("playerId"));
+            UUID playerId = leaveRequest.getPlayerId();
             Room room = roomService.leaveRoom(id, playerId);
             if (room == null) {
                 return ResponseEntity.ok().body(null); // Room was deleted
@@ -86,9 +87,9 @@ public class RoomController {
     }
 
     @PostMapping("/{id}/ready")
-    public ResponseEntity<RoomPlayer> toggleReady(@PathVariable UUID id, @RequestBody Map<String, String> request) {
+    public ResponseEntity<RoomPlayer> toggleReady(@PathVariable UUID id, @RequestBody ToggleReadyRequest readyRequest) {
         try {
-            UUID playerId = UUID.fromString(request.get("playerId"));
+            UUID playerId = readyRequest.getPlayerId();
             RoomPlayer player = roomService.togglePlayerReady(id, playerId);
             return ResponseEntity.ok(player);
         } catch (RuntimeException e) {
@@ -107,9 +108,9 @@ public class RoomController {
     }
 
     @PostMapping("/{id}/finish")
-    public ResponseEntity<Room> finishGame(@PathVariable UUID id, @RequestBody Map<String, String> request) {
+    public ResponseEntity<Room> finishGame(@PathVariable UUID id, @RequestBody FinishGameRequest finishGameRequest) {
         try {
-            UUID winnerId = UUID.fromString(request.get("winnerId"));
+            UUID winnerId = finishGameRequest.getWinnerId();
             Room room = roomService.finishGame(id, winnerId);
             return ResponseEntity.ok(room);
         } catch (RuntimeException e) {
@@ -118,11 +119,11 @@ public class RoomController {
     }
 
     @PostMapping("/{id}/game-state")
-    public ResponseEntity<GameState> updateGameState(@PathVariable UUID id, @RequestBody Map<String, String> request) {
+    public ResponseEntity<GameState> updateGameState(@PathVariable UUID id, @RequestBody UpdateGameRequest updateRequest) {
         try {
-            UUID turnPlayerId = UUID.fromString(request.get("turnPlayerId"));
-            String currentQuestion = request.get("currentQuestion");
-            String lastAnswer = request.get("lastAnswer");
+            UUID turnPlayerId = updateRequest.getTurnPlayerId();
+            String currentQuestion = updateRequest.getCurrentQuestion();
+            String lastAnswer = updateRequest.lastAnswer();
 
             GameState gameState = roomService.updateGameState(id, turnPlayerId, currentQuestion, lastAnswer);
             return ResponseEntity.ok(gameState);
