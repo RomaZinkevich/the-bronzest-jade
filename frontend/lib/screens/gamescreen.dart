@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:guess_who/data/game_data.dart';
 import 'package:guess_who/models/character.dart';
 import 'package:guess_who/widgets/retro_button.dart';
@@ -26,6 +25,7 @@ class _GameScreenState extends State<GameScreen> {
   String _currentPlayer = "Player 1";
   String? _winner;
 
+  bool _isLoading = false;
   bool _isCharacterNameRevealed = false;
 
   @override
@@ -34,11 +34,23 @@ class _GameScreenState extends State<GameScreen> {
     _initializeGame();
   }
 
-  void _initializeGame() {
+  void _initializeGame() async {
     setState(() {
-      // TODO: Replace with API call
-      _allCharacters = GameData.getSampleCharacters();
+      _isLoading = true;
     });
+
+    try {
+      final characters = await GameData.fetchCharacters();
+      setState(() {
+        _allCharacters = characters;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      debugPrint("Error fetching characters: $e");
+    }
   }
 
   void _selectCharacter(Character character, bool isPlayer1) {
@@ -446,12 +458,28 @@ class _GameScreenState extends State<GameScreen> {
         // ],
       ),
       body: _buildBody(),
-      bottomNavigationBar:
-          _currentPhase != GamePhase.characterSelection &&
-              _currentPhase != GamePhase.gameOver
-          ? Container(
-              margin: EdgeInsets.only(bottom: 26),
-              child: Row(
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.only(top: 15, bottom: 45),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).colorScheme.tertiary,
+              width: 5,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child:
+            _currentPhase != GamePhase.characterSelection &&
+                _currentPhase != GamePhase.gameOver
+            ? Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   RetroButton(
@@ -483,9 +511,9 @@ class _GameScreenState extends State<GameScreen> {
                     icon: Icons.swap_horiz_rounded,
                   ),
                 ],
-              ),
-            )
-          : null,
+              )
+            : null,
+      ),
     );
   }
 
@@ -566,24 +594,45 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ),
         Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              childAspectRatio: 0.75,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-            ),
-            itemCount: _allCharacters.length,
-            itemBuilder: (context, index) {
-              final character = _allCharacters[index];
-              return _buildCharacterCard(
-                character,
-                isPlayer1Selecting,
-                isSelectionMode: true,
-              );
-            },
-          ),
+          child: !_isLoading
+              ? GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: _allCharacters.length,
+                  itemBuilder: (context, index) {
+                    final character = _allCharacters[index];
+                    return _buildCharacterCard(
+                      character,
+                      isPlayer1Selecting,
+                      isSelectionMode: true,
+                    );
+                  },
+                )
+              : SizedBox(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 50),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Loading Characters...",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        LinearProgressIndicator(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
         ),
       ],
     );
@@ -713,25 +762,29 @@ class _GameScreenState extends State<GameScreen> {
         ),
         //* BOARD
         Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              childAspectRatio: 0.7,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
+          child: Container(
+            color: Theme.of(context).colorScheme.tertiary,
+
+            child: GridView.builder(
+              padding: const EdgeInsets.all(10),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: _allCharacters.length,
+              itemBuilder: (context, index) {
+                final character = _allCharacters[index];
+                final isFlipped = currentFlippedCards.contains(character.id);
+                return _buildCharacterCard(
+                  character,
+                  false,
+                  isSelectionMode: false,
+                  isFlipped: isFlipped,
+                );
+              },
             ),
-            itemCount: _allCharacters.length,
-            itemBuilder: (context, index) {
-              final character = _allCharacters[index];
-              final isFlipped = currentFlippedCards.contains(character.id);
-              return _buildCharacterCard(
-                character,
-                false,
-                isSelectionMode: false,
-                isFlipped: isFlipped,
-              );
-            },
           ),
         ),
       ],
@@ -760,7 +813,7 @@ class _GameScreenState extends State<GameScreen> {
               : Theme.of(context).colorScheme.primary,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Theme.of(context).colorScheme.primary,
+            color: Theme.of(context).colorScheme.secondary,
             width: 3,
           ),
           boxShadow: [
@@ -779,7 +832,7 @@ class _GameScreenState extends State<GameScreen> {
             children: [
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(1),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
@@ -800,14 +853,17 @@ class _GameScreenState extends State<GameScreen> {
                       },
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                : null,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).colorScheme.tertiary,
+                        return Container(
+                          color: Theme.of(context).colorScheme.primary,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                  : null,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).colorScheme.tertiary,
+                              ),
                             ),
                           ),
                         );
