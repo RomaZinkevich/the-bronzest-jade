@@ -1,7 +1,11 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:guess_who/data/game_data.dart';
 import 'package:guess_who/models/character.dart';
 import 'package:guess_who/widgets/retro_button.dart';
+import 'package:particles_flutter/component/particle/particle.dart';
+import 'package:particles_flutter/particles_engine.dart';
 
 enum GamePhase { characterSelection, player1Turn, player2Turn, gameOver }
 
@@ -113,6 +117,189 @@ class _GameScreenState extends State<GameScreen> {
 
       _isCharacterNameRevealed = false;
     });
+
+    _showTurnTransitionOverlay();
+  }
+
+  void _showTurnTransitionOverlay() {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Theme.of(context).colorScheme.primary,
+      builder: (BuildContext context) {
+        return PopScope(
+          canPop: false,
+          child: Stack(
+            children: [
+              Container(
+                color: Theme.of(context).colorScheme.primary,
+                child: Particles(
+                  awayRadius: 150,
+                  particles: createParticles(),
+                  height: screenHeight,
+                  width: screenWidth,
+                  onTapAnimation: true,
+                  awayAnimationDuration: const Duration(milliseconds: 100),
+                  awayAnimationCurve: Curves.bounceOut,
+                  enableHover: true,
+                  hoverRadius: 30,
+                  connectDots: false,
+                ),
+              ),
+              Dialog(
+                backgroundColor: Colors.transparent,
+                elevation: 10,
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.tertiary,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.secondary,
+                      width: 4,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.secondary.withAlpha(100),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.tertiary,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withAlpha(100),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _currentPlayer == "Player 1"
+                              ? "Player 2"
+                              : "Player 1",
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                      ),
+
+                      Icon(
+                        Icons.swap_horiz_rounded,
+                        size: 50,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.secondary,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              blurRadius: 2,
+                              offset: Offset(0, 2),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withAlpha(200),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _currentPlayer,
+                          style: TextStyle(
+                            fontSize: 22,
+                            color: Theme.of(context).colorScheme.tertiary,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      SizedBox(
+                        width: double.infinity,
+                        child: RetroButton(
+                          text: "I'm Ready!",
+                          fontSize: 18,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.tertiary,
+
+                          borderColor: Theme.of(context).colorScheme.tertiary,
+                          borderRadius: 12,
+
+                          icon: Icons.check_circle,
+                          iconAtEnd: false,
+                          iconSize: 30,
+                          iconSpacing: 10,
+
+                          padding: EdgeInsets.symmetric(
+                            vertical: 25,
+                            horizontal: 0,
+                          ),
+
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  List<Particle> createParticles() {
+    var rng = Random();
+    List<Particle> particles = [];
+    for (int i = 0; i < 50; i++) {
+      particles.add(
+        Particle(
+          color: Theme.of(context).colorScheme.tertiary.withAlpha(200),
+          size: rng.nextDouble() * 10,
+          velocity: Offset(
+            rng.nextDouble() * 50 * randomSign(),
+            rng.nextDouble() * 50 * randomSign(),
+          ),
+        ),
+      );
+    }
+    return particles;
+  }
+
+  double randomSign() {
+    var rng = Random();
+    return rng.nextBool() ? 1 : -1;
   }
 
   void _makeGuess() {
@@ -614,23 +801,21 @@ class _GameScreenState extends State<GameScreen> {
                   },
                 )
               : SizedBox(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 50),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Loading Characters...",
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Loading Characters...",
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                        const SizedBox(height: 10),
-                        LinearProgressIndicator(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 10),
+                      LinearProgressIndicator(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ],
                   ),
                 ),
         ),
@@ -864,6 +1049,7 @@ class _GameScreenState extends State<GameScreen> {
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 Theme.of(context).colorScheme.tertiary,
                               ),
+                              strokeCap: StrokeCap.round,
                             ),
                           ),
                         );
