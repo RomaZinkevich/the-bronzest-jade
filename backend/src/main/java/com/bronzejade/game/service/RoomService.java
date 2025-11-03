@@ -2,6 +2,7 @@ package com.bronzejade.game.service;
 
 import com.bronzejade.game.domain.dtos.CreateRoomRequest;
 import com.bronzejade.game.domain.entities.CharacterSet;
+import com.bronzejade.game.domain.entities.Character;
 import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.repositories.GameStateRepository;
@@ -173,6 +174,34 @@ public class RoomService {
 
         gameStateRepo.save(gameState);
         return roomRepo.save(room);
+    }
+
+    public RoomPlayer selectCharacter(UUID roomId, UUID playerId, UUID characterId) {
+        Room room = roomRepo.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
+
+        if(room.getStatus() != RoomStatus.WAITING) {
+            throw new RuntimeException("Cannot select players when the game is going on");
+        }
+
+        RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
+                .orElseThrow(() -> new RuntimeException("Player not found in room"));
+
+        CharacterSet characterSet = room.getCharacterSet();
+        boolean characterExists = characterSet.getCharacters().stream()
+                .anyMatch(c -> c.getId().equals(characterId));
+
+        if (!characterExists) {
+            throw new RuntimeException("Character not found in room's character set");
+        }
+
+        Character character = characterSet.getCharacters().stream()
+                .filter(c -> c.getId().equals(characterId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Character not found"));
+
+        player.setCharacterToGuess(character);
+        return roomPlayerRepo.save(player);
     }
 
     public Room finishGame(UUID roomId, UUID winnerId) {
