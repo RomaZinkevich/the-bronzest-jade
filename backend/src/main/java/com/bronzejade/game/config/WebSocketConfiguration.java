@@ -22,24 +22,26 @@ import java.util.UUID;
 public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer {
 
     private final RoomPlayerService roomPlayerService;
+    private final PlayerHandshakeInterceptor playerHandshakeInterceptor;
 
-    public WebSocketConfiguration(RoomPlayerService roomPlayerService) {
+    public WebSocketConfiguration(RoomPlayerService roomPlayerService, PlayerHandshakeInterceptor playerHandshakeInterceptor) {
         this.roomPlayerService = roomPlayerService;
+        this.playerHandshakeInterceptor = playerHandshakeInterceptor;
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Enable a simple memory-based message broker for destinations prefixed with /topic or /queue
-        config.enableSimpleBroker("/topic");
-
-        // Set prefix for messages from client to server
         config.setApplicationDestinationPrefixes("/app");
+        config.enableSimpleBroker("/topic", "/queue");
+        config.setUserDestinationPrefix("/user");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Register WebSocket endpoint that clients will use to connect
         registry.addEndpoint("/ws")
+                .addInterceptors(playerHandshakeInterceptor)
+                .setHandshakeHandler(new PlayerHandshakeHandler())
                 .setAllowedOriginPatterns("*")  // Configure CORS as needed
                 .withSockJS();  // Enable SockJS fallback options
     }
