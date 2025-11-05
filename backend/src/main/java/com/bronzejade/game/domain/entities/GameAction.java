@@ -1,6 +1,5 @@
 package com.bronzejade.game.domain.entities;
 
-import com.bronzejade.game.domain.TurnPhase;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
@@ -9,31 +8,37 @@ import org.hibernate.annotations.OnDeleteAction;
 import java.util.UUID;
 
 @Entity
-@Table(name = "game_state")
+@Table(name = "game_action")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @Builder
-public class GameState {
+public class GameAction {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_id", nullable = false)
+    @JoinColumn(name = "game_state_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private Room room;
+    private GameState gameState;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "turn_player_id")
+    @JoinColumn(name = "asking_player_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
-    private RoomPlayer turnPlayer;
+    private RoomPlayer askingPlayer;
 
-    @Enumerated(EnumType.STRING)
-    private TurnPhase turnPhase;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "answering_player_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private RoomPlayer answeringPlayer;
+
+    @Column(nullable = false)
+    private String question;
+
+    private String answer;
 
     private Integer roundNumber;
-
-    private UUID winnerId;
 }

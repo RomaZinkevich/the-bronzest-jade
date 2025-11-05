@@ -102,36 +102,12 @@ public class RoomController {
         }
     }
 
-    @PostMapping("/{id}/start")
-    public ResponseEntity<Room> startGame(@PathVariable UUID id) {
-        try {
-            Room room = roomService.startGame(id);
-            return ResponseEntity.ok(room);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
     @PostMapping("/{id}/finish")
     public ResponseEntity<Room> finishGame(@PathVariable UUID id, @RequestBody FinishGameRequest finishGameRequest) {
         try {
             UUID winnerId = finishGameRequest.getWinnerId();
             Room room = roomService.finishGame(id, winnerId);
             return ResponseEntity.ok(room);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PostMapping("/{id}/game-state")
-    public ResponseEntity<GameState> updateGameState(@PathVariable UUID id, @RequestBody UpdateGameRequest updateRequest) {
-        try {
-            UUID turnPlayerId = updateRequest.getTurnPlayerId();
-            String currentQuestion = updateRequest.getCurrentQuestion();
-            String lastAnswer = updateRequest.getLastAnswer();
-
-            GameState gameState = roomService.updateGameState(id, turnPlayerId, currentQuestion, lastAnswer);
-            return ResponseEntity.ok(gameState);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }

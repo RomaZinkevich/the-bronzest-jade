@@ -138,6 +138,7 @@ public class RoomService {
         return roomRepo.save(room);
     }
 
+    @Transactional
     public RoomPlayer togglePlayerReady(UUID roomId, UUID playerId) {
         RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
                 .orElseThrow(() -> new RuntimeException("Player not found in room"));
@@ -151,13 +152,10 @@ public class RoomService {
         return roomPlayerRepo.save(player);
     }
 
-    public Room startGame(UUID roomId) {
+    @Transactional
+    public Room startGame(UUID roomId, UUID playerId) {
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
-
-        if (room.getStatus() != RoomStatus.IN_PROGRESS) {
-            throw new RuntimeException("Room is not ready to start the game");
-        }
 
         // Check if all players are ready
         List<RoomPlayer> players = roomPlayerRepo.findByRoomId(roomId);
@@ -165,6 +163,12 @@ public class RoomService {
         if (!allReady) {
             throw new RuntimeException("Not all players are ready");
         }
+
+        players.forEach(player -> {
+            if (player.getUserId().equals(playerId) && !player.isHost()) {
+                throw new IllegalArgumentException("Player is not host");
+            }
+        });
 
         room.setStatus(RoomStatus.IN_PROGRESS);
         room.setStartedAt(LocalDateTime.now());
@@ -226,29 +230,6 @@ public class RoomService {
 
         gameStateRepo.save(gameState);
         return roomRepo.save(room);
-    }
-
-    public GameState updateGameState(UUID roomId, UUID turnPlayerId, String currentQuestion, String lastAnswer) {
-        Room room = roomRepo.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
-
-        GameState gameState = gameStateRepo.findByRoomId(roomId)
-                .orElseThrow(() -> new RuntimeException("Game state not found"));
-
-        RoomPlayer turnPlayer = roomPlayerRepo.findByRoomIdAndUserId(roomId, turnPlayerId)
-                .orElseThrow(() -> new RuntimeException("Turn player not found in room"));
-
-        gameState.setTurnPlayer(turnPlayer);
-        gameState.setCurrentQuestion(currentQuestion);
-        gameState.setLastAnswer(lastAnswer);
-
-        if (gameState.getRoundNumber() != null) {
-            gameState.setRoundNumber(gameState.getRoundNumber() + 1);
-        } else {
-            gameState.setRoundNumber(1);
-        }
-
-        return gameStateRepo.save(gameState);
     }
 
     public Room getRoom(UUID id) {
