@@ -783,10 +783,10 @@ class _GameScreenState extends State<GameScreen> {
         Expanded(
           child: !_isLoading
               ? GridView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(8),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,
-                    childAspectRatio: 0.75,
+                    childAspectRatio: 0.7,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
