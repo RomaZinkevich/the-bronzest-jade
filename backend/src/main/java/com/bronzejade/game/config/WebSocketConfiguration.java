@@ -44,6 +44,11 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
                 .setHandshakeHandler(new PlayerHandshakeHandler())
                 .setAllowedOriginPatterns("*")  // Configure CORS as needed
                 .withSockJS();  // Enable SockJS fallback options
+
+        registry.addEndpoint("/ws-direct")
+                .addInterceptors(playerHandshakeInterceptor)
+                .setHandshakeHandler(new PlayerHandshakeHandler())
+                .setAllowedOriginPatterns("*");
     }
 
     @Override

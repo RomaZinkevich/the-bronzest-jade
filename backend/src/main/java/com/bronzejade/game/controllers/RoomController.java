@@ -8,12 +8,15 @@ import com.bronzejade.game.domain.dtos.ToggleReadyRequest;
 import com.bronzejade.game.domain.dtos.FinishGameRequest;
 import com.bronzejade.game.domain.dtos.UpdateGameRequest;
 import com.bronzejade.game.domain.dtos.RoomDto;
+import com.bronzejade.game.domain.dtos.GuessCharacterResponse;
+import com.bronzejade.game.domain.dtos.GuessCharacterRequest;
 import com.bronzejade.game.domain.dtos.RoomPlayerDto;
 import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.mapper.RoomMapper;
 import com.bronzejade.game.mapper.RoomPlayerMapper;
 import com.bronzejade.game.service.RoomService;
+import com.bronzejade.game.service.GuessCharacterService;
 import com.bronzejade.game.domain.entities.Room;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +31,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RoomController {
     private final RoomService roomService;
+    private final GuessCharacterService guessCharacterService;
     private final RoomMapper roomMapper;
     private final RoomPlayerMapper roomPlayerMapper;
 
@@ -86,17 +90,6 @@ public class RoomController {
                 return ResponseEntity.ok().body(null); // Room was deleted
             }
             return ResponseEntity.ok(room);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PostMapping("/{id}/ready")
-    public ResponseEntity<RoomPlayer> toggleReady(@PathVariable UUID id, @RequestBody ToggleReadyRequest readyRequest) {
-        try {
-            UUID playerId = readyRequest.getPlayerId();
-            RoomPlayer player = roomService.togglePlayerReady(id, playerId);
-            return ResponseEntity.ok(player);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
