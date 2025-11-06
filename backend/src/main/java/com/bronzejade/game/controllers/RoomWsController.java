@@ -2,6 +2,7 @@ package com.bronzejade.game.controllers;
 
 import com.bronzejade.game.domain.dtos.ConnectionInfoDto;
 import com.bronzejade.game.domain.entities.RoomPlayer;
+import com.bronzejade.game.service.GameStateService;
 import com.bronzejade.game.service.RoomPlayerService;
 import com.bronzejade.game.service.RoomService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class RoomWsController {
     private final SimpMessagingTemplate messagingTemplate;
     private final RoomPlayerService roomPlayerService;
     private final RoomService roomService;
+    private final GameStateService gameStateService;
 
     @MessageMapping("/join")
     public void handleMessage(SimpMessageHeaderAccessor accessor) {
@@ -36,6 +38,28 @@ public class RoomWsController {
         RoomPlayer roomPlayer = roomService.togglePlayerReady(UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
         String message = messageCrafter(" is " + (!roomPlayer.isReady() ? "not " : "") + "ready", connectionInfoDto.getPlayerId());
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
+    }
+
+    @MessageMapping("/start")
+    public void start(SimpMessageHeaderAccessor accessor) {
+        ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
+        roomService.startGame(UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
+        String message = "The game has been started";
+        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
+    }
+
+    @MessageMapping("/question")
+    public void question(String payload, SimpMessageHeaderAccessor accessor) {
+        ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
+        gameStateService.submitQuestion(payload, UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
+        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), payload);
+    }
+
+    @MessageMapping("/answer")
+    public void answer(String payload, SimpMessageHeaderAccessor accessor) {
+        ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
+        gameStateService.submitAnswer(payload, UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
+        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), payload);
     }
 
     @MessageExceptionHandler
