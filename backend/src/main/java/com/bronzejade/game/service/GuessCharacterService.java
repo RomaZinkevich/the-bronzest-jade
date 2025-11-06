@@ -7,6 +7,7 @@ import java.util.List;
 import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.domain.RoomStatus;
+import com.bronzejade.game.domain.TurnPhase;
 import org.springframework.transaction.annotation.Transactional;
 import com.bronzejade.game.repositories.GameStateRepository;
 import com.bronzejade.game.repositories.RoomPlayerRepository;
@@ -37,17 +38,31 @@ public class GuessCharacterService{
         GameState gameState = gameStateRepo.findByRoomId(roomId)
                 .orElseThrow(() -> new RuntimeException("Game state not found"));
 
-        if (gameState.getTurnPlayer() == null || !gameState.getTurnPlayer().getUserId().equals(playerId)) {
+        RoomPlayer guessingPlayer = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
+                .orElseThrow(() -> new RuntimeException("Player not found in room"));
+
+        // I am making essentially three checks here which determine whether,
+        // the player can guess or not
+
+        // CHECK 1: Turn player must exist
+        if (gameState.getTurnPlayer() == null) {
+            throw new RuntimeException("Turn player not set");
+        }
+
+        // CHECK 2: Must be the player's turn (who can guess?)
+        if (!gameState.getTurnPlayer().getId().equals(guessingPlayer.getId())) {
             throw new RuntimeException("It's not your turn");
         }
 
-        RoomPlayer guessingPlayer = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
-                .orElseThrow(() -> new RuntimeException("Player not found in room"));
+        // CHECK 3: Must be ASKING phase (when they can guess?)
+        if (!gameState.getTurnPhase().equals(TurnPhase.ASKING)) {
+            throw new RuntimeException("You can't guess right now");
+        }
 
         // Filtering out the opponent player
         List<RoomPlayer> allPlayers = roomPlayerRepo.findByRoomId(roomId);
         RoomPlayer opponentPlayer = allPlayers.stream()
-                .filter(p -> !p.getUserId().equals(playerId))
+                .filter(p -> !p.getUserId().equals(guessingPlayer.getId()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Opponent not found"));
 
@@ -91,6 +106,7 @@ public class GuessCharacterService{
         }
         else{ // If its a wrong guess switch turns
             gameState.setTurnPlayer(opponentPlayer);
+            gameState.setTurnPhase(TurnPhase.ASKING);
             gameStateRepo.save(gameState);
 
             return response.toBuilder()
