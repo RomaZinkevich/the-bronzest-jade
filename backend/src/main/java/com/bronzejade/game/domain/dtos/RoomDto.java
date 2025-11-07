@@ -1,13 +1,7 @@
 package com.bronzejade.game.domain.dtos;
 
 import com.bronzejade.game.domain.RoomStatus;
-import com.bronzejade.game.domain.entities.CharacterSet;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.*;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

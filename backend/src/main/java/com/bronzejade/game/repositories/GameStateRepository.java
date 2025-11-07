@@ -2,7 +2,6 @@ package com.bronzejade.game.repositories;
 
 import com.bronzejade.game.domain.entities.GameState;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.Optional;
 import java.util.UUID;
 

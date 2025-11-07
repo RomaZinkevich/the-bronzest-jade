@@ -1,6 +1,5 @@
 package com.bronzejade.game.domain.dtos;
 
-import jakarta.persistence.Column;
 import lombok.*;
 
 import java.util.UUID;

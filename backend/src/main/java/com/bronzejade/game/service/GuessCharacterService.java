@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.bronzejade.game.repositories.GameStateRepository;
 import com.bronzejade.game.repositories.RoomPlayerRepository;
 import com.bronzejade.game.domain.dtos.GuessCharacterResponse;
-import com.bronzejade.game.domain.dtos.GuessCharacterRequest;
 import com.bronzejade.game.domain.entities.Character;
 import org.springframework.stereotype.Service;
 import com.bronzejade.game.domain.entities.CharacterSet;
@@ -62,7 +61,7 @@ public class GuessCharacterService{
         // Filtering out the opponent player
         List<RoomPlayer> allPlayers = roomPlayerRepo.findByRoomId(roomId);
         RoomPlayer opponentPlayer = allPlayers.stream()
-                .filter(p -> !p.getUserId().equals(guessingPlayer.getId()))
+                .filter(p -> !p.getId().equals(guessingPlayer.getId()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Opponent not found"));
 
