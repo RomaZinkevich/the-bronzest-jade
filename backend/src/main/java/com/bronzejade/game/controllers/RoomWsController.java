@@ -1,10 +1,13 @@
 package com.bronzejade.game.controllers;
 
 import com.bronzejade.game.domain.dtos.ConnectionInfoDto;
+import com.bronzejade.game.domain.dtos.GuessCharacterResponse;
+import com.bronzejade.game.domain.dtos.GuessCharacterRequest;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.service.GameStateService;
 import com.bronzejade.game.service.RoomPlayerService;
 import com.bronzejade.game.service.RoomService;
+import com.bronzejade.game.service.GuessCharacterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -24,6 +27,7 @@ public class RoomWsController {
     private final RoomPlayerService roomPlayerService;
     private final RoomService roomService;
     private final GameStateService gameStateService;
+    private final GuessCharacterService guessCharacterService;
 
     @MessageMapping("/join")
     public void handleMessage(SimpMessageHeaderAccessor accessor) {
@@ -60,6 +64,32 @@ public class RoomWsController {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
         gameStateService.submitAnswer(payload, UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), payload);
+    }
+
+    @MessageMapping("/guess")
+    public void guessCharacter(String characterId, SimpMessageHeaderAccessor accessor) {
+        System.out.println("=== GUESS WebSocket Called ===");
+        System.out.println("Raw characterId: " + characterId);
+
+        ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
+        System.out.println("Room: " + connectionInfoDto.getRoomId());
+        System.out.println("Player: " + connectionInfoDto.getPlayerId());
+
+        try {
+            System.out.println("Calling guessCharacterService...");
+            GuessCharacterResponse response = guessCharacterService.guessCharacter(
+                    UUID.fromString(connectionInfoDto.getRoomId()),
+                    UUID.fromString(connectionInfoDto.getPlayerId()),
+                    UUID.fromString(characterId)
+            );
+            System.out.println("Response: " + response);
+            messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), response);
+            System.out.println("Response sent to WebSocket");
+
+        } catch (RuntimeException e) {
+            System.out.println("ERROR in guess: " + e.getMessage());
+            messagingTemplate.convertAndSendToUser(accessor.getSessionId(), "/queue/errors", e.getMessage());
+        }
     }
 
     @MessageExceptionHandler

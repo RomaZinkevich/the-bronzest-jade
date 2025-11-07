@@ -10,6 +10,7 @@ import com.bronzejade.game.repositories.RoomPlayerRepository;
 import com.bronzejade.game.repositories.RoomRepository;
 import com.bronzejade.game.domain.entities.Room;
 import com.bronzejade.game.domain.RoomStatus;
+import com.bronzejade.game.domain.TurnPhase;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -53,6 +54,7 @@ public class RoomService {
         GameState gameState = GameState.builder()
                 .room(savedRoom)
                 .roundNumber(0)
+                .turnPhase(TurnPhase.ASKING)
                 .build();
 
         gameStateRepo.save(gameState);
