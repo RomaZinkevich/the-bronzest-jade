@@ -3,50 +3,41 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:guess_who/data/game_data.dart';
 import 'package:guess_who/models/character.dart';
+import 'package:guess_who/services/game_state_manager.dart';
 import 'package:guess_who/widgets/retro_button.dart';
 import 'package:particles_flutter/component/particle/particle.dart';
 import 'package:particles_flutter/particles_engine.dart';
+import 'package:provider/provider.dart';
 
-enum GamePhase { characterSelection, player1Turn, player2Turn, gameOver }
-
-class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+class LocalGameScreen extends StatefulWidget {
+  const LocalGameScreen({super.key});
 
   @override
-  State<GameScreen> createState() => _GameScreenState();
+  State<LocalGameScreen> createState() => _LocalGameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
-  GamePhase _currentPhase = GamePhase.characterSelection;
-  List<Character> _allCharacters = [];
-
-  final Set<String> _player1FlippedCards = {};
-  final Set<String> _player2FlippedCards = {};
-
-  Character? _player1SelectedCharacter;
-  Character? _player2SelectedCharacter;
-
-  String _currentPlayer = "Player 1";
-  String? _winner;
-
+class _LocalGameScreenState extends State<LocalGameScreen> {
+  late GameStateManager _gameState;
   bool _isLoading = false;
   bool _isCharacterNameRevealed = false;
 
   @override
   void initState() {
     super.initState();
+    _gameState = GameStateManager();
     _initializeGame();
   }
 
-  void _initializeGame() async {
+  Future<void> _initializeGame() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
       final characters = await GameData.fetchCharacters();
+      _gameState.initializeGame(mode: GameMode.local, characters: characters);
+
       setState(() {
-        _allCharacters = characters;
         _isLoading = false;
       });
     } catch (e) {
@@ -57,64 +48,21 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  void _selectCharacter(Character character, bool isPlayer1) {
-    if (_currentPhase != GamePhase.characterSelection) return;
-
+  void _selectCharacter(Character character) {
     setState(() {
-      if (isPlayer1) {
-        _player1SelectedCharacter = character;
-      } else {
-        _player2SelectedCharacter = character;
-      }
-
-      if (_player1SelectedCharacter != null &&
-          _player2SelectedCharacter != null) {
-        _currentPhase = GamePhase.player1Turn;
-        _currentPlayer = "Player 1";
-      }
+      _gameState.selectMyCharacter(character);
     });
   }
 
   void _toggleFlipCard(String characterId) {
     setState(() {
-      switch (_currentPhase) {
-        case GamePhase.player1Turn:
-          if (_player1FlippedCards.contains(characterId)) {
-            _player1FlippedCards.remove(characterId);
-          } else {
-            _player1FlippedCards.add(characterId);
-          }
-
-          break;
-        case GamePhase.player2Turn:
-          if (_player2FlippedCards.contains(characterId)) {
-            _player2FlippedCards.remove(characterId);
-          } else {
-            _player2FlippedCards.add(characterId);
-          }
-
-          break;
-        default:
-          break;
-      }
+      _gameState.toggleFlipCard(characterId);
     });
   }
 
   void _endTurn() {
     setState(() {
-      switch (_currentPhase) {
-        case GamePhase.player1Turn:
-          _currentPhase = GamePhase.player2Turn;
-          _currentPlayer = "Player 2";
-          break;
-        case GamePhase.player2Turn:
-          _currentPhase = GamePhase.player1Turn;
-          _currentPlayer = "Player 1";
-          break;
-        default:
-          break;
-      }
-
+      _gameState.endLocalTurn();
       _isCharacterNameRevealed = false;
     });
 
@@ -138,7 +86,7 @@ class _GameScreenState extends State<GameScreen> {
                 color: Theme.of(context).colorScheme.primary,
                 child: Particles(
                   awayRadius: 150,
-                  particles: createParticles(),
+                  particles: _createParticles(),
                   height: screenHeight,
                   width: screenWidth,
                   onTapAnimation: true,
@@ -193,7 +141,7 @@ class _GameScreenState extends State<GameScreen> {
                           ],
                         ),
                         child: Text(
-                          _currentPlayer == "Player 1"
+                          _gameState.getCurrentPlayerName() == "Player 1"
                               ? "Player 2"
                               : "Player 1",
                           style: TextStyle(
@@ -228,7 +176,7 @@ class _GameScreenState extends State<GameScreen> {
                           ],
                         ),
                         child: Text(
-                          _currentPlayer,
+                          _gameState.getCurrentPlayerName(),
                           style: TextStyle(
                             fontSize: 22,
                             color: Theme.of(context).colorScheme.tertiary,
@@ -279,7 +227,7 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  List<Particle> createParticles() {
+  List<Particle> _createParticles() {
     var rng = Random();
     List<Particle> particles = [];
     for (int i = 0; i < 50; i++) {
@@ -288,8 +236,8 @@ class _GameScreenState extends State<GameScreen> {
           color: Theme.of(context).colorScheme.tertiary.withAlpha(200),
           size: rng.nextDouble() * 10,
           velocity: Offset(
-            rng.nextDouble() * 50 * randomSign(),
-            rng.nextDouble() * 50 * randomSign(),
+            rng.nextDouble() * 50 * _randomSign(),
+            rng.nextDouble() * 50 * _randomSign(),
           ),
         ),
       );
@@ -297,19 +245,14 @@ class _GameScreenState extends State<GameScreen> {
     return particles;
   }
 
-  double randomSign() {
+  double _randomSign() {
     var rng = Random();
     return rng.nextBool() ? 1 : -1;
   }
 
+  //TODO: POLISH
   void _makeGuess() {
-    final currentFlippedCards = _currentPhase == GamePhase.player1Turn
-        ? _player1FlippedCards
-        : _player2FlippedCards;
-
-    final availableCharacters = _allCharacters
-        .where((c) => !currentFlippedCards.contains(c.id))
-        .toList();
+    final availableCharacters = _gameState.getAvailableCharacters();
 
     showDialog(
       context: context,
@@ -422,16 +365,9 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _checkGuess(Character guessedCharacter) {
-    final opponentCharacter = _currentPhase == GamePhase.player1Turn
-        ? _player2SelectedCharacter
-        : _player1SelectedCharacter;
+    final isCorrect = _gameState.makeGuess(guessedCharacter);
 
-    if (guessedCharacter.id == opponentCharacter?.id) {
-      setState(() {
-        _winner = _currentPlayer;
-        _currentPhase = GamePhase.gameOver;
-      });
-
+    if (isCorrect) {
       _showWinnerDialog();
     } else {
       _showIncorrectGuessDialog();
@@ -459,9 +395,11 @@ class _GameScreenState extends State<GameScreen> {
                 size: 60,
                 color: Theme.of(context).colorScheme.secondary,
               ),
+
               const SizedBox(height: 10),
+
               Text(
-                'Game Over!',
+                "Game Over",
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
@@ -471,7 +409,7 @@ class _GameScreenState extends State<GameScreen> {
             ],
           ),
           content: Text(
-            '$_winner wins the game',
+            "${_gameState.winner} wins the game",
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontSize: 18,
@@ -485,7 +423,7 @@ class _GameScreenState extends State<GameScreen> {
                 _resetGame();
               },
               child: Text(
-                'Play Again',
+                "Play Again",
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.secondary,
                   fontSize: 16,
@@ -499,7 +437,7 @@ class _GameScreenState extends State<GameScreen> {
                 Navigator.of(context).pop();
               },
               child: Text(
-                'Exit to Menu',
+                "Exit to Menu",
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.error,
                   fontSize: 16,
@@ -535,7 +473,7 @@ class _GameScreenState extends State<GameScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Wrong Guess!',
+                "Wrong Guess!",
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.error,
                   fontWeight: FontWeight.bold,
@@ -545,7 +483,7 @@ class _GameScreenState extends State<GameScreen> {
             ],
           ),
           content: Text(
-            '$_currentPlayer guessed incorrectly and loses!',
+            "${_gameState.getCurrentPlayerName()} guessed incorrectly and loses!",
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontSize: 16,
@@ -556,16 +494,10 @@ class _GameScreenState extends State<GameScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                setState(() {
-                  _winner = _currentPlayer == 'Player 1'
-                      ? 'Player 2'
-                      : 'Player 1';
-                  _currentPhase = GamePhase.gameOver;
-                });
                 _showWinnerDialog();
               },
               child: Text(
-                'OK',
+                "OK",
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.error,
                   fontSize: 16,
@@ -581,142 +513,119 @@ class _GameScreenState extends State<GameScreen> {
 
   void _resetGame() {
     setState(() {
-      _currentPhase = GamePhase.characterSelection;
-
-      _player1SelectedCharacter = null;
-      _player2SelectedCharacter = null;
-
-      _player1FlippedCards.clear();
-      _player2FlippedCards.clear();
-
-      _winner = null;
-      _currentPlayer = "Player 1";
-
+      _gameState.resetGame();
       _isCharacterNameRevealed = false;
-
       _initializeGame();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.tertiary),
-        title: Text(
-          _currentPhase == GamePhase.characterSelection
-              ? "Select Your Character"
-              : "$_currentPlayer's Turn",
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.tertiary,
-            fontSize: 20,
-          ),
-        ),
-        // actions: [
-        //   if (_currentPhase != GamePhase.characterSelection &&
-        //       _currentPhase != GamePhase.gameOver)
-        //     Padding(
-        //       padding: const EdgeInsets.only(right: 16.0),
-        //       child: Center(
-        //         child: Container(
-        //           padding: const EdgeInsets.symmetric(
-        //             horizontal: 12,
-        //             vertical: 6,
-        //           ),
-        //           decoration: BoxDecoration(
-        //             color: Theme.of(context).colorScheme.secondary,
-        //             borderRadius: BorderRadius.circular(20),
-        //             border: Border.all(
-        //               color: Theme.of(context).colorScheme.tertiary,
-        //               width: 2,
-        //             ),
-        //           ),
-        //           child: Text(
-        //             _currentPlayer,
-        //             style: TextStyle(
-        //               color: Theme.of(context).colorScheme.tertiary,
-        //               fontSize: 14,
-        //             ),
-        //           ),
-        //         ),
-        //       ),
-        //     ),
-        // ],
-      ),
-      body: _buildBody(),
-      bottomNavigationBar:
-          _currentPhase != GamePhase.characterSelection &&
-              _currentPhase != GamePhase.gameOver
-          ? Container(
-              padding: EdgeInsets.only(top: 15, bottom: 45),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                border: Border(
-                  top: BorderSide(
-                    color: Theme.of(context).colorScheme.tertiary,
-                    width: 5,
-                  ),
+    return ChangeNotifierProvider.value(
+      value: _gameState,
+      child: Consumer<GameStateManager>(
+        builder: (context, gameState, child) {
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              iconTheme: IconThemeData(
+                color: Theme.of(context).colorScheme.tertiary,
+              ),
+              title: Text(
+                gameState.gamePhase == GamePhase.characterSelection
+                    ? "Select Your Character"
+                    : "${gameState.getCurrentPlayerName()}'s Turn",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.tertiary,
+                  fontSize: 20,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  RetroButton(
-                    text: "Make Guess",
-                    onPressed: _makeGuess,
-                    fontSize: 16,
-                    iconSize: 30,
-                    iconAtEnd: false,
+            ),
+            body: _buildBody(gameState),
+            bottomNavigationBar: gameState.gamePhase == GamePhase.playing
+                ? Container(
+                    padding: EdgeInsets.only(top: 15, bottom: 45),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      border: Border(
+                        top: BorderSide(
+                          color: Theme.of(context).colorScheme.tertiary,
+                          width: 5,
+                        ),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 4,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        RetroButton(
+                          text: "Make Guess",
+                          onPressed: _makeGuess,
+                          fontSize: 16,
+                          iconSize: 30,
+                          iconAtEnd: false,
 
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
 
-                    backgroundColor: Theme.of(context).colorScheme.error,
-                    foregroundColor: Theme.of(context).colorScheme.tertiary,
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.tertiary,
 
-                    icon: Icons.lightbulb_rounded,
-                  ),
-                  const SizedBox(width: 10),
-                  RetroButton(
-                    text: "End Turn",
-                    fontSize: 16,
-                    iconSize: 30,
-                    iconAtEnd: false,
+                          icon: Icons.lightbulb_rounded,
+                        ),
 
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        const SizedBox(width: 10),
 
-                    onPressed: _endTurn,
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    foregroundColor: Theme.of(context).colorScheme.tertiary,
-                    icon: Icons.swap_horiz_rounded,
-                  ),
-                ],
-              ),
-            )
-          : null,
+                        RetroButton(
+                          text: "End Turn",
+                          fontSize: 16,
+                          iconSize: 30,
+                          iconAtEnd: false,
+
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+
+                          onPressed: _endTurn,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.tertiary,
+                          icon: Icons.swap_horiz_rounded,
+                        ),
+                      ],
+                    ),
+                  )
+                : null,
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildBody() {
-    switch (_currentPhase) {
-      case GamePhase.characterSelection:
-        return _buildCharacterSelection();
-      case GamePhase.player1Turn:
-      case GamePhase.player2Turn:
-      case GamePhase.gameOver:
-        return _buildGameBoard();
+  Widget _buildBody(GameStateManager gameState) {
+    if (gameState.gamePhase == GamePhase.characterSelection) {
+      return _buildCharacterSelection(gameState);
+    } else {
+      return _buildGameBoard(gameState);
     }
   }
 
-  Widget _buildCharacterSelection() {
-    final isPlayer1Selecting = _player1SelectedCharacter == null;
+  Widget _buildCharacterSelection(GameStateManager gameState) {
+    final isPlayer1Selecting = gameState.player1Character == null;
     final currentPlayerName = isPlayer1Selecting ? "Player 1" : "Player 2";
 
     return Column(
@@ -737,7 +646,7 @@ class _GameScreenState extends State<GameScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (_player1SelectedCharacter != null) ...[
+              if (gameState.player1Character != null) ...[
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -790,12 +699,12 @@ class _GameScreenState extends State<GameScreen> {
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
-                  itemCount: _allCharacters.length,
+                  itemCount: gameState.allCharacters.length,
                   itemBuilder: (context, index) {
-                    final character = _allCharacters[index];
+                    final character = gameState.allCharacters[index];
                     return _buildCharacterCard(
                       character,
-                      isPlayer1Selecting,
+                      isFlipped: false,
                       isSelectionMode: true,
                     );
                   },
@@ -823,20 +732,10 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  Widget _buildGameBoard() {
-    final currentFlippedCards =
-        _currentPhase == GamePhase.player1Turn ||
-            _currentPhase == GamePhase.gameOver
-        ? _player1FlippedCards
-        : _player2FlippedCards;
-
-    final selectedCharacter =
-        _currentPhase == GamePhase.player1Turn ||
-            _currentPhase == GamePhase.gameOver
-        ? _player1SelectedCharacter
-        : _player2SelectedCharacter;
-
-    final remainingCount = _allCharacters.length - currentFlippedCards.length;
+  Widget _buildGameBoard(GameStateManager gameState) {
+    final currentFlippedCards = gameState.getCurrentFlippedCards();
+    final selectedCharacter = gameState.getCurrentPlayerCharacter();
+    final remainingCount = gameState.getRemainingCount();
 
     return Column(
       children: [
@@ -887,7 +786,7 @@ class _GameScreenState extends State<GameScreen> {
                           children: [
                             if (_isCharacterNameRevealed) ...[
                               Text(
-                                "$_currentPlayer chose ${selectedCharacter?.name ?? "Unknown"}",
+                                "${gameState.getCurrentPlayerName()} chose ${selectedCharacter?.name ?? "Unknown"}",
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -958,13 +857,13 @@ class _GameScreenState extends State<GameScreen> {
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
               ),
-              itemCount: _allCharacters.length,
+              itemCount: gameState.allCharacters.length,
               itemBuilder: (context, index) {
-                final character = _allCharacters[index];
+                final character = gameState.allCharacters[index];
                 final isFlipped = currentFlippedCards.contains(character.id);
+
                 return _buildCharacterCard(
                   character,
-                  false,
                   isSelectionMode: false,
                   isFlipped: isFlipped,
                 );
@@ -977,16 +876,15 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildCharacterCard(
-    Character character,
-    bool isPlayer1Selecting, {
+    Character character, {
+    required bool isFlipped,
     required bool isSelectionMode,
-    bool isFlipped = false,
   }) {
     return GestureDetector(
       onTap: () {
         if (isSelectionMode) {
-          _selectCharacter(character, isPlayer1Selecting);
-        } else if (_currentPhase != GamePhase.gameOver) {
+          _selectCharacter(character);
+        } else {
           _toggleFlipCard(character.id);
         }
       },
@@ -1039,7 +937,9 @@ class _GameScreenState extends State<GameScreen> {
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Container(
-                          color: Theme.of(context).colorScheme.primary,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.secondary.withAlpha(100),
                           child: Center(
                             child: CircularProgressIndicator(
                               value: loadingProgress.expectedTotalBytes != null
@@ -1050,6 +950,7 @@ class _GameScreenState extends State<GameScreen> {
                                 Theme.of(context).colorScheme.tertiary,
                               ),
                               strokeCap: StrokeCap.round,
+                              strokeWidth: 5,
                             ),
                           ),
                         );
