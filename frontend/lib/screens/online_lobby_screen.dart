@@ -56,6 +56,10 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
       if (message.contains('started')) {
         _navigateToGame();
       }
+
+      if (message.contains("joined") && _messages.length > 1) {
+        _isMessageLogExpanded = true;
+      }
     });
 
     _wsService.errorStream.listen((error) {
@@ -488,45 +492,50 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
 
                     AnimatedSize(
                       clipBehavior: Clip.none,
-                      duration: const Duration(milliseconds: 300),
+                      duration: const Duration(milliseconds: 150),
                       curve: Curves.easeInOut,
-                      child: ConstrainedBox(
-                        constraints: _isMessageLogExpanded
-                            ? const BoxConstraints(maxHeight: 150)
-                            : const BoxConstraints(maxHeight: 0),
-                        child: ClipRect(
-                          child: ListView.builder(
-                            controller: _scrollController,
-                            itemCount: _messages.length,
-                            itemBuilder: (context, index) {
-                              final message =
-                                  _messages[_messages.length - 1 - index];
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: (index % 2 == 0)
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Theme.of(context).colorScheme.secondary,
-                                ),
-                                child: Text(
-                                  index == 0 ? "-> $message" : message,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: (index == 0)
-                                        ? Theme.of(context).colorScheme.tertiary
-                                        : Theme.of(
-                                            context,
-                                          ).colorScheme.tertiary.withAlpha(150),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
+                      child: _isMessageLogExpanded
+                          ? Container(
+                              constraints: const BoxConstraints(maxHeight: 150),
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                itemCount: _messages.length,
+                                itemBuilder: (context, index) {
+                                  final message =
+                                      _messages[_messages.length - 1 - index];
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: (index % 2 == 0)
+                                          ? Theme.of(
+                                              context,
+                                            ).colorScheme.primary
+                                          : Theme.of(
+                                              context,
+                                            ).colorScheme.secondary,
+                                    ),
+                                    child: Text(
+                                      index == 0 ? "-> $message" : message,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: (index == 0)
+                                            ? Theme.of(
+                                                context,
+                                              ).colorScheme.tertiary
+                                            : Theme.of(context)
+                                                  .colorScheme
+                                                  .tertiary
+                                                  .withAlpha(150),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ],
                 ),
