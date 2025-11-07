@@ -4,14 +4,9 @@ import com.bronzejade.game.domain.dtos.CreateRoomRequest;
 import com.bronzejade.game.domain.dtos.SelectCharacterRequest;
 import com.bronzejade.game.domain.dtos.JoinRoomRequest;
 import com.bronzejade.game.domain.dtos.LeaveRoomRequest;
-import com.bronzejade.game.domain.dtos.ToggleReadyRequest;
 import com.bronzejade.game.domain.dtos.FinishGameRequest;
-import com.bronzejade.game.domain.dtos.UpdateGameRequest;
 import com.bronzejade.game.domain.dtos.RoomDto;
-import com.bronzejade.game.domain.dtos.GuessCharacterResponse;
-import com.bronzejade.game.domain.dtos.GuessCharacterRequest;
 import com.bronzejade.game.domain.dtos.RoomPlayerDto;
-import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.mapper.RoomMapper;
 import com.bronzejade.game.mapper.RoomPlayerMapper;
@@ -21,9 +16,6 @@ import com.bronzejade.game.domain.entities.Room;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -31,7 +23,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RoomController {
     private final RoomService roomService;
-    private final GuessCharacterService guessCharacterService;
     private final RoomMapper roomMapper;
     private final RoomPlayerMapper roomPlayerMapper;
 

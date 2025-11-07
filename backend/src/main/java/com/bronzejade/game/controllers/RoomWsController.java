@@ -2,7 +2,6 @@ package com.bronzejade.game.controllers;
 
 import com.bronzejade.game.domain.dtos.ConnectionInfoDto;
 import com.bronzejade.game.domain.dtos.GuessCharacterResponse;
-import com.bronzejade.game.domain.dtos.GuessCharacterRequest;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.service.GameStateService;
 import com.bronzejade.game.service.RoomPlayerService;
@@ -68,28 +67,13 @@ public class RoomWsController {
 
     @MessageMapping("/guess")
     public void guessCharacter(String characterId, SimpMessageHeaderAccessor accessor) {
-        System.out.println("=== GUESS WebSocket Called ===");
-        System.out.println("Raw characterId: " + characterId);
-
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
-        System.out.println("Room: " + connectionInfoDto.getRoomId());
-        System.out.println("Player: " + connectionInfoDto.getPlayerId());
-
-        try {
-            System.out.println("Calling guessCharacterService...");
-            GuessCharacterResponse response = guessCharacterService.guessCharacter(
-                    UUID.fromString(connectionInfoDto.getRoomId()),
-                    UUID.fromString(connectionInfoDto.getPlayerId()),
-                    UUID.fromString(characterId)
-            );
-            System.out.println("Response: " + response);
-            messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), response);
-            System.out.println("Response sent to WebSocket");
-
-        } catch (RuntimeException e) {
-            System.out.println("ERROR in guess: " + e.getMessage());
-            messagingTemplate.convertAndSendToUser(accessor.getSessionId(), "/queue/errors", e.getMessage());
-        }
+        GuessCharacterResponse response = guessCharacterService.guessCharacter(
+                UUID.fromString(connectionInfoDto.getRoomId()),
+                UUID.fromString(connectionInfoDto.getPlayerId()),
+                UUID.fromString(characterId)
+        );
+        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), response);
     }
 
     @MessageExceptionHandler
@@ -100,6 +84,7 @@ public class RoomWsController {
     }
 
     private ConnectionInfoDto retrieveConnectionInfo(SimpMessageHeaderAccessor accessor) {
+        if (accessor.getSessionAttributes() == null) throw new IllegalArgumentException("Session attributes cannot be null");
         String roomId =  (String) accessor.getSessionAttributes().get("roomId");
         String playerId =  (String) accessor.getSessionAttributes().get("playerId");
         if (roomId == null || playerId == null) throw new MessagingException("Room or Player ID is null");

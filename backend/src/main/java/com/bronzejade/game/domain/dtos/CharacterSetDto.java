@@ -1,7 +1,5 @@
 package com.bronzejade.game.domain.dtos;
 
-import com.bronzejade.game.domain.entities.Character;
-import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;

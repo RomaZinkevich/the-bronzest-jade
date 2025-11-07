@@ -1,6 +1,5 @@
 package com.bronzejade.game.service;
 
-import com.bronzejade.game.domain.entities.Room;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.repositories.RoomPlayerRepository;
 import lombok.RequiredArgsConstructor;
