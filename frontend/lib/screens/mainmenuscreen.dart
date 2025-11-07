@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:guess_who/screens/gamescreen.dart';
+import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/widgets/appbar.dart';
 import 'package:guess_who/widgets/popup_menu.dart';
 import 'package:guess_who/widgets/retro_button.dart';
@@ -352,7 +352,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const GameScreen(),
+                            builder: (context) => const LocalGameScreen(),
                           ),
                         );
                       },

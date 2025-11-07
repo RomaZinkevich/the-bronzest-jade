@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:guess_who/models/character.dart';
 
 enum GameMode { local, online }
@@ -174,13 +174,13 @@ class GameStateManager extends ChangeNotifier {
       if (_player1FlippedCards.contains(characterId)) {
         _player1FlippedCards.remove(characterId);
       } else {
-        _player1FlippedCards.remove(characterId);
+        _player1FlippedCards.add(characterId);
       }
     } else {
       if (_player1FlippedCards.contains(characterId)) {
         _player1FlippedCards.remove(characterId);
       } else {
-        _player1FlippedCards.remove(characterId);
+        _player1FlippedCards.add(characterId);
       }
     }
 
