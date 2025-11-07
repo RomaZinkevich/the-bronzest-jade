@@ -126,6 +126,15 @@ class WebsocketService {
     _stompClient!.send(destination: "/app/question", body: answer);
   }
 
+  void sendGuess(String characterId) {
+    if (!_isConnected) {
+      debugPrint("Cannot send guess - not connected");
+      return;
+    }
+
+    _stompClient!.send(destination: "/app/guess", body: characterId);
+  }
+
   void disconnect() {
     if (_stompClient != null) {
       _stompClient!.deactivate();

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
+import 'package:guess_who/screens/online_lobby_screen.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/widgets/appbar.dart';
 import 'package:guess_who/widgets/popup_menu.dart';
@@ -94,28 +95,13 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       if (mounted) {
         Navigator.pop(context);
 
-        //TODO: Online Lobby Screen
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => Container(
-              color: Theme.of(context).colorScheme.tertiary,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(room.roomCode),
-                  Text("Max Players: ${room.maxPlayers}"),
-                  Text(room.status.name),
-                  Text(room.roomCode),
-                  RetroButton(
-                    text: "Go back",
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
+            builder: (context) => OnlineLobbyScreen(
+              room: room,
+              playerId: _playerId,
+              isHost: false,
             ),
           ),
         );
@@ -218,24 +204,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => Container(
-              color: Theme.of(context).colorScheme.tertiary,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(room.roomCode),
-                  Text("Max Players: ${room.maxPlayers}"),
-                  Text(room.status.name),
-                  Text(room.roomCode),
-                  RetroButton(
-                    text: "Go back",
-                    onPressed: () async {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
+            builder: (context) => OnlineLobbyScreen(
+              room: room,
+              playerId: _playerId,
+              isHost: true,
             ),
           ),
         );
