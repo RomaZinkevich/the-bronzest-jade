@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:guess_who/models/character.dart';
+import 'package:http/http.dart' as http;
 
 class GameData {
   static List<Character> getSampleCharacters() {
@@ -86,13 +89,16 @@ class GameData {
     ];
   }
 
-  // TODO: Replace with API call to your Spring Boot backend
-  // static Future<List<Character>> fetchCharacters() async {
-  //   final response = await http.get(Uri.parse('/api/characters'));
-  //   if (response.statusCode == 200) {
-  //     final List<dynamic> data = json.decode(response.body);
-  //     return data.map((json) => Character.fromJson(json)).toList();
-  //   }
-  //   throw Exception('Failed to load characters');
-  // }
+  static Future<List<Character>> fetchCharacters() async {
+    final response = await http.get(
+      Uri.parse('https://guesswho.190304.xyz/api/character-sets'),
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      final List<dynamic> characterJson = data.first["characters"];
+
+      return characterJson.map((json) => Character.fromJson(json)).toList();
+    }
+    throw Exception('Failed to load characters');
+  }
 }

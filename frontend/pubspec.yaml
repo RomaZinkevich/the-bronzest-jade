@@ -9,7 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
+  http: ^1.5.0
+  particles_flutter: ^1.0.0
 
 dev_dependencies:
   flutter_test:

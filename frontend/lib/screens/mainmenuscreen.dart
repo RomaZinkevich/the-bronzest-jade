@@ -306,7 +306,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        playerName: "GUEST PLAYER",
+        playerName: "Guest Player",
         playerId: "#123456",
         onSettingsPressed: () {},
       ),
