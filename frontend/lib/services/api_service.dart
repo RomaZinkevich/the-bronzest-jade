@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   static const String baseUrl = 'https://guesswho.190304.xyz/api';
-  static const String wsUrl = 'https://guesswho.190304.xyz/ws';
 
   static Future<List<CharacterSet>> getCharacterSets() async {
     try {

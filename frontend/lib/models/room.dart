@@ -2,6 +2,33 @@ import 'package:guess_who/models/character_set.dart';
 
 enum RoomStatus { waiting, inProgress, finished }
 
+//? SHOULD WE JUST USE STRING FOR ROOM STATUS
+extension RoomStatusX on RoomStatus {
+  static RoomStatus fromApi(String value) {
+    switch (value) {
+      case "WAITING":
+        return RoomStatus.waiting;
+      case 'IN_PROGRESS':
+        return RoomStatus.inProgress;
+      case 'FINISHED':
+        return RoomStatus.finished;
+      default:
+        throw ArgumentError('Unknown RoomStatus: $value');
+    }
+  }
+
+  String toApi() {
+    switch (this) {
+      case RoomStatus.waiting:
+        return 'WAITING';
+      case RoomStatus.inProgress:
+        return 'IN_PROGRESS';
+      case RoomStatus.finished:
+        return 'FINISHED';
+    }
+  }
+}
+
 class Room {
   final String id;
   final String roomCode;
@@ -33,7 +60,7 @@ class Room {
       id: json["id"] as String,
       roomCode: json["roomCode"] as String,
       hostId: json["hostId"] as String,
-      status: RoomStatus.values.byName(json["status"] as String),
+      status: RoomStatusX.fromApi(json["status"] as String),
       maxPlayers: json["maxPlayers"] as int,
 
       characterSet: json["characterSet"] != null

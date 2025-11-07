@@ -937,7 +937,9 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Container(
-                          color: Theme.of(context).colorScheme.primary,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.secondary.withAlpha(100),
                           child: Center(
                             child: CircularProgressIndicator(
                               value: loadingProgress.expectedTotalBytes != null
@@ -948,6 +950,7 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                                 Theme.of(context).colorScheme.tertiary,
                               ),
                               strokeCap: StrokeCap.round,
+                              strokeWidth: 5,
                             ),
                           ),
                         );

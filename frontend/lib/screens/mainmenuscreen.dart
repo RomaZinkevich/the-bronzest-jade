@@ -3,10 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
+import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/widgets/appbar.dart';
 import 'package:guess_who/widgets/popup_menu.dart';
 import 'package:guess_who/widgets/retro_button.dart';
 import 'package:guess_who/widgets/retro_icon_button.dart';
+import 'package:uuid/uuid.dart';
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -17,6 +19,7 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
+  final String _playerId = const Uuid().v4();
 
   @override
   void dispose() {
@@ -54,11 +57,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     );
   }
 
-  void _joinWithCode() {
-    String code = _roomCodeController.text.trim();
-    if (code.isNotEmpty) {
-      debugPrint("Joining room with code: $code");
-    } else {
+  Future<void> _joinWithCode() async {
+    String code = _roomCodeController.text.trim().toUpperCase();
+    if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
@@ -68,32 +69,190 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
+
+      return;
+    }
+
+    //* LOADING
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).colorScheme.primary,
+          ),
+          strokeCap: StrokeCap.round,
+          strokeWidth: 5,
+        ),
+      ),
+    );
+
+    try {
+      final room = await ApiService.joinRoom(code, _playerId);
+
+      if (mounted) {
+        Navigator.pop(context);
+
+        //TODO: Online Lobby Screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Container(
+              color: Theme.of(context).colorScheme.tertiary,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(room.roomCode),
+                  Text("Max Players: ${room.maxPlayers}"),
+                  Text(room.status.name),
+                  Text(room.roomCode),
+                  RetroButton(
+                    text: "Go back",
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint("$e");
+      if (mounted) {
+        Navigator.pop(context);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to join room: $e"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
-  void _showCreateRoomMenu() {
-    PopupMenu.show(
+  Future<void> _showCreateRoomMenu() async {
+    showDialog(
       context: context,
-      title: "Create a Room",
-      items: [
-        RetroPopupMenuItem(
-          text: "Public Room",
-          icon: Icons.public,
-          onTap: () {
-            debugPrint("Creating public room");
-          },
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).colorScheme.primary,
+          ),
+          strokeWidth: 5,
+          strokeCap: StrokeCap.round,
         ),
-
-        RetroPopupMenuItem(
-          text: "Private Room",
-          icon: Icons.lock,
-          onTap: () {
-            debugPrint("Creating friends only room");
-          },
-          backgroundColor: Theme.of(context).colorScheme.secondary,
-        ),
-      ],
+      ),
     );
+
+    try {
+      final characterSets = await ApiService.getCharacterSets();
+
+      if (mounted) {
+        Navigator.pop(context);
+
+        if (characterSets.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text("No character sets available"),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+          return;
+        }
+
+        PopupMenu.show(
+          context: context,
+          title: "Select Character Set",
+          items: characterSets
+              .map(
+                (characterSets) => RetroPopupMenuItem(
+                  text: characterSets.name,
+                  onTap: () => _createRoom(characterSets.id),
+                ),
+              )
+              .toList(),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+
+        debugPrint("$e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Failed to load character sets"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _createRoom(String characterSetId) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).colorScheme.primary,
+          ),
+          strokeWidth: 5,
+          strokeCap: StrokeCap.round,
+        ),
+      ),
+    );
+
+    try {
+      final room = await ApiService.createRoom(_playerId, characterSetId);
+
+      if (mounted) {
+        Navigator.pop(context);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Container(
+              color: Theme.of(context).colorScheme.tertiary,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(room.roomCode),
+                  Text("Max Players: ${room.maxPlayers}"),
+                  Text(room.status.name),
+                  Text(room.roomCode),
+                  RetroButton(
+                    text: "Go back",
+                    onPressed: () async {
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+
+        debugPrint("$e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Failed to create room"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   void _showFindRoomsMenu() {
@@ -105,8 +264,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           text: "Browse Public",
           icon: Icons.search,
           onTap: () {
-            debugPrint("Browsing public rooms");
-            _showRoomList();
+            debugPrint("Browsing public rooms - Sample set");
+            _showSampleRoomList();
           },
         ),
 
@@ -115,6 +274,15 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           icon: Icons.people,
           onTap: () {
             debugPrint("Finding Friends Room");
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  "Friends' room feature coming soon!",
+                  textAlign: TextAlign.center,
+                ),
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+              ),
+            );
           },
           backgroundColor: Theme.of(context).colorScheme.secondary,
         ),
@@ -122,7 +290,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     );
   }
 
-  Future<List<Map<String, dynamic>>> _fetchRooms() async {
+  Future<List<Map<String, dynamic>>> _fetchSampleRooms() async {
     final randomNum = Random.secure().nextInt(5);
     await Future.delayed(Duration(seconds: randomNum));
 
@@ -165,12 +333,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     ];
   }
 
-  void _showRoomList() {
+  void _showSampleRoomList() {
     PopupMenu.show<List<Map<String, dynamic>>>(
       context: context,
       title: "Available Rooms",
       customContent: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _fetchRooms(),
+        future: _fetchSampleRooms(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Padding(
@@ -182,7 +350,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     valueColor: AlwaysStoppedAnimation<Color>(
                       Theme.of(context).colorScheme.primary,
                     ),
-                    strokeWidth: 4,
+                    strokeWidth: 5,
+                    strokeCap: StrokeCap.round,
                   ),
 
                   const SizedBox(height: 20),
@@ -307,7 +476,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     return Scaffold(
       appBar: CustomAppBar(
         playerName: "Guest Player",
-        playerId: "#123456",
+        playerId: "#${_playerId.substring(0, 6)}",
         onSettingsPressed: () {},
       ),
       body: Stack(
