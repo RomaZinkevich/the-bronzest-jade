@@ -100,12 +100,9 @@ public class RoomWsController {
     }
 
     private MessageDto messageCrafter(String text, String playerId) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("guest-player-");
-        sb.append(playerId, 0, 6);
-        sb.append(text);
-        MessageDto msg = new MessageDto();
-        msg.setMessage(sb.toString());
-        return msg;
+        String message = "guest-player-" + playerId.substring(0, 6) + text;
+        return MessageDto.builder()
+                .message(message)
+                .build();
     }
 }
