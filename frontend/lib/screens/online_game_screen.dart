@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:guess_who/models/character.dart';
 import 'package:guess_who/models/room.dart';
@@ -7,6 +9,8 @@ import 'package:guess_who/widgets/game_board.dart';
 import 'package:guess_who/widgets/make_guess_dialogue.dart';
 import 'package:guess_who/widgets/retro_button.dart';
 import 'package:provider/provider.dart';
+
+enum TurnPhase { asking, answering }
 
 class OnlineGameScreen extends StatefulWidget {
   final Room room;
@@ -31,6 +35,15 @@ class OnlineGameScreen extends StatefulWidget {
 class _OnlineGameScreenState extends State<OnlineGameScreen> {
   late GameStateManager _gameState;
   bool _isCharacterNameRevealed = false;
+
+  TurnPhase _currentPhase = TurnPhase.asking;
+  String? _currentQuestion;
+  bool _waitingForAnswer = false;
+
+  final List<Map<String, String>> _qaHistory = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _isMessageLogExpanded = false;
+  final TextEditingController _questionController = TextEditingController();
 
   @override
   void initState() {
@@ -59,14 +72,54 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     widget.wsService.messageStream.listen((message) {
       debugPrint("Game message: $message");
 
-      if (message.contains("turn")) {
+      if (message.contains("asked: ")) {
+        final parts = message.split(" asked: ");
+        final question = parts[1];
+
         setState(() {
-          _gameState.switchTurn();
+          _currentQuestion = question;
+          _currentPhase = TurnPhase.answering;
         });
-      } else if (message.contains("winner")) {
-        _handleGameover(message);
-      } else if (message.contains("started")) {
-        debugPrint("Game started message recieved!");
+      } else if (message.contains("answered:")) {
+        final parts = message.split(" answered: ");
+        final answerId = parts[0].replaceAll("guest-player-", "");
+        final answer = parts[1];
+
+        setState(() {
+          if (_currentQuestion != null) {
+            _qaHistory.add({
+              "question": _currentQuestion!,
+              "questionerId": _gameState.isMyTurn
+                  ? "guest-${widget.playerId.substring(0, 6)}"
+                  : answerId,
+              "answer": answer,
+              "answeredId": answerId,
+            });
+            _currentQuestion = null;
+          }
+          _currentPhase = TurnPhase.asking;
+          _waitingForAnswer = false;
+          _isMessageLogExpanded = true;
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      } else {
+        try {
+          final jsonData = json.decode(message);
+          if (jsonData["gameEnded"] == true) {
+            _handleGameover(jsonData);
+          }
+        } catch (e) {
+          debugPrint("Could not parse as JSON: $e");
+        }
       }
     });
 
@@ -82,17 +135,22 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     });
   }
 
-  void _handleGameover(String message) {
+  void _sendAnswer(String answer) {
+    widget.wsService.sendAnswer(answer);
     setState(() {
-      _gameState.resetGame();
+      _gameState.switchTurn();
+      _currentPhase = TurnPhase.asking;
     });
+  }
+
+  void _handleGameover(Map<String, dynamic> response) {
+    final winnerId = response["winnerId"];
+    final isWinner = winnerId == widget.playerId;
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        final isWinner = message.contains(widget.playerId);
-
         return AlertDialog(
           backgroundColor: Theme.of(context).colorScheme.tertiary,
           shape: RoundedRectangleBorder(
@@ -155,14 +213,22 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   void _toggleFlipCard(String characterId) {
-    if (!_gameState.isMyTurn) {
+    setState(() {
+      _gameState.toggleFlipCard(characterId);
+    });
+  }
+
+  void _sendQuestion() {
+    final question = _questionController.text.trim();
+
+    if (question.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
-            "It's not your turn!",
+            "Please enter a question",
             textAlign: TextAlign.center,
           ),
-          duration: const Duration(seconds: 1),
+          duration: const Duration(milliseconds: 1500),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -170,23 +236,26 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       return;
     }
 
+    widget.wsService.sendQuestion(question);
     setState(() {
-      _gameState.toggleFlipCard(characterId);
+      _currentQuestion = question;
+      _currentPhase = TurnPhase.answering;
+      _waitingForAnswer = true;
+      _questionController.clear();
     });
   }
 
   void _makeGuess() {
-    if (!_gameState.isMyTurn) {
+    if (_currentPhase != TurnPhase.asking) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
-            "It's not your turn!",
+            "You can only make a guess during the asking phase!",
             textAlign: TextAlign.center,
           ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
-
       return;
     }
 
@@ -228,78 +297,25 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
             ),
             textAlign: TextAlign.center,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'OK',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
         );
       },
     );
 
-    // Finish game through API
     try {
       widget.wsService.sendGuess(guessedCharacter.id);
     } catch (e) {
       debugPrint('Error finishing game: $e');
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     }
-  }
-
-  void _endTurn() {
-    if (!_gameState.isMyTurn) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            "It's not your turn!",
-            textAlign: TextAlign.center,
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-
-      return;
-    }
-
-    widget.wsService.sendQuestion("Is your mom gay?");
-
-    setState(() {
-      _isCharacterNameRevealed = false;
-    });
-  }
-
-  void _endTurn2() {
-    if (_gameState.isMyTurn) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            "It's not your turn!",
-            textAlign: TextAlign.center,
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-
-      return;
-    }
-
-    widget.wsService.sendAnswer("Yes");
-
-    setState(() {
-      _isCharacterNameRevealed = false;
-    });
   }
 
   @override
   void dispose() {
-    widget.wsService.dispose();
+    _gameState.dispose();
+    _scrollController.dispose();
+    _questionController.dispose();
     super.dispose();
   }
 
@@ -367,12 +383,27 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                 iconTheme: IconThemeData(
                   color: Theme.of(context).colorScheme.tertiary,
                 ),
-                title: Text(
-                  gameState.isMyTurn ? "Your Turn" : "Opponent's Turn",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.tertiary,
-                    fontSize: 20,
-                  ),
+                title: Column(
+                  children: [
+                    Text(
+                      gameState.isMyTurn ? "Your Turn" : "Opponent's Turn",
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.tertiary,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      _waitingForAnswer
+                          ? "Waiting for answer..."
+                          : (_currentPhase == TurnPhase.asking
+                                ? "Ask or Guess"
+                                : "Answer question"),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.tertiary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               body: GameBoard(
@@ -386,92 +417,479 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                 onFlip: (character) => _toggleFlipCard(character.id),
                 isSelectionMode: false,
               ),
-              bottomNavigationBar: Container(
-                padding: const EdgeInsets.only(top: 15, bottom: 45),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  border: Border(
-                    top: BorderSide(
-                      color: Theme.of(context).colorScheme.tertiary,
-                      width: 5,
-                    ),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        RetroButton(
-                          text: "Make Guess",
-                          onPressed: gameState.isMyTurn ? _makeGuess : () {},
-                          fontSize: 16,
-                          iconSize: 30,
-                          iconAtEnd: false,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
+              bottomNavigationBar: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_qaHistory.isNotEmpty)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.tertiary,
+                        border: Border(
+                          top: BorderSide(
+                            color: Theme.of(context).colorScheme.tertiary,
+                            width: 2,
                           ),
-                          backgroundColor: gameState.isMyTurn
-                              ? Theme.of(context).colorScheme.error
-                              : Colors.grey,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.tertiary,
-                          icon: Icons.lightbulb_rounded,
                         ),
-                        const SizedBox(width: 10),
-                        RetroButton(
-                          text: "Ask",
-                          fontSize: 16,
-                          iconSize: 30,
-                          iconAtEnd: false,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-                          onPressed: gameState.isMyTurn ? _endTurn : () {},
-                          backgroundColor: gameState.isMyTurn
-                              ? Theme.of(context).colorScheme.secondary
-                              : Colors.grey,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.tertiary,
-                          icon: Icons.swap_horiz_rounded,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 10),
-                    RetroButton(
-                      text: "Answer",
-                      fontSize: 16,
-                      iconSize: 30,
-                      iconAtEnd: false,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
                       ),
-                      onPressed: !gameState.isMyTurn ? _endTurn2 : () {},
-                      backgroundColor: !gameState.isMyTurn
-                          ? Theme.of(context).colorScheme.secondary
-                          : Colors.grey,
-                      foregroundColor: Theme.of(context).colorScheme.tertiary,
-                      icon: Icons.swap_horiz_rounded,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                _isMessageLogExpanded = !_isMessageLogExpanded;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.secondary,
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.tertiary,
+                                    width: 2,
+                                  ),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.message_rounded,
+                                        size: 16,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "Q&A History (${_qaHistory.length})",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.tertiary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  AnimatedRotation(
+                                    turns: _isMessageLogExpanded ? 0.5 : 0,
+                                    duration: const Duration(milliseconds: 150),
+                                    curve: Curves.easeInOut,
+                                    child: Icon(
+                                      Icons.expand_circle_down_rounded,
+                                      size: 25,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.tertiary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          AnimatedSize(
+                            clipBehavior: Clip.none,
+                            curve: Curves.easeInOut,
+                            duration: const Duration(milliseconds: 150),
+                            child: _isMessageLogExpanded
+                                ? Container(
+                                    constraints: const BoxConstraints(
+                                      maxHeight: 200,
+                                    ),
+                                    child: ListView.builder(
+                                      controller: _scrollController,
+                                      padding: const EdgeInsets.all(8),
+                                      itemCount: _qaHistory.length,
+                                      itemBuilder: (context, index) {
+                                        final qa = _qaHistory[index];
+                                        final isMyQuestion = qa["questionerId"]!
+                                            .contains(
+                                              widget.playerId.substring(0, 6),
+                                            );
+
+                                        return Container(
+                                          margin: const EdgeInsets.only(
+                                            bottom: 12,
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Icon(
+                                                    Icons.question_mark_rounded,
+                                                    size: 16,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.primary,
+                                                  ),
+
+                                                  const SizedBox(width: 6),
+
+                                                  Expanded(
+                                                    child: RichText(
+                                                      text: TextSpan(
+                                                        style: TextStyle(
+                                                          fontSize: 13,
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).colorScheme.primary,
+                                                        ),
+                                                        children: [
+                                                          TextSpan(
+                                                            text:
+                                                                "${isMyQuestion ? "You" : "Opponent"}: ",
+                                                            style:
+                                                                const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                          ),
+                                                          TextSpan(
+                                                            text:
+                                                                qa["question"],
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+
+                                              const SizedBox(height: 4),
+
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  left: 22,
+                                                ),
+                                                child: Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      "➥ ",
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.secondary,
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: RichText(
+                                                        text: TextSpan(
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color:
+                                                                Theme.of(
+                                                                      context,
+                                                                    )
+                                                                    .colorScheme
+                                                                    .secondary,
+                                                          ),
+                                                          children: [
+                                                            TextSpan(
+                                                              text:
+                                                                  "${!isMyQuestion ? "You" : "Opponent"}: ",
+                                                              style: const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                            TextSpan(
+                                                              text:
+                                                                  qa["answer"],
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+
+                  Container(
+                    padding: const EdgeInsets.only(
+                      top: 15,
+                      bottom: 45,
+                      left: 16,
+                      right: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      border: _isMessageLogExpanded
+                          ? Border(
+                              top: BorderSide(
+                                color: Theme.of(context).colorScheme.tertiary,
+                                width: 4,
+                              ),
+                            )
+                          : null,
+                      boxShadow: _isMessageLogExpanded
+                          ? [
+                              BoxShadow(
+                                color: Theme.of(context).colorScheme.shadow,
+                                blurRadius: 4,
+                                offset: const Offset(0, -2),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: _currentPhase == TurnPhase.asking
+                        ? _buildAskingPhaseUI(gameState)
+                        : _buildAnsweringPhaseUI(),
+                  ),
+                ],
               ),
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildAskingPhaseUI(GameStateManager gameState) {
+    final canAct = gameState.isMyTurn && !_waitingForAnswer;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (canAct) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.tertiary,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.secondary,
+                width: 2,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _questionController,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: "Ask a question...",
+                      hintStyle: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withAlpha(150),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 12,
+                      ),
+                    ),
+                    maxLines: 2,
+                    minLines: 1,
+                  ),
+                ),
+                IconButton(
+                  onPressed: _sendQuestion,
+                  icon: Icon(
+                    Icons.send_rounded,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (canAct)
+              Expanded(
+                child: RetroButton(
+                  text: "Make Guess",
+                  onPressed: _makeGuess,
+                  fontSize: 16,
+
+                  iconSize: 24,
+                  iconAtEnd: false,
+                  icon: Icons.lightbulb_rounded,
+
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.tertiary,
+                ),
+              )
+            else
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.tertiary.withAlpha(100),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.tertiary,
+                      width: 2,
+                    ),
+                  ),
+                  child: Text(
+                    _waitingForAnswer
+                        ? "Waiting for opponent's answer..."
+                        : "Opponent's turn",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAnsweringPhaseUI() {
+    if (_currentQuestion != null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.tertiary,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.secondary,
+                width: 2,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.question_mark_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Opponent asks:",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _currentQuestion!,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: RetroButton(
+                  text: "Yes",
+                  fontSize: 16,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.tertiary,
+                  icon: Icons.check_circle_rounded,
+                  iconAtEnd: false,
+                  onPressed: () => _sendAnswer("Yes"),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: RetroButton(
+                  text: "No",
+                  fontSize: 16,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.tertiary,
+                  icon: Icons.do_not_disturb_alt_outlined,
+                  iconAtEnd: false,
+                  onPressed: () => _sendAnswer("No"),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.tertiary.withAlpha(100),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.tertiary,
+          width: 2,
+        ),
+      ),
+      child: Text(
+        "Opponent is thinking...",
+        style: TextStyle(
+          fontSize: 14,
+          color: Theme.of(context).colorScheme.tertiary,
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }

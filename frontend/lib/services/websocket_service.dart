@@ -132,7 +132,10 @@ class WebsocketService {
       return;
     }
 
-    _stompClient!.send(destination: "/app/question", body: question);
+    String formattedMessage =
+        "guest-player-${playerId.substring(0, 6)} asked: $question";
+
+    _stompClient!.send(destination: "/app/question", body: formattedMessage);
   }
 
   void sendAnswer(String answer) {
@@ -141,7 +144,9 @@ class WebsocketService {
       return;
     }
 
-    _stompClient!.send(destination: "/app/question", body: answer);
+    String formattedMessage =
+        "guest-player-${playerId.substring(0, 6)} answered: $answer";
+    _stompClient!.send(destination: "/app/question", body: formattedMessage);
   }
 
   void sendGuess(String characterId) {
