@@ -60,7 +60,13 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       debugPrint("Game message: $message");
 
       if (message.contains("turn")) {
-        _gameState.switchTurn();
+        setState(() {
+          _gameState.switchTurn();
+        });
+      } else if (message.contains("winner")) {
+        _handleGameover(message);
+      } else if (message.contains("started")) {
+        debugPrint("Game started message recieved!");
       }
     });
 
@@ -76,6 +82,78 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     });
   }
 
+  void _handleGameover(String message) {
+    setState(() {
+      _gameState.resetGame();
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        final isWinner = message.contains(widget.playerId);
+
+        return AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.secondary,
+              width: 2,
+            ),
+          ),
+          title: Column(
+            children: [
+              Icon(
+                isWinner ? Icons.emoji_events : Icons.cancel,
+                size: 60,
+                color: isWinner
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                isWinner ? "You Won!" : "You Lost!",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          content: Text(
+            isWinner
+                ? "Congratulations! You guessed correctly!"
+                : "Better luck next time!",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontSize: 18,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                "Exit to Menu",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _toggleFlipCard(String characterId) {
     if (!_gameState.isMyTurn) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,6 +162,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
             "It's not your turn!",
             textAlign: TextAlign.center,
           ),
+          duration: const Duration(seconds: 1),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -100,7 +179,10 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     if (!_gameState.isMyTurn) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("It's not your turn!"),
+          content: const Text(
+            "It's not your turn!",
+            textAlign: TextAlign.center,
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -131,7 +213,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
             ),
           ),
           title: Text(
-            'Guess Submitted',
+            "Guess Submitted",
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.bold,
@@ -139,7 +221,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
             textAlign: TextAlign.center,
           ),
           content: Text(
-            'You guessed: ${guessedCharacter.name}\n\nWait for the result from the server...',
+            "You guessed: ${guessedCharacter.name}\n\nWait for the result from the server...",
             style: TextStyle(
               color: Theme.of(context).colorScheme.primary,
               fontSize: 16,
@@ -172,8 +254,45 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   void _endTurn() {
+    if (!_gameState.isMyTurn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "It's not your turn!",
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+
+      return;
+    }
+
+    widget.wsService.sendQuestion("Is your mom gay?");
+
     setState(() {
-      _gameState.switchTurn();
+      _isCharacterNameRevealed = false;
+    });
+  }
+
+  void _endTurn2() {
+    if (_gameState.isMyTurn) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "It's not your turn!",
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+
+      return;
+    }
+
+    widget.wsService.sendAnswer("Yes");
+
+    setState(() {
       _isCharacterNameRevealed = false;
     });
   }
@@ -186,94 +305,173 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _gameState,
-      child: Consumer<GameStateManager>(
-        builder: (context, gameState, child) {
-          return Scaffold(
-            appBar: AppBar(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              iconTheme: IconThemeData(
-                color: Theme.of(context).colorScheme.tertiary,
-              ),
-              title: Text(
-                gameState.isMyTurn ? "Your Turn" : "Opponent's Turn",
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.tertiary,
-                  fontSize: 20,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, dynamic) async {
+        if (didPop) return;
+
+        final shouldLeave = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(
+              "Leave Room?",
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+            ),
+            content: Text(
+              "Are you sure you want to leave this room?",
+              style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  "Cancel",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
-            ),
-            body: GameBoard(
-              gameState: gameState,
-              isCharacterNameRevealed: _isCharacterNameRevealed,
-              onToggleCharacterNameReveal: () {
-                setState(() {
-                  _isCharacterNameRevealed = !_isCharacterNameRevealed;
-                });
-              },
-              onFlip: (character) => _toggleFlipCard(character.id),
-              isSelectionMode: false,
-            ),
-            bottomNavigationBar: Container(
-              padding: const EdgeInsets.only(top: 15, bottom: 45),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                border: Border(
-                  top: BorderSide(
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(
+                    Theme.of(context).colorScheme.error,
+                  ),
+                ),
+                child: Text(
+                  "Leave",
+                  style: TextStyle(
                     color: Theme.of(context).colorScheme.tertiary,
-                    width: 5,
                   ),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  RetroButton(
-                    text: "Make Guess",
-                    onPressed: gameState.isMyTurn ? _makeGuess : () {},
-                    fontSize: 16,
-                    iconSize: 30,
-                    iconAtEnd: false,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    backgroundColor: gameState.isMyTurn
-                        ? Theme.of(context).colorScheme.error
-                        : Colors.grey,
-                    foregroundColor: Theme.of(context).colorScheme.tertiary,
-                    icon: Icons.lightbulb_rounded,
+            ],
+          ),
+        );
+
+        if (shouldLeave == true) {
+          widget.wsService.disconnect();
+
+          if (context.mounted) {
+            Navigator.pop(context);
+          }
+        }
+      },
+      child: ChangeNotifierProvider.value(
+        value: _gameState,
+        child: Consumer<GameStateManager>(
+          builder: (context, gameState, child) {
+            return Scaffold(
+              appBar: AppBar(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                iconTheme: IconThemeData(
+                  color: Theme.of(context).colorScheme.tertiary,
+                ),
+                title: Text(
+                  gameState.isMyTurn ? "Your Turn" : "Opponent's Turn",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.tertiary,
+                    fontSize: 20,
                   ),
-                  const SizedBox(width: 10),
-                  RetroButton(
-                    text: "End Turn",
-                    fontSize: 16,
-                    iconSize: 30,
-                    iconAtEnd: false,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    onPressed: gameState.isMyTurn ? _endTurn : () {},
-                    backgroundColor: gameState.isMyTurn
-                        ? Theme.of(context).colorScheme.secondary
-                        : Colors.grey,
-                    foregroundColor: Theme.of(context).colorScheme.tertiary,
-                    icon: Icons.swap_horiz_rounded,
-                  ),
-                ],
+                ),
               ),
-            ),
-          );
-        },
+              body: GameBoard(
+                gameState: gameState,
+                isCharacterNameRevealed: _isCharacterNameRevealed,
+                onToggleCharacterNameReveal: () {
+                  setState(() {
+                    _isCharacterNameRevealed = !_isCharacterNameRevealed;
+                  });
+                },
+                onFlip: (character) => _toggleFlipCard(character.id),
+                isSelectionMode: false,
+              ),
+              bottomNavigationBar: Container(
+                padding: const EdgeInsets.only(top: 15, bottom: 45),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).colorScheme.tertiary,
+                      width: 5,
+                    ),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        RetroButton(
+                          text: "Make Guess",
+                          onPressed: gameState.isMyTurn ? _makeGuess : () {},
+                          fontSize: 16,
+                          iconSize: 30,
+                          iconAtEnd: false,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          backgroundColor: gameState.isMyTurn
+                              ? Theme.of(context).colorScheme.error
+                              : Colors.grey,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.tertiary,
+                          icon: Icons.lightbulb_rounded,
+                        ),
+                        const SizedBox(width: 10),
+                        RetroButton(
+                          text: "Ask",
+                          fontSize: 16,
+                          iconSize: 30,
+                          iconAtEnd: false,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          onPressed: gameState.isMyTurn ? _endTurn : () {},
+                          backgroundColor: gameState.isMyTurn
+                              ? Theme.of(context).colorScheme.secondary
+                              : Colors.grey,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.tertiary,
+                          icon: Icons.swap_horiz_rounded,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 10),
+                    RetroButton(
+                      text: "Answer",
+                      fontSize: 16,
+                      iconSize: 30,
+                      iconAtEnd: false,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      onPressed: !gameState.isMyTurn ? _endTurn2 : () {},
+                      backgroundColor: !gameState.isMyTurn
+                          ? Theme.of(context).colorScheme.secondary
+                          : Colors.grey,
+                      foregroundColor: Theme.of(context).colorScheme.tertiary,
+                      icon: Icons.swap_horiz_rounded,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

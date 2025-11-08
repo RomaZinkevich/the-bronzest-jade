@@ -23,6 +23,24 @@ class WebsocketService {
   bool get isConnected => _isConnected;
   String get playerId => _playerId ?? "undefined";
 
+  void _addToMessageStream(String message) {
+    if (!_messageController.isClosed) {
+      _messageController.add(message);
+    }
+  }
+
+  void _addToErrorStream(String error) {
+    if (!_errorController.isClosed) {
+      _errorController.add(error);
+    }
+  }
+
+  void _addToConnectionStream(bool connected) {
+    if (!_connectionController.isClosed) {
+      _connectionController.add(connected);
+    }
+  }
+
   void connect(String roomId, String playerId) {
     _roomId = roomId;
     _playerId = playerId;
@@ -34,17 +52,17 @@ class WebsocketService {
         onWebSocketError: (dynamic error) {
           debugPrint("WebSocket Error: $error");
           _isConnected = false;
-          _connectionController.add(false);
-          _errorController.add("Connection error: $error");
+          _addToConnectionStream(false);
+          _addToErrorStream(error);
         },
         onStompError: (StompFrame frame) {
           debugPrint("STOMP error: ${frame.body}");
-          _errorController.add("STOMP error: ${frame.body}");
+          _addToErrorStream("STOMP error: ${frame.body}");
         },
         onDisconnect: (StompFrame frame) {
           debugPrint("Disconnected");
           _isConnected = false;
-          _connectionController.add(false);
+          _addToConnectionStream(false);
         },
         stompConnectHeaders: {"playerId": playerId, "roomId": roomId},
       ),
@@ -56,14 +74,14 @@ class WebsocketService {
   void _onConnect(StompFrame frame) {
     debugPrint("Connected to WebSocket");
     _isConnected = true;
-    _connectionController.add(true);
+    _addToConnectionStream(true);
 
     _stompClient!.subscribe(
       destination: "/topic/room.$_roomId",
       callback: (StompFrame frame) {
         if (frame.body != null) {
           debugPrint("Received message: ${frame.body}");
-          _messageController.add(frame.body!);
+          _addToMessageStream(frame.body!);
         }
       },
     );
@@ -73,7 +91,7 @@ class WebsocketService {
       callback: (StompFrame frame) {
         if (frame.body != null) {
           debugPrint("Recieved error: ${frame.body}");
-          _errorController.add(frame.body!);
+          _addToErrorStream(frame.body!);
         }
       },
     );
@@ -140,7 +158,7 @@ class WebsocketService {
       _stompClient!.deactivate();
       _stompClient = null;
       _isConnected = false;
-      _connectionController.add(false);
+      _addToConnectionStream(false);
     }
   }
 

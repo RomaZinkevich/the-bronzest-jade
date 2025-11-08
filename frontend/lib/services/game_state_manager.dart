@@ -151,11 +151,10 @@ class GameStateManager extends ChangeNotifier {
   }
 
   void startOnlineGame() {
-    if (_isReady && _isOpponentReady) {
-      _currentPhase = GamePhase.playing;
-      _isMyTurn = _isHost;
-      notifyListeners();
-    }
+    _currentPhase = GamePhase.playing;
+    _isMyTurn = _isHost;
+    debugPrint("My Turn?: $_isMyTurn (isHost: $_isHost)");
+    notifyListeners();
   }
 
   void toggleFlipCard(String characterId) {

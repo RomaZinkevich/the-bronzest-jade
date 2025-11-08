@@ -44,12 +44,16 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     _wsService = WebsocketService();
 
     _wsService.connectionStream.listen((connected) {
+      if (!mounted) return;
+
       setState(() {
         _isConnected = connected;
       });
     });
 
     _wsService.messageStream.listen((message) {
+      if (!mounted) return;
+
       setState(() {
         _messages.add(message);
       });
@@ -64,11 +68,11 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     });
 
     _wsService.errorStream.listen((error) {
+      if (!mounted) return;
+
       setState(() {
         _errorMessage = error;
       });
-
-      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -193,6 +197,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
   Future<void> _leaveRoom() async {
     try {
       _wsService.disconnect();
+      _wsService.dispose();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -205,12 +210,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
         ),
       );
     }
-  }
-
-  @override
-  void dispose() {
-    _wsService.dispose();
-    super.dispose();
   }
 
   @override
