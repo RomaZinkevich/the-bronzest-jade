@@ -28,11 +28,11 @@ public class RoomPlayer {
     @Column(nullable = false)
     private UUID userId;
 
-    @Column(nullable = false)
-    private boolean isHost;
+    @Column(nullable = false, name = "is_host")
+    private boolean host;
 
-    @Column(nullable = false)
-    private boolean isReady;
+    @Column(nullable = false, name = "is_ready")
+    private boolean ready;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "character_to_guess_id")
@@ -45,6 +45,6 @@ public class RoomPlayer {
     @PrePersist
     public void onCreate() {
         this.joinedAt = LocalDateTime.now();
-        this.isReady = false;
+        this.ready = false;
     }
 }

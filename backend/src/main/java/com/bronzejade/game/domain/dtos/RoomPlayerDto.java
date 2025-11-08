@@ -1,5 +1,6 @@
 package com.bronzejade.game.domain.dtos;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -11,10 +12,14 @@ import java.util.UUID;
 @AllArgsConstructor
 public class RoomPlayerDto {
     private UUID id;
-    private UUID roomId;
     private UUID userId;
-    private boolean isHost;
-    private boolean isReady;
+
+    @JsonProperty("isHost")
+    private boolean host;
+
+    @JsonProperty("isReady")
+    private boolean ready;
+
     private CharacterDto characterToGuess;
     private LocalDateTime joinedAt;
 }
