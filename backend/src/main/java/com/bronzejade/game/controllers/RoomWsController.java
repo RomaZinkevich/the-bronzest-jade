@@ -2,7 +2,6 @@ package com.bronzejade.game.controllers;
 
 import com.bronzejade.game.domain.dtos.*;
 import com.bronzejade.game.domain.entities.RoomPlayer;
-import com.bronzejade.game.mapper.RoomPlayerMapper;
 import com.bronzejade.game.service.GameStateService;
 import com.bronzejade.game.service.RoomPlayerService;
 import com.bronzejade.game.service.RoomService;
@@ -27,7 +26,6 @@ public class RoomWsController {
     private final RoomService roomService;
     private final GameStateService gameStateService;
     private final GuessCharacterService guessCharacterService;
-    private final RoomPlayerMapper roomPlayerMapper;
 
     @MessageMapping("/join")
     public void handleJoin(SimpMessageHeaderAccessor accessor) {
