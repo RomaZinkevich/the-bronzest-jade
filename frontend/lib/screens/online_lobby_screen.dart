@@ -4,6 +4,7 @@ import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/websocket_service.dart';
 import 'package:guess_who/models/character.dart';
 import 'package:guess_who/screens/online_game_screen.dart';
+import 'package:guess_who/widgets/character_card.dart';
 import 'package:guess_who/widgets/retro_button.dart';
 
 class OnlineLobbyScreen extends StatefulWidget {
@@ -322,94 +323,37 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
 
             // Characters grid
             Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.all(8),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemCount: characters.length,
-                itemBuilder: (context, index) {
-                  final character = characters[index];
-                  final isSelected = _selectedCharacter?.id == character.id;
+              child: Container(
+                color: Theme.of(context).colorScheme.tertiary,
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(10),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    childAspectRatio: 0.7,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                  ),
+                  itemCount: characters.length,
+                  itemBuilder: (context, index) {
+                    final character = characters[index];
+                    final isSelected = _selectedCharacter?.id == character.id;
 
-                  return GestureDetector(
-                    onTap: () => _selectCharacter(character),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.secondary
-                            : Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected
-                              ? Theme.of(context).colorScheme.tertiary
-                              : Theme.of(context).colorScheme.secondary,
-                          width: isSelected ? 4 : 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  character.imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.secondary.withAlpha(100),
-                                      child: Icon(
-                                        Icons.person,
-                                        size: 40,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 4,
-                              horizontal: 4,
-                            ),
-                            child: Text(
-                              character.name,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.tertiary,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                    return CharacterCard(
+                      character: character,
+                      isFlipped: isSelected,
+                      isSelectionMode: true,
+                      onSelect: () => _selectCharacter(character),
+                    );
+                  },
+                ),
               ),
             ),
+          ],
+        ),
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
 
+          children: [
             // Message log
             if (_messages.isNotEmpty)
               Container(
