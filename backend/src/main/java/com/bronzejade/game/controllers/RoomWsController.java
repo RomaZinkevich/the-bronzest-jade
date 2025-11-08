@@ -1,7 +1,6 @@
 package com.bronzejade.game.controllers;
 
-import com.bronzejade.game.domain.dtos.ConnectionInfoDto;
-import com.bronzejade.game.domain.dtos.GuessCharacterResponse;
+import com.bronzejade.game.domain.dtos.*;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.service.GameStateService;
 import com.bronzejade.game.service.RoomPlayerService;
@@ -29,9 +28,9 @@ public class RoomWsController {
     private final GuessCharacterService guessCharacterService;
 
     @MessageMapping("/join")
-    public void handleMessage(SimpMessageHeaderAccessor accessor) {
+    public void handleJoin(SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
-        String message = messageCrafter(" has joined room", connectionInfoDto.getPlayerId());
+        MessageDto message = messageCrafter(" has joined room", connectionInfoDto.getPlayerId());
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
     }
 
@@ -39,30 +38,35 @@ public class RoomWsController {
     public void toggleReady(SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
         RoomPlayer roomPlayer = roomService.togglePlayerReady(UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
-        String message = messageCrafter(" is " + (!roomPlayer.isReady() ? "not " : "") + "ready", connectionInfoDto.getPlayerId());
+        MessageDto message = messageCrafter(" is " + (!roomPlayer.isReady() ? "not " : "") + "ready", connectionInfoDto.getPlayerId());
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
     }
 
     @MessageMapping("/start")
     public void start(SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
-        roomService.startGame(UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
+        RoomPlayerDto roomPlayerDto = roomService.startGame(UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
         String message = "The game has been started";
-        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
+        StartGameResponse startGameResponse = new StartGameResponse();
+        startGameResponse.setMessage(message);
+        startGameResponse.setTurnPlayer(roomPlayerDto);
+        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), startGameResponse);
     }
 
     @MessageMapping("/question")
     public void question(String payload, SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
         gameStateService.submitQuestion(payload, UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
-        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), payload);
+        MessageDto msg = messageCrafter(payload,  connectionInfoDto.getPlayerId());
+        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), msg);
     }
 
     @MessageMapping("/answer")
     public void answer(String payload, SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
         gameStateService.submitAnswer(payload, UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
-        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), payload);
+        MessageDto msg = messageCrafter(payload,  connectionInfoDto.getPlayerId());
+        messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), msg);
     }
 
     @MessageMapping("/guess")
@@ -95,11 +99,10 @@ public class RoomWsController {
         return connectionInfoDto;
     }
 
-    private String messageCrafter(String text, String playerId) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("guest-player-");
-        sb.append(playerId, 0, 6);
-        sb.append(text);
-        return sb.toString();
+    private MessageDto messageCrafter(String text, String playerId) {
+        String message = "guest-player-" + playerId.substring(0, 6) + text;
+        return MessageDto.builder()
+                .message(message)
+                .build();
     }
 }

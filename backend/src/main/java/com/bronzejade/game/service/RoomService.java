@@ -1,6 +1,7 @@
 package com.bronzejade.game.service;
 
 import com.bronzejade.game.domain.dtos.CreateRoomRequest;
+import com.bronzejade.game.domain.dtos.RoomPlayerDto;
 import com.bronzejade.game.domain.entities.CharacterSet;
 import com.bronzejade.game.domain.entities.Character;
 import com.bronzejade.game.domain.entities.GameState;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import com.bronzejade.game.mapper.RoomPlayerMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ public class RoomService {
     private final RoomPlayerRepository roomPlayerRepo;
     private final GameStateRepository gameStateRepo;
     private final CharacterSetService characterSetService;
+    private final RoomPlayerMapper roomPlayerMapper;
 
     @Transactional
     public Room createRoom(CreateRoomRequest createRoomRequest) {
@@ -43,8 +46,8 @@ public class RoomService {
         RoomPlayer hostPlayer = RoomPlayer.builder()
                 .room(savedRoom)
                 .userId(hostId)
-                .isHost(true)
-                .isReady(false)
+                .host(true)
+                .ready(false)
                 .joinedAt(LocalDateTime.now())
                 .build();
 
@@ -92,8 +95,8 @@ public class RoomService {
         RoomPlayer newPlayer = RoomPlayer.builder()
                 .room(room)
                 .userId(playerId)
-                .isHost(false)
-                .isReady(false)
+                .host(false)
+                .ready(false)
                 .joinedAt(LocalDateTime.now())
                 .build();
 
@@ -154,7 +157,7 @@ public class RoomService {
     }
 
     @Transactional
-    public Room startGame(UUID roomId, UUID playerId) {
+    public RoomPlayerDto startGame(UUID roomId, UUID playerId) {
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
 
@@ -178,12 +181,13 @@ public class RoomService {
                 .orElseThrow(() -> new RuntimeException("Game state not found"));
 
         if (!players.isEmpty()) {
-            gameState.setTurnPlayer(players.get(0));
+            RoomPlayer turnPlayer = players.get((int) (Math.random()*players.size()));
+            gameState.setTurnPlayer(turnPlayer);
             gameState.setRoundNumber(1);
+            gameStateRepo.save(gameState);
+            return roomPlayerMapper.toDto(turnPlayer);
         }
-
-        gameStateRepo.save(gameState);
-        return roomRepo.save(room);
+        throw new RuntimeException("No players in game");
     }
 
     public RoomPlayer selectCharacter(UUID roomId, UUID playerId, UUID characterId) {
