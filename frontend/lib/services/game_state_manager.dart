@@ -152,8 +152,11 @@ class GameStateManager extends ChangeNotifier {
 
   void startOnlineGame() {
     _currentPhase = GamePhase.playing;
-    _isMyTurn = true;
-    debugPrint("My Turn?: $_isMyTurn (isHost: $_isHost)");
+    notifyListeners();
+  }
+
+  void setMyTurn(bool isMyTurn) {
+    _isMyTurn = isMyTurn;
     notifyListeners();
   }
 

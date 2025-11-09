@@ -26,8 +26,8 @@ class RoomPlayer {
       roomId: json['roomId'] != null ? json['roomId'] as String : null,
 
       userId: json['userId'] as String,
-      isHost: json['host'] as bool,
-      isReady: json['ready'] as bool,
+      isHost: json['isHost'] as bool,
+      isReady: json['isReady'] as bool,
 
       characterToGuess: json['characterToGuess'] != null
           ? Character.fromJson(json['characterToGuess'] as Map<String, dynamic>)

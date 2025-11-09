@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:guess_who/models/room.dart';
+import 'package:guess_who/models/room_player.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/websocket_service.dart';
 import 'package:guess_who/models/character.dart';
@@ -34,6 +38,10 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isMessageLogExpanded = false;
 
+  StreamSubscription<String>? _messageSubsciption;
+  StreamSubscription<String>? _errorSubscription;
+  StreamSubscription<bool>? _connectionSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -43,7 +51,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
   void _initializeWebSocket() {
     _wsService = WebsocketService();
 
-    _wsService.connectionStream.listen((connected) {
+    _connectionSubscription = _wsService.connectionStream.listen((connected) {
       if (!mounted) return;
 
       setState(() {
@@ -51,23 +59,37 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
       });
     });
 
-    _wsService.messageStream.listen((message) {
+    _messageSubsciption = _wsService.messageStream.listen((message) {
       if (!mounted) return;
 
       setState(() {
         _messages.add(message);
       });
 
-      if (message.contains('started')) {
-        _navigateToGame();
-      }
+      try {
+        final Map<String, dynamic> jsonData = json.decode(message);
 
-      if (message.contains("joined") && _messages.length > 1) {
-        _isMessageLogExpanded = true;
+        if (jsonData.containsKey("turnPlayer")) {
+          debugPrint("YO!!!");
+          _navigateToGame(jsonData);
+        } else if (jsonData.containsKey("message")) {
+          final messageText = jsonData["message"];
+          if (messageText.contains("joined") && _messages.length > 1) {
+            _isMessageLogExpanded = true;
+          }
+        }
+      } catch (e) {
+        if (message.contains("started")) {
+          _navigateToGame(null);
+        }
+
+        if (message.contains("joined") && _messages.length > 1) {
+          _isMessageLogExpanded = true;
+        }
       }
     });
 
-    _wsService.errorStream.listen((error) {
+    _errorSubscription = _wsService.errorStream.listen((error) {
       if (!mounted) return;
 
       setState(() {
@@ -95,6 +117,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     });
   }
 
+  //! Call API only after ready.
   Future<void> _selectCharacter(Character character) async {
     try {
       await ApiService.selectCharacter(
@@ -179,7 +202,20 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     }
   }
 
-  void _navigateToGame() {
+  void _navigateToGame(Map<String, dynamic>? startGameResponse) {
+    _messageSubsciption?.cancel();
+    _errorSubscription?.cancel();
+    _connectionSubscription?.cancel();
+
+    bool isMyTurnInitially = false;
+
+    if (startGameResponse != null &&
+        startGameResponse.containsKey("turnPlayer")) {
+      final turnPlayerData = startGameResponse["turnPlayer"];
+      final turnPlayerId = turnPlayerData["userId"];
+      isMyTurnInitially = turnPlayerId == widget.playerId;
+    }
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -189,6 +225,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
           isHost: widget.isHost,
           selectedCharacter: _selectedCharacter!,
           wsService: _wsService,
+          isMyTurnInitially: isMyTurnInitially,
         ),
       ),
     );
@@ -197,7 +234,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
   Future<void> _leaveRoom() async {
     try {
       _wsService.disconnect();
-      _wsService.dispose();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -210,6 +246,16 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
         ),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _messageSubsciption?.cancel();
+    _errorSubscription?.cancel();
+    _connectionSubscription?.cancel();
+
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -444,8 +490,21 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
                                 controller: _scrollController,
                                 itemCount: _messages.length,
                                 itemBuilder: (context, index) {
-                                  final message =
+                                  final rawMessage =
                                       _messages[_messages.length - 1 - index];
+
+                                  String displayMessage = rawMessage;
+
+                                  try {
+                                    final Map<String, dynamic> jsonData = json
+                                        .decode(rawMessage);
+                                    if (jsonData.containsKey("message")) {
+                                      displayMessage = jsonData["message"];
+                                    }
+                                  } catch (e) {
+                                    displayMessage = rawMessage;
+                                  }
+
                                   return Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,
@@ -461,7 +520,9 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
                                             ).colorScheme.secondary,
                                     ),
                                     child: Text(
-                                      index == 0 ? "-> $message" : message,
+                                      index == 0
+                                          ? "-> $displayMessage"
+                                          : displayMessage,
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: (index == 0)
