@@ -12,6 +12,7 @@ import com.bronzejade.game.repositories.RoomRepository;
 import com.bronzejade.game.domain.entities.Room;
 import com.bronzejade.game.domain.RoomStatus;
 import com.bronzejade.game.domain.TurnPhase;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -66,30 +67,30 @@ public class RoomService {
 
     public void deleteRoom(UUID id) {
         if (!roomRepo.existsById(id)) {
-            throw new RuntimeException("Room not found with id: " + id);
+            throw new EntityNotFoundException("Room not found with id: " + id);
         }
         roomRepo.deleteById(id);
     }
 
     public Room joinRoom(String roomCode, UUID playerId) {
         Room room = roomRepo.findByRoomCode(roomCode.toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Room could not be found"));
+                .orElseThrow(() -> new EntityNotFoundException("Room could not be found"));
 
         UUID roomId = room.getId();
 
         if (room.getStatus() != RoomStatus.WAITING) {
-            throw new RuntimeException("Room is not available for joining");
+            throw new IllegalArgumentException("Room is not available for joining");
         }
 
         boolean playerAlreadyInRoom = roomPlayerRepo.existsByRoomIdAndUserId(roomId, playerId);
         if (playerAlreadyInRoom) {
-            throw new RuntimeException("Player is already in the room");
+            throw new IllegalArgumentException("Player is already in the room");
         }
 
         // Checking if the room is full
         long currentPlayerCount = roomPlayerRepo.countByRoomId(roomId);
         if (currentPlayerCount >= room.getMaxPlayers()) {
-            throw new RuntimeException("Room is full");
+            throw new IllegalArgumentException("Room is full");
         }
 
         RoomPlayer newPlayer = RoomPlayer.builder()
@@ -111,10 +112,10 @@ public class RoomService {
 
     public Room leaveRoom(UUID roomId, UUID playerId) {
         Room room = roomRepo.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
+                .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
         RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
-                .orElseThrow(() -> new RuntimeException("Player not found in room"));
+                .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
 
         boolean wasHost = player.isHost();
 
@@ -145,11 +146,11 @@ public class RoomService {
     @Transactional
     public RoomPlayer togglePlayerReady(UUID roomId, UUID playerId) {
         RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
-                .orElseThrow(() -> new RuntimeException("Player not found in room"));
+                .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
         if (player.getCharacterToGuess() == null) { throw new IllegalStateException("Player didn't select character"); }
 
         Room room = roomRepo.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
         if (room.getStatus() != RoomStatus.WAITING) {throw new IllegalArgumentException("Room is not in waiting process");}
 
         player.setReady(!player.isReady());
@@ -159,13 +160,13 @@ public class RoomService {
     @Transactional
     public RoomPlayerDto startGame(UUID roomId, UUID playerId) {
         Room room = roomRepo.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
+                .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
         // Check if all players are ready
         List<RoomPlayer> players = roomPlayerRepo.findByRoomId(roomId);
         boolean allReady = players.stream().allMatch(RoomPlayer::isReady);
         if (!allReady) {
-            throw new RuntimeException("Not all players are ready");
+            throw new IllegalArgumentException("Not all players are ready");
         }
 
         players.forEach(player -> {
@@ -178,41 +179,41 @@ public class RoomService {
         room.setStartedAt(LocalDateTime.now());
 
         GameState gameState = gameStateRepo.findByRoomId(roomId)
-                .orElseThrow(() -> new RuntimeException("Game state not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
 
-        if (!players.isEmpty()) {
+        if (players.size() > 1) {
             RoomPlayer turnPlayer = players.get((int) (Math.random()*players.size()));
             gameState.setTurnPlayer(turnPlayer);
             gameState.setRoundNumber(1);
             gameStateRepo.save(gameState);
             return roomPlayerMapper.toDto(turnPlayer);
         }
-        throw new RuntimeException("No players in game");
+        throw new IllegalArgumentException("Not enough players in the room");
     }
 
     public RoomPlayer selectCharacter(UUID roomId, UUID playerId, UUID characterId) {
         Room room = roomRepo.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
+                .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
         if(room.getStatus() != RoomStatus.WAITING) {
-            throw new RuntimeException("Cannot select players when the game is going on");
+            throw new IllegalArgumentException("Cannot select players when the game is going on");
         }
 
         RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
-                .orElseThrow(() -> new RuntimeException("Player not found in room"));
+                .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
 
         CharacterSet characterSet = room.getCharacterSet();
         boolean characterExists = characterSet.getCharacters().stream()
                 .anyMatch(c -> c.getId().equals(characterId));
 
         if (!characterExists) {
-            throw new RuntimeException("Character not found in room's character set");
+            throw new EntityNotFoundException("Character not found in room's character set");
         }
 
         Character character = characterSet.getCharacters().stream()
                 .filter(c -> c.getId().equals(characterId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Character not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Character not found"));
 
         player.setCharacterToGuess(character);
         return roomPlayerRepo.save(player);
@@ -220,17 +221,17 @@ public class RoomService {
 
     public Room finishGame(UUID roomId, UUID winnerId) {
         Room room = roomRepo.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
+                .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
         if (room.getStatus() != RoomStatus.IN_PROGRESS) {
-            throw new RuntimeException("Game is not in progress");
+            throw new IllegalArgumentException("Game is not in progress");
         }
 
         room.setStatus(RoomStatus.FINISHED);
         room.setFinishedAt(LocalDateTime.now());
 
         GameState gameState = gameStateRepo.findByRoomId(roomId)
-                .orElseThrow(() -> new RuntimeException("Game state not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
         gameState.setWinnerId(winnerId);
 
         gameStateRepo.save(gameState);
@@ -239,6 +240,6 @@ public class RoomService {
 
     public Room getRoom(UUID id) {
         return roomRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + id));
     }
 }
