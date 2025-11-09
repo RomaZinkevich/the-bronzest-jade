@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:guess_who/mainmenuscreen.dart';
-import 'package:guess_who/theme/app_theme.dart';
+import 'package:guess_who/constants/theme/app_theme.dart';
+import 'package:guess_who/screens/mainmenuscreen.dart';
 
 void main() {
   runApp(const MyApp());
