@@ -11,7 +11,6 @@ import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.mapper.RoomMapper;
 import com.bronzejade.game.mapper.RoomPlayerMapper;
 import com.bronzejade.game.service.RoomService;
-import com.bronzejade.game.service.GuessCharacterService;
 import com.bronzejade.game.domain.entities.Room;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
