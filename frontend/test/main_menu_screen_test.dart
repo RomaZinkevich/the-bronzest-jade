@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:guess_who/gamescreen.dart';
-import 'package:guess_who/mainmenuscreen.dart';
-import 'package:guess_who/theme/app_theme.dart';
+import 'package:guess_who/constants/theme/app_theme.dart';
+import 'package:guess_who/screens/gamescreen.dart';
+import 'package:guess_who/screens/mainmenuscreen.dart';
 
 void main() {
   Future<void> pumpMainMenuScreen(WidgetTester tester) async {
