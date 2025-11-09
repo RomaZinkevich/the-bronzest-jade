@@ -19,6 +19,8 @@ public class CharacterSetService {
     }
 
     public CharacterSet getCharacterSet(UUID id) {
-        return characterSetRepository.findById(id).orElseThrow(EntityNotFoundException::new);
+        return characterSetRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("CharacterSet with id " + id + " not found"));
+
     }
 }

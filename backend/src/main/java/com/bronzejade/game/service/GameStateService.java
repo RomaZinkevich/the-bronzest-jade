@@ -10,6 +10,7 @@ import com.bronzejade.game.repositories.GameActionRepository;
 import com.bronzejade.game.repositories.GameStateRepository;
 import com.bronzejade.game.repositories.RoomPlayerRepository;
 import com.bronzejade.game.repositories.RoomRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,17 +28,17 @@ public class GameStateService {
     @Transactional
     public void submitQuestion(String question, UUID roomId, UUID playerId) {
         Room room = roomRepo.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
+                .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
         GameState gameState = gameStateRepo.findByRoomId(roomId)
-                .orElseThrow(() -> new RuntimeException("Game state not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
 
         RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
-                .orElseThrow(() -> new RuntimeException("Turn player not found in room"));
+                .orElseThrow(() -> new EntityNotFoundException("Turn player not found in room"));
 
-        if (room.getStatus() != RoomStatus.IN_PROGRESS) throw new RuntimeException("Room is not in progress");
-        if (gameState.getTurnPlayer().getId() != player.getId()) throw new RuntimeException("Not permitted");
-        if (!gameState.getTurnPhase().equals(TurnPhase.ASKING)) throw new RuntimeException("Not permitted");
+        if (room.getStatus() != RoomStatus.IN_PROGRESS) throw new IllegalArgumentException("Room is not in progress");
+        if (gameState.getTurnPlayer().getId() != player.getId()) throw new IllegalArgumentException("Not user's turn to ask");
+        if (!gameState.getTurnPhase().equals(TurnPhase.ASKING)) throw new IllegalArgumentException("Not in ASKING phase");
 
         GameAction gameAction = new GameAction();
         gameAction.setGameState(gameState);
@@ -54,21 +55,21 @@ public class GameStateService {
     @Transactional
     public void submitAnswer(String answer, UUID roomId, UUID playerId) {
         Room room = roomRepo.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
+                .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
         GameState gameState = gameStateRepo.findByRoomId(roomId)
-                .orElseThrow(() -> new RuntimeException("Game state not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
 
         RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
-                .orElseThrow(() -> new RuntimeException("Turn player not found in room"));
+                .orElseThrow(() -> new EntityNotFoundException("Turn player not found in room"));
 
-        if (room.getStatus() != RoomStatus.IN_PROGRESS) throw new RuntimeException("Room is not in progress");
-        if (gameState.getTurnPlayer().getId() == player.getId()) throw new RuntimeException("Not permitted");
-        if (!gameState.getTurnPhase().equals(TurnPhase.ANSWERING)) throw new RuntimeException("Not permitted");
+        if (room.getStatus() != RoomStatus.IN_PROGRESS) throw new IllegalArgumentException("Room is not in progress");
+        if (gameState.getTurnPlayer().getId() == player.getId()) throw new IllegalArgumentException("Not user's turn to answer");
+        if (!gameState.getTurnPhase().equals(TurnPhase.ANSWERING)) throw new IllegalArgumentException("Not in ANSWERING phase");
 
         GameAction gameAction = gameActionRepository
                 .findByGameState_IdAndRoundNumber(gameState.getId(), gameState.getRoundNumber())
-                .orElseThrow(() -> new RuntimeException("Game action not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Game action not found"));
         gameAction.setAnswer(answer);
         gameAction.setAnsweringPlayer(player);
         gameActionRepository.save(gameAction);
