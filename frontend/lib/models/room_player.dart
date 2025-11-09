@@ -2,7 +2,7 @@ import 'package:guess_who/models/character.dart';
 
 class RoomPlayer {
   final String id;
-  final String roomId;
+  final String? roomId;
   final String userId;
   final bool isHost;
   final bool isReady;
@@ -11,7 +11,7 @@ class RoomPlayer {
 
   RoomPlayer({
     required this.id,
-    required this.roomId,
+    this.roomId,
     required this.userId,
     required this.isHost,
     required this.isReady,
@@ -22,7 +22,9 @@ class RoomPlayer {
   factory RoomPlayer.fromJson(Map<String, dynamic> json) {
     return RoomPlayer(
       id: json['id'] as String,
-      roomId: json['roomId'] as String,
+
+      roomId: json['roomId'] != null ? json['roomId'] as String : null,
+
       userId: json['userId'] as String,
       isHost: json['isHost'] as bool,
       isReady: json['isReady'] as bool,
