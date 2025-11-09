@@ -102,21 +102,20 @@ class QAMessageLog extends StatelessWidget {
       curve: Curves.easeInOut,
       child: isExpanded
           ? Container(
-              constraints: BoxConstraints(maxHeight: 250),
+              constraints: BoxConstraints(maxHeight: 300),
               child: ListView.builder(
                 controller: scrollController,
                 padding: const EdgeInsets.all(8),
                 itemCount: qaHistory.length,
                 itemBuilder: (context, index) {
                   final qa = qaHistory[index];
-                  final qId = qa["questionerId"];
                   final currentPlayerIdPrefix = currentPlayerId.substring(0, 6);
-                  final isMyQuestion = qId == currentPlayerIdPrefix;
 
                   return QAMessageItem(
                     question: qa["question"]!,
                     answer: qa["answer"]!,
-                    isMyQuestion: isMyQuestion,
+                    isMyQuestion: qa["questionerId"] == currentPlayerIdPrefix,
+                    isMyAnswer: qa["answererId"] == currentPlayerIdPrefix,
                   );
                 },
               ),
@@ -130,12 +129,14 @@ class QAMessageItem extends StatelessWidget {
   final String question;
   final String answer;
   final bool isMyQuestion;
+  final bool isMyAnswer;
 
   const QAMessageItem({
     super.key,
     required this.question,
     required this.answer,
     required this.isMyQuestion,
+    required this.isMyAnswer,
   });
 
   @override
@@ -206,9 +207,7 @@ class QAMessageItem extends StatelessWidget {
                         color: Theme.of(context).colorScheme.secondary,
                       ),
                       children: [
-                        TextSpan(
-                          text: "${!isMyQuestion ? "You" : "Opponent"}: ",
-                        ),
+                        TextSpan(text: "${isMyAnswer ? "You" : "Opponent"}: "),
                         TextSpan(
                           text: answer,
                           style: const TextStyle(fontWeight: FontWeight.bold),
