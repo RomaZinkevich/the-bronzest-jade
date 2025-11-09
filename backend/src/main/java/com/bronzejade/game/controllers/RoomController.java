@@ -11,7 +11,6 @@ import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.mapper.RoomMapper;
 import com.bronzejade.game.mapper.RoomPlayerMapper;
 import com.bronzejade.game.service.RoomService;
-import com.bronzejade.game.service.GuessCharacterService;
 import com.bronzejade.game.domain.entities.Room;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,82 +27,54 @@ public class RoomController {
 
     @PostMapping
     public ResponseEntity<RoomDto> createRoom(@RequestBody CreateRoomRequest createRoomRequest) {
-        try {
-            Room room = roomService.createRoom(createRoomRequest);
-            RoomDto roomDto = roomMapper.toDto(room);
-            return ResponseEntity.ok(roomDto);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        Room room = roomService.createRoom(createRoomRequest);
+        RoomDto roomDto = roomMapper.toDto(room);
+        return ResponseEntity.ok(roomDto);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteRoom(@PathVariable UUID id) {
-        try {
-            roomService.deleteRoom(id);
-            return ResponseEntity.ok("Room with id " + id + " has been deleted successfully");
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        roomService.deleteRoom(id);
+        return ResponseEntity.ok("Room with id " + id + " has been deleted successfully");
     }
 
     @PostMapping("/join/{roomCode}")
     public ResponseEntity<RoomDto> joinRoom(@PathVariable String roomCode, @RequestBody JoinRoomRequest joinRequest) {
-        try {
-            UUID playerId = joinRequest.getPlayerId();
-            Room room = roomService.joinRoom(roomCode, playerId);
-            RoomDto roomDto = roomMapper.toDto(room);
-            return ResponseEntity.ok(roomDto);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(null);
-        }
+        UUID playerId = joinRequest.getPlayerId();
+        Room room = roomService.joinRoom(roomCode, playerId);
+        RoomDto roomDto = roomMapper.toDto(room);
+        return ResponseEntity.ok(roomDto);
     }
 
     @PostMapping("/{id}/select-character")
     public ResponseEntity<RoomPlayerDto> selectCharacter(@PathVariable UUID id, @RequestBody SelectCharacterRequest characterRequest) {
-        try {
-            UUID playerId = characterRequest.getPlayerId();
-            UUID characterId = characterRequest.getCharacterId();
-            RoomPlayer player = roomService.selectCharacter(id, playerId, characterId);
-            RoomPlayerDto roomPlayerdto = roomPlayerMapper.toDto(player);
-            return ResponseEntity.ok(roomPlayerdto);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        UUID playerId = characterRequest.getPlayerId();
+        UUID characterId = characterRequest.getCharacterId();
+        RoomPlayer player = roomService.selectCharacter(id, playerId, characterId);
+        RoomPlayerDto roomPlayerdto = roomPlayerMapper.toDto(player);
+        return ResponseEntity.ok(roomPlayerdto);
     }
 
     @PostMapping("/{id}/leave")
     public ResponseEntity<Room> leaveRoom(@PathVariable UUID id, @RequestBody LeaveRoomRequest leaveRequest) {
-        try {
-            UUID playerId = leaveRequest.getPlayerId();
-            Room room = roomService.leaveRoom(id, playerId);
-            if (room == null) {
-                return ResponseEntity.ok().body(null); // Room was deleted
-            }
-            return ResponseEntity.ok(room);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+        UUID playerId = leaveRequest.getPlayerId();
+        Room room = roomService.leaveRoom(id, playerId);
+        if (room == null) {
+            return ResponseEntity.ok().body(null); // Room was deleted
         }
+        return ResponseEntity.ok(room);
     }
 
     @PostMapping("/{id}/finish")
     public ResponseEntity<Room> finishGame(@PathVariable UUID id, @RequestBody FinishGameRequest finishGameRequest) {
-        try {
-            UUID winnerId = finishGameRequest.getWinnerId();
-            Room room = roomService.finishGame(id, winnerId);
-            return ResponseEntity.ok(room);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        UUID winnerId = finishGameRequest.getWinnerId();
+        Room room = roomService.finishGame(id, winnerId);
+        return ResponseEntity.ok(room);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Room> getRoom(@PathVariable UUID id) {
-        try {
-            Room room = roomService.getRoom(id);
-            return ResponseEntity.ok(room);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+        Room room = roomService.getRoom(id);
+        return ResponseEntity.ok(room);
     }
 }

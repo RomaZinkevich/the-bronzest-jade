@@ -42,7 +42,7 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
         registry.addEndpoint("/ws")
                 .addInterceptors(playerHandshakeInterceptor)
                 .setHandshakeHandler(new PlayerHandshakeHandler())
-                .setAllowedOriginPatterns("*")  // Configure CORS as needed
+                .setAllowedOriginPatterns("http://localhost:8080", "http://localhost:63342","http://127.0.0.1:5500", "https://guesswho.190304.xyz")  // Configure CORS as needed
                 .withSockJS();  // Enable SockJS fallback options
 
         registry.addEndpoint("/ws-direct")

@@ -8,6 +8,7 @@ import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.domain.RoomStatus;
 import com.bronzejade.game.domain.TurnPhase;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import com.bronzejade.game.repositories.GameStateRepository;
 import com.bronzejade.game.repositories.RoomPlayerRepository;
@@ -28,34 +29,34 @@ public class GuessCharacterService{
     @Transactional
     public GuessCharacterResponse guessCharacter(UUID roomId, UUID playerId, UUID guessedCharacterId) {
         Room room = roomRepo.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + roomId));
+                .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
         if (room.getStatus() != RoomStatus.IN_PROGRESS) {
-            throw new RuntimeException("Game is not in progress");
+            throw new IllegalArgumentException("Game is not in progress");
         }
 
         GameState gameState = gameStateRepo.findByRoomId(roomId)
-                .orElseThrow(() -> new RuntimeException("Game state not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
 
         RoomPlayer guessingPlayer = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
-                .orElseThrow(() -> new RuntimeException("Player not found in room"));
+                .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
 
         // I am making essentially three checks here which determine whether,
         // the player can guess or not
 
         // CHECK 1: Turn player must exist
         if (gameState.getTurnPlayer() == null) {
-            throw new RuntimeException("Turn player not set");
+            throw new IllegalArgumentException("Turn player not set");
         }
 
         // CHECK 2: Must be the player's turn (who can guess?)
         if (!gameState.getTurnPlayer().getId().equals(guessingPlayer.getId())) {
-            throw new RuntimeException("It's not your turn");
+            throw new IllegalArgumentException("Not user's turn to guess");
         }
 
         // CHECK 3: Must be ASKING phase (when they can guess?)
         if (!gameState.getTurnPhase().equals(TurnPhase.ASKING)) {
-            throw new RuntimeException("You can't guess right now");
+            throw new IllegalArgumentException("Not in ASKING phase");
         }
 
         // Filtering out the opponent player
@@ -63,19 +64,19 @@ public class GuessCharacterService{
         RoomPlayer opponentPlayer = allPlayers.stream()
                 .filter(p -> !p.getId().equals(guessingPlayer.getId()))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Opponent not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Opponent not found"));
 
         // Validate the guessed character exists in the character set
         CharacterSet characterSet = room.getCharacterSet();
         Character guessedCharacter = characterSet.getCharacters().stream()
                 .filter(c -> c.getId().equals(guessedCharacterId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Guessed character not found in character set"));
+                .orElseThrow(() -> new EntityNotFoundException("Guessed character not found in character set"));
 
         // Get the opponent's actual character
         Character actualCharacter = opponentPlayer.getCharacterToGuess();
         if (actualCharacter == null) {
-            throw new RuntimeException("Opponent hasn't selected a character");
+            throw new IllegalArgumentException("Opponent hasn't selected a character");
         }
 
         // Check if the guess is correct
