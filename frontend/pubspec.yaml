@@ -1,0 +1,39 @@
+name: guess_who
+description: "Guess who? game"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/bg.jpg
+    - assets/main_menu.png
+    - assets/main_logo.png
+
+    - assets/icons/default_user.png
+    - assets/icons/find_room.png
+    - assets/icons/join_submit.png
+  fonts:
+  - family: BowlbyOneSC
+    fonts:
+      - asset: fonts/BowlbyOneSC-Regular.ttf
+
+
+
+
+
+
