@@ -36,6 +36,7 @@ public class GameStateService {
         RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
                 .orElseThrow(() -> new EntityNotFoundException("Turn player not found in room"));
 
+        //Room should be in progress state in order to submit a question
         if (room.getStatus() != RoomStatus.IN_PROGRESS) throw new IllegalArgumentException("Room is not in progress");
         if (gameState.getTurnPlayer().getId() != player.getId()) throw new IllegalArgumentException("Not user's turn to ask");
         if (!gameState.getTurnPhase().equals(TurnPhase.ASKING)) throw new IllegalArgumentException("Not in ASKING phase");
@@ -63,8 +64,16 @@ public class GameStateService {
         RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
                 .orElseThrow(() -> new EntityNotFoundException("Turn player not found in room"));
 
+        //Room should be in progress state in order to submit a question
         if (room.getStatus() != RoomStatus.IN_PROGRESS) throw new IllegalArgumentException("Room is not in progress");
+
+        /*
+          Counterintuitive, but turn player shows who was asking a question during Asking phase
+          So when it switches to Answer phase turn player doesn't change
+          So turn player should not be equal to player who answered a question (current player)
+         */
         if (gameState.getTurnPlayer().getId() == player.getId()) throw new IllegalArgumentException("Not user's turn to answer");
+
         if (!gameState.getTurnPhase().equals(TurnPhase.ANSWERING)) throw new IllegalArgumentException("Not in ANSWERING phase");
 
         GameAction gameAction = gameActionRepository
@@ -75,6 +84,8 @@ public class GameStateService {
         gameActionRepository.save(gameAction);
 
         gameState.setTurnPhase(TurnPhase.ASKING);
+
+        //finally switch turns
         gameState.setTurnPlayer(player);
         gameState.setRoundNumber(gameState.getRoundNumber() + 1);
         gameStateRepo.save(gameState);

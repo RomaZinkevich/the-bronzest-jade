@@ -17,6 +17,10 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 import java.util.UUID;
 
+/**
+ * Configures STOMP WebSocket messaging, endpoint registration, message broker setup,
+ * and inbound message validation for room access.
+ */
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer {
@@ -31,8 +35,11 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
+        // Prefix for application-level message mappings (@MessageMapping)
         config.setApplicationDestinationPrefixes("/app");
+        // Enable simple in-memory message broker for subscribing to destinations
         config.enableSimpleBroker("/topic", "/queue");
+        // Prefix for user-specific destinations (/user/...)
         config.setUserDestinationPrefix("/user");
     }
 
@@ -40,19 +47,15 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Register WebSocket endpoint that clients will use to connect
         registry.addEndpoint("/ws")
-                .addInterceptors(playerHandshakeInterceptor)
-                .setHandshakeHandler(new PlayerHandshakeHandler())
+                .addInterceptors(playerHandshakeInterceptor) // Extracts playerId before handshake
+                .setHandshakeHandler(new PlayerHandshakeHandler()) // Assigns Principal per connection
                 .setAllowedOriginPatterns("http://localhost:8080", "http://localhost:63342","http://127.0.0.1:5500", "https://guesswho.190304.xyz")  // Configure CORS as needed
                 .withSockJS();  // Enable SockJS fallback options
-
-        registry.addEndpoint("/ws-direct")
-                .addInterceptors(playerHandshakeInterceptor)
-                .setHandshakeHandler(new PlayerHandshakeHandler())
-                .setAllowedOriginPatterns("*");
     }
 
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
+        // Intercepts incoming STOMP frames to validate room membership
         registration.interceptors(new ChannelInterceptor() {
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -72,6 +75,7 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
                 if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
                     String destination = accessor.getDestination();
+                    // Validate that the subscribing player is actually in the room
                     if (destination.contains("room")) {
                         UUID playerId = UUID.fromString((String) accessor.getSessionAttributes().get("playerId"));
                         UUID roomId = UUID.fromString((String) accessor.getSessionAttributes().get("roomId"));
