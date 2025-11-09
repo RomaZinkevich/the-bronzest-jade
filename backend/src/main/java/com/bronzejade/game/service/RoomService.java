@@ -169,6 +169,7 @@ public class RoomService {
             throw new IllegalArgumentException("Not all players are ready");
         }
 
+        //Only host can start the game
         players.forEach(player -> {
             if (player.getUserId().equals(playerId) && !player.isHost()) {
                 throw new IllegalArgumentException("Player is not host");
@@ -181,6 +182,7 @@ public class RoomService {
         GameState gameState = gameStateRepo.findByRoomId(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
 
+        //For game to start it should have more than 1 player in it
         if (players.size() > 1) {
             RoomPlayer turnPlayer = players.get((int) (Math.random()*players.size()));
             gameState.setTurnPlayer(turnPlayer);

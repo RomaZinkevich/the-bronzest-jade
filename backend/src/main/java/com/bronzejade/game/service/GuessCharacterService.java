@@ -58,7 +58,7 @@ public class GuessCharacterService{
         if (!gameState.getTurnPhase().equals(TurnPhase.ASKING)) {
             throw new IllegalArgumentException("Not in ASKING phase");
         }
-
+//finally switch turns
         // Filtering out the opponent player
         List<RoomPlayer> allPlayers = roomPlayerRepo.findByRoomId(roomId);
         RoomPlayer opponentPlayer = allPlayers.stream()

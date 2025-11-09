@@ -8,6 +8,10 @@ import java.security.Principal;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Custom handshake handler that assigns a unique Principal to each WebSocket connection.
+ * Uses provided "playerId" attribute if available; otherwise generates an anonymous ID.
+ */
 public class PlayerHandshakeHandler extends DefaultHandshakeHandler {
     @Override
     protected Principal determineUser(ServerHttpRequest request,
@@ -16,6 +20,7 @@ public class PlayerHandshakeHandler extends DefaultHandshakeHandler {
 
         String playerId = (String) attributes.get("playerId");
 
+        //assigns randomId if none is provided
         if (playerId == null || playerId.isBlank()) {
             playerId = "anon-" + UUID.randomUUID();
         }

@@ -83,10 +83,10 @@ public class RoomWsController {
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
     public String handleException(Exception ex) {
-        System.out.println("Error: " + ex.getMessage());
         return ex.getMessage();
     }
 
+    //Retrieves roomId and playerId from session and checks if playerId is the room (from roomId)
     private ConnectionInfoDto retrieveConnectionInfo(SimpMessageHeaderAccessor accessor) {
         if (accessor.getSessionAttributes() == null) throw new IllegalArgumentException("Session attributes cannot be null");
         String roomId =  (String) accessor.getSessionAttributes().get("roomId");
