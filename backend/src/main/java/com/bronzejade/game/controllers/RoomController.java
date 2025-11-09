@@ -32,12 +32,6 @@ public class RoomController {
         return ResponseEntity.ok(roomDto);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteRoom(@PathVariable UUID id) {
-        roomService.deleteRoom(id);
-        return ResponseEntity.ok("Room with id " + id + " has been deleted successfully");
-    }
-
     @PostMapping("/join/{roomCode}")
     public ResponseEntity<RoomDto> joinRoom(@PathVariable String roomCode, @RequestBody JoinRoomRequest joinRequest) {
         UUID playerId = joinRequest.getPlayerId();
@@ -59,22 +53,9 @@ public class RoomController {
     public ResponseEntity<Room> leaveRoom(@PathVariable UUID id, @RequestBody LeaveRoomRequest leaveRequest) {
         UUID playerId = leaveRequest.getPlayerId();
         Room room = roomService.leaveRoom(id, playerId);
-        if (room == null) {
-            return ResponseEntity.ok().body(null); // Room was deleted
+        if (room == null) { // Means room was deleted, so null returned
+            return ResponseEntity.ok().body(null);
         }
-        return ResponseEntity.ok(room);
-    }
-
-    @PostMapping("/{id}/finish")
-    public ResponseEntity<Room> finishGame(@PathVariable UUID id, @RequestBody FinishGameRequest finishGameRequest) {
-        UUID winnerId = finishGameRequest.getWinnerId();
-        Room room = roomService.finishGame(id, winnerId);
-        return ResponseEntity.ok(room);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Room> getRoom(@PathVariable UUID id) {
-        Room room = roomService.getRoom(id);
         return ResponseEntity.ok(room);
     }
 }
