@@ -154,7 +154,9 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
         if (_currentQuestion != null) {
           final questionerId = _gameState.isMyTurn
               ? widget.playerId.substring(0, 6)
-              : answererId;
+              : (answererId == widget.playerId.substring(0, 6)
+                    ? "Opponent"
+                    : answererId);
 
           _qaHistory.add({
             "question": _currentQuestion!,
