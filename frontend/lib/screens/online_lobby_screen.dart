@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:guess_who/models/room.dart';
-import 'package:guess_who/models/room_player.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/websocket_service.dart';
 import 'package:guess_who/models/character.dart';
