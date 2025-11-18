@@ -44,7 +44,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         // Define allowed origins, methods, headers, and credential usage
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:63342", "http://127.0.0.1:5500", "https://guesswho.190304.xyz"));
+        config.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:63342", "http://127.0.0.1:5500", "https://guesswho.190304.xyz", "https://guess-who-web-nine.vercel.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
