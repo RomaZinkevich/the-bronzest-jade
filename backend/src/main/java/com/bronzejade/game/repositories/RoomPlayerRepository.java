@@ -11,4 +11,6 @@ public interface RoomPlayerRepository extends JpaRepository<RoomPlayer, UUID> {
     Optional<RoomPlayer> findByRoomIdAndUserId(UUID roomId, UUID userId);
     boolean existsByRoomIdAndUserId(UUID roomId, UUID userId);
     long countByRoomId(UUID roomId);
+
+    RoomPlayer findByHost(boolean host);
 }
