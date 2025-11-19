@@ -23,7 +23,13 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+                "jwt.secret=testsecret1234567890testsecret1234567890",
+                "jwt.expiration=86400000"
+        }
+)
 public class HelloWorldControllerIntegrationTest {
 
     @LocalServerPort

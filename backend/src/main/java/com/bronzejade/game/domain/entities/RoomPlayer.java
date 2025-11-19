@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import com.bronzejade.game.entities.User;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -25,8 +26,10 @@ public class RoomPlayer {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Room room;
 
-    @Column(nullable = false)
-    private UUID userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private User user;
 
     @Column(nullable = false, name = "is_host")
     private boolean host;
