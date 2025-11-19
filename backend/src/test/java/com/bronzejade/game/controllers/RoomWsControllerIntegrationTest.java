@@ -68,11 +68,11 @@ public class RoomWsControllerIntegrationTest {
     private CharacterSet createCharacterSet() {
         Character character = new Character();
         character.setName("bob");
-        character.setImage_url("bob.png");
+        character.setImageUrl("bob.png");
 
         Character character2 = new Character();
         character2.setName("charlie");
-        character2.setImage_url("char.png");
+        character2.setImageUrl("char.png");
 
         CharacterSet characterSet = new CharacterSet();
         characterSet.setName("test set");
