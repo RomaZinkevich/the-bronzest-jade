@@ -4,10 +4,7 @@ import com.bronzejade.game.service.ImageUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -24,5 +21,11 @@ public class ImageUploadController {
         String uniqueFilename = imageUploadService.uploadImage(image);
 
         return ResponseEntity.ok(uniqueFilename);
+    }
+
+    @DeleteMapping()
+    public ResponseEntity<?> deleteImage(@RequestParam("filename") String filename) throws IOException {
+        imageUploadService.deleteImage(filename);
+        return ResponseEntity.noContent().build();
     }
 }
