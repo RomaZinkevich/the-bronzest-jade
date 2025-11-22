@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:guess_who/models/room.dart';
-import 'package:guess_who/models/room_player.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/websocket_service.dart';
 import 'package:guess_who/models/character.dart';
@@ -33,7 +32,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
   bool _isReady = false;
   bool _isConnected = false;
   final List<String> _messages = [];
-  String? _errorMessage;
 
   final ScrollController _scrollController = ScrollController();
   bool _isMessageLogExpanded = false;
@@ -91,10 +89,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
 
     _errorSubscription = _wsService.errorStream.listen((error) {
       if (!mounted) return;
-
-      setState(() {
-        _errorMessage = error;
-      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

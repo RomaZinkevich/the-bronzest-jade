@@ -478,15 +478,15 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
                     RetroButton(
                       text: "Play local",
-                      fontSize: 18,
+                      fontSize: 20,
 
                       icon: Icons.videogame_asset,
-                      iconSize: 30,
+                      iconSize: 34,
                       iconAtEnd: true,
 
                       padding: EdgeInsets.symmetric(
-                        horizontal: 25,
-                        vertical: 15,
+                        horizontal: 26,
+                        vertical: 16,
                       ),
 
                       onPressed: () {
@@ -502,8 +502,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     const SizedBox(height: 60),
 
                     Container(
-                      margin: EdgeInsets.symmetric(horizontal: 30),
-                      padding: EdgeInsets.symmetric(vertical: 4),
+                      margin: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.sizeOf(context).width * 0.1,
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 2),
                       decoration: BoxDecoration(
                         shape: BoxShape.rectangle,
                         border: BoxBorder.all(
@@ -515,10 +517,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
                             child: Container(
-                              margin: EdgeInsets.only(left: 8),
+                              margin: EdgeInsets.only(left: 6),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(100),
                                 boxShadow: [
@@ -563,9 +566,13 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                             onPressed: _joinWithCode,
                             tooltip: "Join with code",
                             imagePath: "assets/icons/join_submit.png",
-                            iconSize: 65,
+                            iconSize: 64,
                             padding: 0,
-                            margin: EdgeInsets.only(right: 5),
+                            margin: EdgeInsets.only(
+                              top: 2,
+                              bottom: 2,
+                              right: 4,
+                            ),
 
                             backgroundColor: Theme.of(
                               context,
@@ -585,7 +592,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           fontSize: 18,
 
                           padding: EdgeInsets.symmetric(
-                            horizontal: 50,
+                            horizontal: 40,
                             vertical: 20,
                           ),
 
@@ -595,7 +602,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           onPressed: _showCreateRoomMenu,
                         ),
 
-                        SizedBox(width: 8),
+                        SizedBox(width: 4),
 
                         RetroIconButton(
                           onPressed: _showFindRoomsMenu,

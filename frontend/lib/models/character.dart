@@ -9,11 +9,11 @@ class Character {
     return Character(
       id: json["id"] as String,
       name: json["name"] as String,
-      imageUrl: json["image_url"] as String,
+      imageUrl: json["imageUrl"] as String,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {"id": id, "name": name, "image_url": imageUrl};
+    return {"id": id, "name": name, "imageUrl": imageUrl};
   }
 }
