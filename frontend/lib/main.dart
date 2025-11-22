@@ -15,10 +15,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Guess Who?',
       theme: AppTheme.lightTheme,
-      home: const ResponsiveWrapper(child: MainMenuScreen()),
-      // builder: (context, child) {
-      //   return ResponsiveWrapper(child: child ?? const SizedBox.shrink());
-      // },
+      home: const MainMenuScreen(),
+      builder: (context, child) {
+        return ResponsiveWrapper(child: child ?? const SizedBox.shrink());
+      },
     );
   }
 }

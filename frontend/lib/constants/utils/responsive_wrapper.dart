@@ -11,12 +11,10 @@ class ResponsiveWrapper extends StatelessWidget {
       builder: (context, constraints) {
         final isWideScreen = constraints.maxWidth > 500;
 
-        // On mobile or narrow screens, use full screen
         if (!isWideScreen) {
           return child;
         }
 
-        // On wide screens (desktop/tablet), show phone frame
         return Scaffold(
           backgroundColor: const Color(0xFF1a1a1a),
           body: Container(
