@@ -24,7 +24,7 @@ public class Character {
     private String name;
 
     @Column(nullable = false)
-    private String image_url;
+    private String imageUrl;
 
     @ManyToMany(mappedBy = "characters", fetch = FetchType.LAZY)
     private Set<CharacterSet> characterSets = new HashSet<>();

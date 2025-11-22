@@ -57,7 +57,7 @@ public class RoomWsController {
     public void question(String payload, SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
         gameStateService.submitQuestion(payload, UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
-        MessageDto msg = messageCrafter(payload,  connectionInfoDto.getPlayerId());
+        MessageDto msg = messageCrafter(": " + payload,  connectionInfoDto.getPlayerId());
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), msg);
     }
 
@@ -65,7 +65,7 @@ public class RoomWsController {
     public void answer(String payload, SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
         gameStateService.submitAnswer(payload, UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
-        MessageDto msg = messageCrafter(payload,  connectionInfoDto.getPlayerId());
+        MessageDto msg = messageCrafter(": " + payload,  connectionInfoDto.getPlayerId());
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), msg);
     }
 
@@ -83,6 +83,7 @@ public class RoomWsController {
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
     public String handleException(Exception ex) {
+        System.out.println("Error " +  ex.getMessage());
         return ex.getMessage();
     }
 
