@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:guess_who/models/character.dart';
 import 'package:guess_who/models/character_set.dart';
 import 'package:guess_who/models/room.dart';
 import 'package:guess_who/models/room_player.dart';
@@ -65,6 +66,36 @@ class ApiService {
       }
     } catch (e) {
       throw Exception("Error selecting character: $e");
+    }
+  }
+
+  static Future<CharacterSet> createCharacterSet(
+    String name,
+    String createdBy,
+    bool isPublic,
+    List<Character> characters,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/character-sets"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "name": name,
+          "createdBy": createdBy,
+          "isPublic": isPublic,
+          "characters": characters.map((c) => c.toJson()).toList(),
+        }),
+      );
+
+      if (response.statusCode != 201) {
+        throw Exception("Failed to create character set: ${response.body}");
+      }
+
+      final jsonBody = json.decode(response.body);
+      return CharacterSet.fromJson(jsonBody);
+    } catch (e) {
+      debugPrint(e.toString());
+      throw Exception("Something went wrong: $e");
     }
   }
 
