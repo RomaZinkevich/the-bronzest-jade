@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/screens/online_lobby_screen.dart';
 import 'package:guess_who/services/api_service.dart';
@@ -450,6 +451,14 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         playerName: "Guest Player",
         playerId: "#${_playerId.substring(0, 6)}",
         onSettingsPressed: () {},
+        onCreateCharacterSetPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CreateCharactersetScreen(),
+            ),
+          );
+        },
       ),
       body: Stack(
         children: [

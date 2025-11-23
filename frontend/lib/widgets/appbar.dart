@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:guess_who/widgets/retro_icon_button.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String playerName;
   final String playerId;
   final String profilePicture;
   final VoidCallback onSettingsPressed;
+  final VoidCallback? onCreateCharacterSetPressed;
 
   const CustomAppBar({
     super.key,
@@ -12,6 +14,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.playerName,
     required this.playerId,
     required this.onSettingsPressed,
+    this.onCreateCharacterSetPressed,
   });
 
   @override
@@ -27,22 +30,38 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       shadowColor: Colors.black,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          IconButton(
-            onPressed: onSettingsPressed,
-            icon: Icon(
-              Icons.settings_rounded,
-              size: 40,
-              color: Theme.of(context).colorScheme.tertiary,
-              shadows: [
-                Shadow(
-                  color: Colors.black54,
-                  offset: Offset(0, 2),
-                  blurRadius: 6,
-                ),
-              ],
-            ),
+          Row(
+            children: [
+              RetroIconButton(
+                onPressed: () {},
+                icon: Icons.settings_rounded,
+                iconSize: 30,
+                padding: 10,
+
+                tooltip: "Settings",
+
+                backgroundColor: Theme.of(context).colorScheme.tertiary,
+                iconColor: Theme.of(context).colorScheme.secondary,
+              ),
+
+              RetroIconButton(
+                onPressed: () {
+                  onCreateCharacterSetPressed?.call();
+                },
+                icon: Icons.person_add_alt_1_rounded,
+                iconSize: 30,
+                padding: 10,
+
+                tooltip: "Add character set",
+
+                backgroundColor: Theme.of(context).colorScheme.tertiary,
+                iconColor: Theme.of(context).colorScheme.secondary,
+              ),
+            ],
           ),
+
           Row(
             children: [
               Column(
