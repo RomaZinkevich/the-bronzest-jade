@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:guess_who/models/character.dart';
 import 'package:guess_who/models/character_set.dart';
 import 'package:guess_who/models/room.dart';
 import 'package:guess_who/models/room_player.dart';
@@ -69,11 +69,35 @@ class ApiService {
     }
   }
 
+  static Future<String> uploadImage(File imageFile) async {
+    try {
+      var request = http.MultipartRequest(
+        "POST",
+        Uri.parse("$baseUrl/images/upload"),
+      );
+
+      request.files.add(
+        await http.MultipartFile.fromPath("image", imageFile.path),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        throw Exception("Failed to upload image: ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("Error uploading images: $e");
+    }
+  }
+
   static Future<CharacterSet> createCharacterSet(
     String name,
     String createdBy,
     bool isPublic,
-    List<Character> characters,
+    List<Map<String, String>> characters,
   ) async {
     try {
       final response = await http.post(
@@ -83,7 +107,7 @@ class ApiService {
           "name": name,
           "createdBy": createdBy,
           "isPublic": isPublic,
-          "characters": characters.map((c) => c.toJson()).toList(),
+          "characters": characters,
         }),
       );
 
