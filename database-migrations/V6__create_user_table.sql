@@ -12,24 +12,29 @@ CREATE UNIQUE INDEX idx_users_username ON users(username);
 
 CREATE INDEX idx_users_created_at ON users(created_at);
 
--- Remove old column user_id column
+-- Make user_id nullable to support guest users
 ALTER TABLE room_players 
-    DROP COLUMN IF EXISTS user_id;
+    ADD COLUMN user_id UUID;
 
--- Add correct user reference (another user_id column)
+-- Add guest columns
 ALTER TABLE room_players
-    ADD COLUMN user_id UUID NOT NULL;
+    ADD COLUMN guest_display_name VARCHAR(255),
+    ADD COLUMN guest_session_id UUID;
 
--- If there are existing rows
-ALTER TABLE room_players ALTER COLUMN user_id SET NOT NULL;
-
--- Add foreign key constraint
+-- Add foreign key constraint for authenticated users
 ALTER TABLE room_players
     ADD CONSTRAINT fk_room_players_user
     FOREIGN KEY (user_id)
     REFERENCES users(id)
     ON DELETE CASCADE;
 
--- Index for faster lookup
-CREATE INDEX idx_room_players_user_id
-    ON room_players(user_id);
+-- Add constraint to ensure at least one user type is present
+ALTER TABLE room_players 
+    ADD CONSTRAINT chk_user_or_guest 
+    CHECK (
+        (user_id IS NOT NULL) OR (guest_session_id IS NOT NULL)
+    );
+
+-- Index for faster lookups
+CREATE INDEX idx_room_players_user_id ON room_players(user_id);
+CREATE INDEX idx_room_players_guest_session ON room_players(guest_session_id);

@@ -8,7 +8,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class LeaveRoomRequest {
+public class PlayerActionRequest {
     private UUID userId;              // For authenticated users (nullable)
     private UUID guestSessionId;      // For guest users
 }

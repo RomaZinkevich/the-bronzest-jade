@@ -26,10 +26,18 @@ public class RoomPlayer {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Room room;
 
+    // For authenticated users
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
+
+    // For guest users
+    @Column(name = "guest_display_name")
+    private String guestDisplayName;
+
+    @Column(name = "guest_session_id")
+    private UUID guestSessionId;
 
     @Column(nullable = false, name = "is_host")
     private boolean host;
@@ -44,6 +52,26 @@ public class RoomPlayer {
 
     @Column(nullable = false)
     private LocalDateTime joinedAt;
+
+    public String getDisplayName() {
+        if (user != null) {
+            return user.getUsername();
+        } else {
+            return guestDisplayName != null ? guestDisplayName : "Guest";
+        }
+    }
+
+    public UUID getUserId() {
+        if (user != null) {
+            return user.getId();
+        } else {
+            return guestSessionId;
+        }
+    }
+
+    public boolean isGuest() {
+        return user == null;
+    }
 
     @PrePersist
     public void onCreate() {
