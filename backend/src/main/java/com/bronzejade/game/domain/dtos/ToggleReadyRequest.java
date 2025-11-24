@@ -9,6 +9,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class ToggleReadyRequest {
-    private UUID playerId;
+    private UUID userId; // For authenticated users
+    private UUID guestSessionId; // For guest users
 }

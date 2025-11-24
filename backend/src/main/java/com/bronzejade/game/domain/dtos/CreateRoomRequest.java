@@ -9,7 +9,10 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class CreateRoomRequest {
-    private UUID hostId;
     private UUID characterSetId;
+    private UUID userId; // For authenticated users
+    private UUID guestSessionId; // For guest users
+    private String guestDisplayName; // For guest users
 }

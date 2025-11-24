@@ -6,12 +6,14 @@ import com.bronzejade.game.domain.entities.CharacterSet;
 import com.bronzejade.game.domain.entities.Character;
 import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
+import com.bronzejade.game.entities.User;
 import com.bronzejade.game.repositories.GameStateRepository;
 import com.bronzejade.game.repositories.RoomPlayerRepository;
 import com.bronzejade.game.repositories.RoomRepository;
 import com.bronzejade.game.domain.entities.Room;
 import com.bronzejade.game.domain.RoomStatus;
 import com.bronzejade.game.domain.TurnPhase;
+import com.bronzejade.game.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import com.bronzejade.game.mapper.RoomPlayerMapper;
 public class RoomService {
     private final RoomRepository roomRepo;
     private final RoomPlayerRepository roomPlayerRepo;
+    private final UserRepository userRepo;
     private final GameStateRepository gameStateRepo;
     private final CharacterSetService characterSetService;
     private final RoomPlayerMapper roomPlayerMapper;
@@ -33,9 +36,8 @@ public class RoomService {
     @Transactional
     public Room createRoom(CreateRoomRequest createRoomRequest) {
         CharacterSet characterSet = characterSetService.getCharacterSet(createRoomRequest.getCharacterSetId());
-        UUID hostId =  createRoomRequest.getHostId();
+
         Room room = Room.builder()
-                .hostId(hostId)
                 .characterSet(characterSet)
                 .maxPlayers(2)
                 .status(RoomStatus.WAITING)
@@ -43,16 +45,27 @@ public class RoomService {
 
         Room savedRoom = roomRepo.save(room);
 
-        // Host is set as the first player to join the room
-        RoomPlayer hostPlayer = RoomPlayer.builder()
+        // Create host player (can be authenticated or guest)
+        RoomPlayer.RoomPlayerBuilder hostBuilder = RoomPlayer.builder()
                 .room(savedRoom)
-                .userId(hostId)
                 .host(true)
                 .ready(false)
-                .joinedAt(LocalDateTime.now())
-                .build();
+                .joinedAt(LocalDateTime.now());
 
-        roomPlayerRepo.save(hostPlayer);
+        if (createRoomRequest.getUserId() != null) {
+            // Authenticated user
+            User user = userRepo.findById(createRoomRequest.getUserId())
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            hostBuilder.user(user);
+            room.setHostId(user.getId());
+        } else {
+            // Guest user
+            hostBuilder.guestSessionId(createRoomRequest.getGuestSessionId())
+                    .guestDisplayName(createRoomRequest.getGuestDisplayName());
+            room.setHostId(createRoomRequest.getGuestSessionId());
+        }
+
+        roomPlayerRepo.save(hostBuilder.build());
 
         GameState gameState = GameState.builder()
                 .room(savedRoom)
@@ -62,7 +75,7 @@ public class RoomService {
 
         gameStateRepo.save(gameState);
 
-        return savedRoom;
+        return roomRepo.save(savedRoom);
     }
 
     public void deleteRoom(UUID id) {
@@ -72,7 +85,8 @@ public class RoomService {
         roomRepo.deleteById(id);
     }
 
-    public Room joinRoom(String roomCode, UUID playerId) {
+    @Transactional
+    public Room joinRoom(String roomCode, UUID userId, UUID guestSessionId, String guestDisplayName) {
         Room room = roomRepo.findByRoomCode(roomCode.toUpperCase())
                 .orElseThrow(() -> new EntityNotFoundException("Room could not be found"));
 
@@ -82,40 +96,62 @@ public class RoomService {
             throw new IllegalArgumentException("Room is not available for joining");
         }
 
-        boolean playerAlreadyInRoom = roomPlayerRepo.existsByRoomIdAndUserId(roomId, playerId);
+        // Check if player already in room
+        boolean playerAlreadyInRoom;
+        if (userId != null) {
+            User user = userRepo.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            playerAlreadyInRoom = roomPlayerRepo.existsByRoomIdAndUser(roomId, user);
+        } else {
+            playerAlreadyInRoom = roomPlayerRepo.existsByRoomIdAndGuestSessionId(roomId, guestSessionId);
+        }
+
         if (playerAlreadyInRoom) {
             throw new IllegalArgumentException("Player is already in the room");
         }
 
-        // Checking if the room is full
+        // Check if room is full
         long currentPlayerCount = roomPlayerRepo.countByRoomId(roomId);
         if (currentPlayerCount >= room.getMaxPlayers()) {
             throw new IllegalArgumentException("Room is full");
         }
 
-        RoomPlayer newPlayer = RoomPlayer.builder()
+        // Create new player
+        RoomPlayer.RoomPlayerBuilder playerBuilder = RoomPlayer.builder()
                 .room(room)
-                .userId(playerId)
                 .host(false)
                 .ready(false)
-                .joinedAt(LocalDateTime.now())
-                .build();
+                .joinedAt(LocalDateTime.now());
 
-        roomPlayerRepo.save(newPlayer);
-
-        long updatedPlayerCount = roomPlayerRepo.countByRoomId(roomId);
-        if (updatedPlayerCount >= room.getMaxPlayers() && newPlayer.isReady()) {
-            room.setStatus(RoomStatus.IN_PROGRESS);
+        if (userId != null) {
+            User user = userRepo.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            playerBuilder.user(user);
+        } else {
+            playerBuilder.guestSessionId(guestSessionId)
+                    .guestDisplayName(guestDisplayName);
         }
-        return roomRepo.save(room);
+
+        roomPlayerRepo.save(playerBuilder.build());
+
+        return room;
     }
 
-    public Room leaveRoom(UUID roomId, UUID playerId) {
+    @Transactional
+    public Room leaveRoom(UUID roomId, UUID userId, UUID guestSessionId) {
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
-        RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
-                .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
+        RoomPlayer player;
+        if (userId != null) {
+            User user = userRepo.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            player = roomPlayerRepo.findByRoomIdAndUser(roomId, user)
+                    .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
+        } else {
+            player = roomPlayerRepo.findByRoomIdAndGuestSessionId(roomId, guestSessionId)
+                    .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
+        }
 
         boolean wasHost = player.isHost();
 
@@ -123,12 +159,14 @@ public class RoomService {
 
         if (wasHost) {
             List<RoomPlayer> remainingPlayers = roomPlayerRepo.findByRoomId(roomId);
-            if (remainingPlayers.isEmpty()) { // if there are no players left after host leaves delete the room
+            if (remainingPlayers.isEmpty()) {
+                // No players left, delete room
                 roomRepo.delete(room);
                 return null;
             } else {
+                // Assign new host
                 RoomPlayer newHost = remainingPlayers.get(0);
-                newHost.setHost(true); // Setting the remaining player as the new host
+                newHost.setHost(true);
                 roomPlayerRepo.save(newHost);
                 room.setHostId(newHost.getUserId());
             }
@@ -144,21 +182,35 @@ public class RoomService {
     }
 
     @Transactional
-    public RoomPlayer togglePlayerReady(UUID roomId, UUID playerId) {
-        RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
-                .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
-        if (player.getCharacterToGuess() == null) { throw new IllegalStateException("Player didn't select character"); }
+    public RoomPlayer togglePlayerReady(UUID roomId, UUID userId, UUID guestSessionId) {
+        RoomPlayer player;
+        if (userId != null) {
+            User user = userRepo.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            player = roomPlayerRepo.findByRoomIdAndUser(roomId, user)
+                    .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
+        } else {
+            player = roomPlayerRepo.findByRoomIdAndGuestSessionId(roomId, guestSessionId)
+                    .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
+        }
+
+        if (player.getCharacterToGuess() == null) {
+            throw new IllegalStateException("Player didn't select character");
+        }
 
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
-        if (room.getStatus() != RoomStatus.WAITING) {throw new IllegalArgumentException("Room is not in waiting process");}
+
+        if (room.getStatus() != RoomStatus.WAITING) {
+            throw new IllegalArgumentException("Room is not in waiting process");
+        }
 
         player.setReady(!player.isReady());
         return roomPlayerRepo.save(player);
     }
 
     @Transactional
-    public RoomPlayerDto startGame(UUID roomId, UUID playerId) {
+    public RoomPlayerDto startGame(UUID roomId, UUID userId, UUID guestSessionId) {
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
@@ -169,12 +221,21 @@ public class RoomService {
             throw new IllegalArgumentException("Not all players are ready");
         }
 
-        //Only host can start the game
-        players.forEach(player -> {
-            if (player.getUserId().equals(playerId) && !player.isHost()) {
-                throw new IllegalArgumentException("Player is not host");
-            }
-        });
+        // Only host can start the game
+        RoomPlayer requestingPlayer;
+        if (userId != null) {
+            User user = userRepo.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            requestingPlayer = roomPlayerRepo.findByRoomIdAndUser(roomId, user)
+                    .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
+        } else {
+            requestingPlayer = roomPlayerRepo.findByRoomIdAndGuestSessionId(roomId, guestSessionId)
+                    .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
+        }
+
+        if (!requestingPlayer.isHost()) {
+            throw new IllegalArgumentException("Player is not host");
+        }
 
         room.setStatus(RoomStatus.IN_PROGRESS);
         room.setStartedAt(LocalDateTime.now());
@@ -182,9 +243,9 @@ public class RoomService {
         GameState gameState = gameStateRepo.findByRoomId(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
 
-        //For game to start it should have more than 1 player in it
+        // For game to start it should have more than 1 player in it
         if (players.size() > 1) {
-            RoomPlayer turnPlayer = players.get((int) (Math.random()*players.size()));
+            RoomPlayer turnPlayer = players.get((int) (Math.random() * players.size()));
             gameState.setTurnPlayer(turnPlayer);
             gameState.setRoundNumber(1);
             gameStateRepo.save(gameState);
@@ -193,34 +254,37 @@ public class RoomService {
         throw new IllegalArgumentException("Not enough players in the room");
     }
 
-    public RoomPlayer selectCharacter(UUID roomId, UUID playerId, UUID characterId) {
+    @Transactional
+    public RoomPlayer selectCharacter(UUID roomId, UUID userId, UUID guestSessionId, UUID characterId) {
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
-        if(room.getStatus() != RoomStatus.WAITING) {
-            throw new IllegalArgumentException("Cannot select players when the game is going on");
+        if (room.getStatus() != RoomStatus.WAITING) {
+            throw new IllegalArgumentException("Cannot select characters when the game is in progress");
         }
 
-        RoomPlayer player = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
-                .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
+        RoomPlayer player;
+        if (userId != null) {
+            User user = userRepo.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+            player = roomPlayerRepo.findByRoomIdAndUser(roomId, user)
+                    .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
+        } else {
+            player = roomPlayerRepo.findByRoomIdAndGuestSessionId(roomId, guestSessionId)
+                    .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
+        }
 
         CharacterSet characterSet = room.getCharacterSet();
-        boolean characterExists = characterSet.getCharacters().stream()
-                .anyMatch(c -> c.getId().equals(characterId));
-
-        if (!characterExists) {
-            throw new EntityNotFoundException("Character not found in room's character set");
-        }
-
         Character character = characterSet.getCharacters().stream()
                 .filter(c -> c.getId().equals(characterId))
                 .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("Character not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Character not found in room's character set"));
 
         player.setCharacterToGuess(character);
         return roomPlayerRepo.save(player);
     }
 
+    @Transactional
     public Room finishGame(UUID roomId, UUID winnerId) {
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));

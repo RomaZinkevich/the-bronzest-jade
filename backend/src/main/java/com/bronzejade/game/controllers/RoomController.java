@@ -34,28 +34,44 @@ public class RoomController {
 
     @PostMapping("/join/{roomCode}")
     public ResponseEntity<RoomDto> joinRoom(@PathVariable String roomCode, @RequestBody JoinRoomRequest joinRequest) {
-        UUID playerId = joinRequest.getPlayerId();
-        Room room = roomService.joinRoom(roomCode, playerId);
+        Room room = roomService.joinRoom(
+                roomCode,
+                joinRequest.getUserId(),
+                joinRequest.getGuestSessionId(),
+                joinRequest.getGuestDisplayName()
+        );
         RoomDto roomDto = roomMapper.toDto(room);
         return ResponseEntity.ok(roomDto);
     }
 
     @PostMapping("/{id}/select-character")
-    public ResponseEntity<RoomPlayerDto> selectCharacter(@PathVariable UUID id, @RequestBody SelectCharacterRequest characterRequest) {
-        UUID playerId = characterRequest.getPlayerId();
-        UUID characterId = characterRequest.getCharacterId();
-        RoomPlayer player = roomService.selectCharacter(id, playerId, characterId);
-        RoomPlayerDto roomPlayerdto = roomPlayerMapper.toDto(player);
-        return ResponseEntity.ok(roomPlayerdto);
+    public ResponseEntity<RoomPlayerDto> selectCharacter(
+            @PathVariable UUID id,
+            @RequestBody SelectCharacterRequest characterRequest) {
+        RoomPlayer player = roomService.selectCharacter(
+                id,
+                characterRequest.getUserId(),
+                characterRequest.getGuestSessionId(),
+                characterRequest.getCharacterId()
+        );
+        RoomPlayerDto roomPlayerDto = roomPlayerMapper.toDto(player);
+        return ResponseEntity.ok(roomPlayerDto);
     }
 
     @PostMapping("/{id}/leave")
-    public ResponseEntity<Room> leaveRoom(@PathVariable UUID id, @RequestBody LeaveRoomRequest leaveRequest) {
-        UUID playerId = leaveRequest.getPlayerId();
-        Room room = roomService.leaveRoom(id, playerId);
-        if (room == null) { // Means room was deleted, so null returned
+    public ResponseEntity<RoomDto> leaveRoom(
+            @PathVariable UUID id,
+            @RequestBody LeaveRoomRequest leaveRequest) {
+        Room room = roomService.leaveRoom(
+                id,
+                leaveRequest.getUserId(),
+                leaveRequest.getGuestSessionId()
+        );
+        if (room == null) {
+            // Room was deleted
             return ResponseEntity.ok().body(null);
         }
-        return ResponseEntity.ok(room);
+        RoomDto roomDto = roomMapper.toDto(room);
+        return ResponseEntity.ok(roomDto);
     }
 }

@@ -46,7 +46,6 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 // No authorization restrictions
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Do not create HTTP sessions
