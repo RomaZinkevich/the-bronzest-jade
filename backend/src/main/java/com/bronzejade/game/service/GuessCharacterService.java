@@ -2,7 +2,7 @@ package com.bronzejade.game.service;
 
 import com.bronzejade.game.repositories.RoomRepository;
 import com.bronzejade.game.repositories.UserRepository;
-import com.bronzejade.game.entities.User;
+import com.bronzejade.game.domain.entities.User;
 import java.util.UUID;
 import java.time.LocalDateTime;
 import java.util.List;

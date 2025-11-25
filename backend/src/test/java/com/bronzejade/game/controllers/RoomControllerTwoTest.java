@@ -6,7 +6,6 @@ import com.bronzejade.game.domain.dtos.SelectCharacterRequest;
 import com.bronzejade.game.domain.dtos.RoomDto;
 import com.bronzejade.game.domain.entities.Room;
 import com.bronzejade.game.domain.entities.RoomPlayer;
-import com.bronzejade.game.entities.User;
 import com.bronzejade.game.mapper.RoomMapper;
 import com.bronzejade.game.mapper.RoomPlayerMapper;
 import com.bronzejade.game.service.RoomService;

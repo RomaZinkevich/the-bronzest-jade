@@ -5,7 +5,7 @@ import com.bronzejade.game.domain.TurnPhase;
 import com.bronzejade.game.domain.entities.GameAction;
 import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.Room;
-import com.bronzejade.game.entities.User;
+import com.bronzejade.game.domain.entities.User;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.repositories.*;
 import jakarta.persistence.EntityNotFoundException;

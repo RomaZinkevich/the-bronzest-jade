@@ -6,7 +6,7 @@ import com.bronzejade.game.domain.entities.CharacterSet;
 import com.bronzejade.game.domain.entities.Character;
 import com.bronzejade.game.domain.entities.GameState;
 import com.bronzejade.game.domain.entities.RoomPlayer;
-import com.bronzejade.game.entities.User;
+import com.bronzejade.game.domain.entities.User;
 import com.bronzejade.game.repositories.GameStateRepository;
 import com.bronzejade.game.repositories.RoomPlayerRepository;
 import com.bronzejade.game.repositories.RoomRepository;
