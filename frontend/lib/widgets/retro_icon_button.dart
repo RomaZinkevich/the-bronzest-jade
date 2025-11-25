@@ -55,12 +55,15 @@ class RetroIconButton extends StatelessWidget {
         margin: margin,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            shape: CircleBorder(
-              side: BorderSide(
-                width: borderWidth,
-                color: borderColor ?? Theme.of(context).colorScheme.tertiary,
-              ),
-            ),
+            shape: borderWidth > 0
+                ? CircleBorder(
+                    side: BorderSide(
+                      width: borderWidth,
+                      color:
+                          borderColor ?? Theme.of(context).colorScheme.tertiary,
+                    ),
+                  )
+                : null,
             backgroundColor: bgColor,
             foregroundColor: iconColor,
             padding: EdgeInsets.all(padding),

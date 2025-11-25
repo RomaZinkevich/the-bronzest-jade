@@ -15,6 +15,7 @@ dependencies:
   stomp_dart_client: ^3.0.1
   uuid: ^4.5.2
   shared_preferences: 2.5.3
+  image_picker: 1.2.1
 
 dev_dependencies:
   flutter_test:

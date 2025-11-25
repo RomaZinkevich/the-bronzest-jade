@@ -7,6 +7,7 @@ import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/screens/online_lobby_screen.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/widgets/appbar.dart';
+import 'package:guess_who/widgets/inner_shadow_input.dart';
 import 'package:guess_who/widgets/popup_menu.dart';
 import 'package:guess_who/widgets/retro_button.dart';
 import 'package:guess_who/widgets/retro_icon_button.dart';
@@ -455,7 +456,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const CreateCharactersetScreen(),
+              builder: (context) =>
+                  CreateCharactersetScreen(playerId: _playerId),
             ),
           );
         },
@@ -510,85 +512,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
                     const SizedBox(height: 60),
 
-                    Container(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: MediaQuery.sizeOf(context).width * 0.1,
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.rectangle,
-                        border: BoxBorder.all(
-                          color: Theme.of(context).colorScheme.primary,
-                          width: 4,
-                        ),
-                        borderRadius: BorderRadius.circular(100),
-                        color: Theme.of(context).colorScheme.tertiary,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Container(
-                              margin: EdgeInsets.only(left: 6),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                boxShadow: [
-                                  const BoxShadow(color: Color(0xFF5B7B76)),
-                                  BoxShadow(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.secondary,
-                                    blurRadius: 4,
-                                    spreadRadius: -2,
-                                  ),
-                                ],
-                              ),
-                              child: TextField(
-                                controller: _roomCodeController,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.tertiary,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: "Join with code...",
-                                  hintStyle: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.tertiary.withAlpha(150),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(width: 4),
-
-                          RetroIconButton(
-                            onPressed: _joinWithCode,
-                            tooltip: "Join with code",
-                            imagePath: "assets/icons/join_submit.png",
-                            iconSize: 64,
-                            padding: 0,
-                            margin: EdgeInsets.only(
-                              top: 2,
-                              bottom: 2,
-                              right: 4,
-                            ),
-
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.secondary,
-                          ),
-                        ],
-                      ),
+                    InnerShadowInput(
+                      controller: _roomCodeController,
+                      onSubmit: _joinWithCode,
+                      submitTooltip: "Join with code",
+                      hintText: "Join with code...",
                     ),
 
                     const SizedBox(height: 10),
@@ -619,6 +547,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           imagePath: "assets/icons/find_room.png",
                           iconSize: 55,
                           padding: 6,
+                          borderWidth: 0,
                         ),
                       ],
                     ),

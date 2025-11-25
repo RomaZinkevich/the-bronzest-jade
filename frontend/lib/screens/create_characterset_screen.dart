@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:guess_who/models/character_set_draft.dart';
+import 'package:guess_who/services/draft_storage_service.dart';
+import 'package:guess_who/widgets/character_draft_dialogue.dart';
+import 'package:guess_who/widgets/popup_menu.dart';
 import 'package:guess_who/widgets/retro_icon_button.dart';
+import 'package:uuid/uuid.dart';
 
 class CreateCharactersetScreen extends StatefulWidget {
-  const CreateCharactersetScreen({super.key});
+  final String playerId;
+
+  const CreateCharactersetScreen({super.key, required this.playerId});
 
   @override
   State<CreateCharactersetScreen> createState() =>
@@ -10,7 +17,70 @@ class CreateCharactersetScreen extends StatefulWidget {
 }
 
 class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
-  bool _isExpanded = false;
+  List<CharacterSetDraft> _drafts = [];
+  CharacterSetDraft? _currentDraft;
+
+  final TextEditingController _draftNameController = TextEditingController();
+
+  bool _isLoading = false;
+  bool _isDraftExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDrafts();
+  }
+
+  Future<void> _loadDrafts() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final drafts = await DraftStorageService.loadDrafts();
+      setState(() {
+        _drafts = drafts;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Failed to load drafts: $e",
+              textAlign: TextAlign.center,
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _createNewDraft() {
+    showDialog(
+      context: context,
+      builder: (context) => CharacterDraftDialogue(
+        onCreateDraft: (name, isPublic) {
+          final draft = CharacterSetDraft(
+            id: const Uuid().v4(),
+            name: name,
+            characters: [],
+            isPublic: isPublic,
+            lastModified: DateTime.now(),
+          );
+
+          setState(() {
+            _currentDraft = draft;
+            _drafts.add(draft);
+          });
+
+          debugPrint("name: ${draft.name}, public: ${draft.isPublic}");
+          DraftStorageService.saveDraft(draft);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -32,10 +102,12 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
         foregroundColor: Theme.of(context).colorScheme.tertiary,
         actions: [
           RetroIconButton(
-            onPressed: () {},
-            margin: EdgeInsets.zero,
+            onPressed: () {
+              _createNewDraft();
+            },
+            margin: EdgeInsets.only(right: 6),
             backgroundColor: Theme.of(context).colorScheme.secondary,
-            borderWidth: 4,
+            borderWidth: 3,
             borderColor: Theme.of(context).colorScheme.tertiary,
 
             icon: Icons.add,
@@ -78,13 +150,13 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
                       InkWell(
                         onTap: () => {
                           setState(() {
-                            _isExpanded = !_isExpanded;
+                            _isDraftExpanded = !_isDraftExpanded;
                           }),
                         },
                         child: Row(
                           children: [
                             AnimatedRotation(
-                              turns: _isExpanded ? 0 : 0.5,
+                              turns: _isDraftExpanded ? 0 : 0.5,
                               duration: const Duration(milliseconds: 150),
                               child: Icon(
                                 Icons.expand_circle_down_outlined,
@@ -114,7 +186,7 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
                     padding: EdgeInsets.all(4),
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
-                    height: _isExpanded
+                    height: _isDraftExpanded
                         ? MediaQuery.of(context).size.height * 0.5
                         : 0,
                     child: ClipRect(
