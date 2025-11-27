@@ -30,7 +30,7 @@ public class GuessCharacterService {
     private final UserRepository userRepo;
 
     @Transactional
-    public GuessCharacterResponse guessCharacter(UUID roomId, UUID userId, UUID guestSessionId, UUID guessedCharacterId) {
+    public GuessCharacterResponse guessCharacter(UUID roomId, UUID userId, UUID guessedCharacterId) {
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
@@ -41,8 +41,11 @@ public class GuessCharacterService {
         GameState gameState = gameStateRepo.findByRoomId(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
 
-        // Get the guessing player (authenticated or guest)
-        RoomPlayer guessingPlayer = getPlayerFromRoom(roomId, userId, guestSessionId);
+        // Simplified player lookup - no more helper method
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        RoomPlayer guessingPlayer = roomPlayerRepo.findByRoomIdAndUser(roomId, user)
+                .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
 
         // I am making essentially three checks here which determine whether,
         // the player can guess or not
@@ -98,8 +101,8 @@ public class GuessCharacterService {
             room.setStatus(RoomStatus.FINISHED);
             room.setFinishedAt(LocalDateTime.now());
 
-            // Set winner ID based on player type
-            UUID winnerId = guessingPlayer.getUserId(); // Uses the getUserId() method from RoomPlayer entity
+            // Set winner ID - always a User ID now
+            UUID winnerId = guessingPlayer.getUser().getId();
             gameState.setWinnerId(winnerId);
 
             gameStateRepo.save(gameState);
@@ -121,23 +124,6 @@ public class GuessCharacterService {
                     .winnerId(null)
                     .message("Wrong guess! Turn passes to opponent.")
                     .build();
-        }
-    }
-
-    /**
-     * Helper method to get RoomPlayer based on userId or guestSessionId
-     */
-    private RoomPlayer getPlayerFromRoom(UUID roomId, UUID userId, UUID guestSessionId) {
-        if (userId != null) {
-            User user = userRepo.findById(userId)
-                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
-            return roomPlayerRepo.findByRoomIdAndUser(roomId, user)
-                    .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
-        } else if (guestSessionId != null) {
-            return roomPlayerRepo.findByRoomIdAndGuestSessionId(roomId, guestSessionId)
-                    .orElseThrow(() -> new EntityNotFoundException("Guest player not found in room"));
-        } else {
-            throw new IllegalArgumentException("Either userId or guestSessionId must be provided");
         }
     }
 }

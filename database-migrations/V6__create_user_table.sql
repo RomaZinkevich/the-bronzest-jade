@@ -11,14 +11,22 @@ CREATE UNIQUE INDEX idx_users_username ON users(username);
 
 CREATE INDEX idx_users_created_at ON users(created_at);
 
--- Make user_id nullable to support guest users
+-- Delete the column if it already exists
 ALTER TABLE room_players 
-    ADD COLUMN user_id UUID;
+    DROP COLUMN IF EXISTS user_id;
+
+-- Then add it properly as a foreign key
+ALTER TABLE room_players 
+    ADD COLUMN user_id UUID REFERENCES users(id);
 
 -- Add guest columns
 ALTER TABLE room_players
     ADD COLUMN guest_display_name VARCHAR(255),
     ADD COLUMN guest_session_id UUID;
+
+-- Delete the rows that would violate the constraint
+DELETE FROM room_players 
+WHERE user_id IS NULL AND guest_session_id IS NULL;
 
 -- Add foreign key constraint for authenticated users
 ALTER TABLE room_players

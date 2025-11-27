@@ -47,7 +47,7 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Register WebSocket endpoint that clients will use to connect
         registry.addEndpoint("/ws")
-                .addInterceptors(playerHandshakeInterceptor) // Extracts userId before handshake
+                .addInterceptors(playerHandshakeInterceptor) // Extracts playerId before handshake
                 .setHandshakeHandler(new PlayerHandshakeHandler()) // Assigns Principal per connection
                 .setAllowedOriginPatterns("http://localhost:8080", "http://localhost:63342","http://127.0.0.1:5500", "https://guesswho.190304.xyz", "https://guess-who-web-nine.vercel.app")  // Configure CORS as needed
                 .withSockJS();  // Enable SockJS fallback options
@@ -63,21 +63,13 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
                         MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-                    // Try to extract userId from native headers
+                    // Try to extract playerId from native headers
                     String userId = accessor.getFirstNativeHeader("userId");
-                    String guestSessionId = accessor.getFirstNativeHeader("guestSessionId");
                     String roomId = accessor.getFirstNativeHeader("roomId");
 
-                    if (roomId != null) {
-                        accessor.getSessionAttributes().put("roomId", roomId);
-                    }
-
-                    if (userId != null) {
+                    if (userId != null && roomId != null) {
                         accessor.getSessionAttributes().put("userId", userId);
-                        accessor.getSessionAttributes().put("guestSessionId", null);
-                    } else if (guestSessionId != null) {
-                        accessor.getSessionAttributes().put("userId", null);
-                        accessor.getSessionAttributes().put("guestSessionId", guestSessionId);
+                        accessor.getSessionAttributes().put("roomId", roomId);
                     }
                 }
 
@@ -86,14 +78,14 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
                     // Validate that the subscribing player is actually in the room
                     if (destination.contains("room")) {
                         UUID userId = UUID.fromString((String) accessor.getSessionAttributes().get("userId"));
-                        UUID guestSessionId = UUID.fromString((String) accessor.getSessionAttributes().get("guestSessionId"));
                         UUID roomId = UUID.fromString((String) accessor.getSessionAttributes().get("roomId"));
 
-                        if (!roomPlayerService.isInRoom(roomId, userId, guestSessionId)) {
+                        if (!roomPlayerService.isInRoom(roomId, userId)) {
                             throw new MessagingException("Access to this room is forbidden.");
                         }
                     }
                 }
+
                 return message;
             }
         });

@@ -12,6 +12,7 @@ import com.bronzejade.game.mapper.RoomMapper;
 import com.bronzejade.game.mapper.RoomPlayerMapper;
 import com.bronzejade.game.service.RoomService;
 import com.bronzejade.game.domain.entities.Room;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,32 +27,27 @@ public class RoomController {
     private final RoomPlayerMapper roomPlayerMapper;
 
     @PostMapping
-    public ResponseEntity<RoomDto> createRoom(@RequestBody CreateRoomRequest createRoomRequest) {
+    public ResponseEntity<RoomDto> createRoom(@Valid @RequestBody CreateRoomRequest createRoomRequest) {
         Room room = roomService.createRoom(createRoomRequest);
         RoomDto roomDto = roomMapper.toDto(room);
         return ResponseEntity.ok(roomDto);
     }
 
     @PostMapping("/join/{roomCode}")
-    public ResponseEntity<RoomDto> joinRoom(@PathVariable String roomCode, @RequestBody JoinRoomRequest joinRequest) {
+    public ResponseEntity<RoomDto> joinRoom(@PathVariable String roomCode, @Valid @RequestBody JoinRoomRequest joinRequest) {
         Room room = roomService.joinRoom(
                 roomCode,
-                joinRequest.getUserId(),
-                joinRequest.getGuestSessionId(),
-                joinRequest.getGuestDisplayName()
+                joinRequest.getUserId()
         );
         RoomDto roomDto = roomMapper.toDto(room);
         return ResponseEntity.ok(roomDto);
     }
 
     @PostMapping("/{id}/select-character")
-    public ResponseEntity<RoomPlayerDto> selectCharacter(
-            @PathVariable UUID id,
-            @RequestBody SelectCharacterRequest characterRequest) {
+    public ResponseEntity<RoomPlayerDto> selectCharacter(@PathVariable UUID id, @Valid @RequestBody SelectCharacterRequest characterRequest) {
         RoomPlayer player = roomService.selectCharacter(
                 id,
                 characterRequest.getUserId(),
-                characterRequest.getGuestSessionId(),
                 characterRequest.getCharacterId()
         );
         RoomPlayerDto roomPlayerDto = roomPlayerMapper.toDto(player);
@@ -59,13 +55,10 @@ public class RoomController {
     }
 
     @PostMapping("/{id}/leave")
-    public ResponseEntity<RoomDto> leaveRoom(
-            @PathVariable UUID id,
-            @RequestBody LeaveRoomRequest leaveRequest) {
+    public ResponseEntity<RoomDto> leaveRoom(@PathVariable UUID id, @Valid @RequestBody LeaveRoomRequest leaveRequest) {
         Room room = roomService.leaveRoom(
                 id,
-                leaveRequest.getUserId(),
-                leaveRequest.getGuestSessionId()
+                leaveRequest.getUserId()
         );
         if (room == null) {
             // Room was deleted

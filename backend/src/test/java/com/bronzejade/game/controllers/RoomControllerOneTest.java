@@ -5,8 +5,10 @@ import com.bronzejade.game.domain.dtos.CharacterSetDto;
 import com.bronzejade.game.domain.dtos.CreateRoomRequest;
 import com.bronzejade.game.domain.dtos.JoinRoomRequest;
 import com.bronzejade.game.domain.dtos.RoomDto;
+import com.bronzejade.game.domain.dtos.UserDto;
 import com.bronzejade.game.domain.entities.CharacterSet;
 import com.bronzejade.game.domain.entities.Room;
+import com.bronzejade.game.domain.entities.User;
 import com.bronzejade.game.mapper.RoomMapper;
 import com.bronzejade.game.service.RoomService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,7 +49,8 @@ class RoomControllerOneTest {
     private UUID testUserId;
     private UUID testCharacterSetId;
     private UUID testRoomId;
-    private UUID testGuestSessionId;
+    private User testHostUser;
+    private UserDto testHostUserDto;
 
     @BeforeEach
     void setUp() {
@@ -58,13 +61,27 @@ class RoomControllerOneTest {
         testUserId = UUID.randomUUID();
         testCharacterSetId = UUID.randomUUID();
         testRoomId = UUID.randomUUID();
-        testGuestSessionId = UUID.randomUUID();
+
+        // Create test host user and DTO
+        testHostUser = User.builder()
+                .id(testUserId)
+                .username("testuser")
+                .email("test@example.com")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        testHostUserDto = UserDto.builder()
+                .id(testUserId)
+                .username("testuser")
+                .email("test@example.com")
+                .createdAt(testHostUser.getCreatedAt())
+                .build();
     }
 
-    // ===== Tests for createRoom API (Authenticated User) =====
+    // ===== Tests for createRoom API =====
 
     @Test
-    void createRoom_ShouldReturnCreatedRoom_WhenAuthenticatedUserCreates() throws Exception {
+    void createRoom_ShouldReturnCreatedRoom() throws Exception {
         CreateRoomRequest request = new CreateRoomRequest();
         request.setUserId(testUserId);
         request.setCharacterSetId(testCharacterSetId);
@@ -77,7 +94,7 @@ class RoomControllerOneTest {
         Room room = Room.builder()
                 .id(testRoomId)
                 .roomCode("ABC123")
-                .hostId(testUserId)
+                .host(testHostUser)
                 .status(RoomStatus.WAITING)
                 .maxPlayers(2)
                 .characterSet(characterSet)
@@ -92,7 +109,7 @@ class RoomControllerOneTest {
         RoomDto roomDto = RoomDto.builder()
                 .id(testRoomId)
                 .roomCode("ABC123")
-                .hostId(testUserId)
+                .host(testHostUserDto)
                 .status(RoomStatus.WAITING)
                 .maxPlayers(2)
                 .characterSet(characterSetDto)
@@ -109,7 +126,9 @@ class RoomControllerOneTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(testRoomId.toString()))
                 .andExpect(jsonPath("$.roomCode").value("ABC123"))
-                .andExpect(jsonPath("$.hostId").value(testUserId.toString()))
+                .andExpect(jsonPath("$.host.id").value(testUserId.toString()))
+                .andExpect(jsonPath("$.host.username").value("testuser"))
+                .andExpect(jsonPath("$.host.email").value("test@example.com"))
                 .andExpect(jsonPath("$.status").value("WAITING"))
                 .andExpect(jsonPath("$.maxPlayers").value(2))
                 .andExpect(jsonPath("$.characterSet.id").value(testCharacterSetId.toString()));
@@ -118,68 +137,15 @@ class RoomControllerOneTest {
         verify(roomMapper, times(1)).toDto(any(Room.class));
     }
 
-    @Test
-    void createRoom_ShouldReturnCreatedRoom_WhenGuestUserCreates() throws Exception {
-        CreateRoomRequest request = new CreateRoomRequest();
-        request.setGuestSessionId(testGuestSessionId);
-        request.setGuestDisplayName("Guest Player");
-        request.setCharacterSetId(testCharacterSetId);
-
-        CharacterSet characterSet = CharacterSet.builder()
-                .id(testCharacterSetId)
-                .name("Test Character Set")
-                .build();
-
-        Room room = Room.builder()
-                .id(testRoomId)
-                .roomCode("XYZ789")
-                .hostId(testGuestSessionId)
-                .status(RoomStatus.WAITING)
-                .maxPlayers(2)
-                .characterSet(characterSet)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        CharacterSetDto characterSetDto = CharacterSetDto.builder()
-                .id(testCharacterSetId)
-                .name("Test Character Set")
-                .build();
-
-        RoomDto roomDto = RoomDto.builder()
-                .id(testRoomId)
-                .roomCode("XYZ789")
-                .hostId(testGuestSessionId)
-                .status(RoomStatus.WAITING)
-                .maxPlayers(2)
-                .characterSet(characterSetDto)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        when(roomService.createRoom(any(CreateRoomRequest.class))).thenReturn(room);
-        when(roomMapper.toDto(any(Room.class))).thenReturn(roomDto);
-
-        mockMvc.perform(post("/api/rooms")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(testRoomId.toString()))
-                .andExpect(jsonPath("$.roomCode").value("XYZ789"))
-                .andExpect(jsonPath("$.hostId").value(testGuestSessionId.toString()));
-
-        verify(roomService, times(1)).createRoom(any(CreateRoomRequest.class));
-        verify(roomMapper, times(1)).toDto(any(Room.class));
-    }
-
-    // ===== Tests for joinRoom API (Authenticated User) =====
+    // ===== Tests for joinRoom API =====
 
     @Test
-    void joinRoom_ShouldReturnJoinedRoom_WhenAuthenticatedUserJoins() throws Exception {
+    void joinRoom_ShouldReturnJoinedRoom() throws Exception {
         String roomCode = "ROOM123";
         UUID playerId = UUID.randomUUID();
 
         JoinRoomRequest joinRoomRequest = new JoinRoomRequest();
-        joinRoomRequest.setUserId(playerId);
+        joinRoomRequest.setUserId(playerId); // Only userId needed now
 
         CharacterSet characterSet = CharacterSet.builder()
                 .id(UUID.randomUUID())
@@ -189,7 +155,7 @@ class RoomControllerOneTest {
         Room joinedRoom = Room.builder()
                 .id(testRoomId)
                 .roomCode(roomCode)
-                .hostId(testUserId)
+                .host(testHostUser)
                 .status(RoomStatus.WAITING)
                 .maxPlayers(2)
                 .characterSet(characterSet)
@@ -204,13 +170,14 @@ class RoomControllerOneTest {
         RoomDto roomDto = RoomDto.builder()
                 .id(testRoomId)
                 .roomCode(roomCode)
-                .hostId(testUserId)
+                .host(testHostUserDto)
                 .status(RoomStatus.WAITING)
                 .maxPlayers(2)
                 .characterSet(characterSetDto)
                 .build();
 
-        when(roomService.joinRoom(eq(roomCode), eq(playerId), eq(null), eq(null))).thenReturn(joinedRoom);
+        // Updated method call - only roomCode and userId
+        when(roomService.joinRoom(eq(roomCode), eq(playerId))).thenReturn(joinedRoom);
         when(roomMapper.toDto(joinedRoom)).thenReturn(roomDto);
 
         mockMvc.perform(post("/api/rooms/join/{roomCode}", roomCode)
@@ -220,49 +187,28 @@ class RoomControllerOneTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(testRoomId.toString()))
                 .andExpect(jsonPath("$.roomCode").value(roomCode))
+                .andExpect(jsonPath("$.host.id").value(testUserId.toString()))
+                .andExpect(jsonPath("$.host.username").value("testuser"))
                 .andExpect(jsonPath("$.status").value("WAITING"))
                 .andExpect(jsonPath("$.maxPlayers").value(2));
 
-        verify(roomService, times(1)).joinRoom(eq(roomCode), eq(playerId), eq(null), eq(null));
+        verify(roomService, times(1)).joinRoom(eq(roomCode), eq(playerId));
         verify(roomMapper, times(1)).toDto(joinedRoom);
     }
 
+    // You might want to add a test for when userId is not provided
     @Test
-    void joinRoom_ShouldReturnJoinedRoom_WhenGuestUserJoins() throws Exception {
-        String roomCode = "GUEST123";
-        UUID guestSessionId = UUID.randomUUID();
-        String guestDisplayName = "Guest Player";
+    void joinRoom_ShouldReturnBadRequest_WhenUserIdMissing() throws Exception {
+        String roomCode = "ROOM123";
 
         JoinRoomRequest joinRoomRequest = new JoinRoomRequest();
-        joinRoomRequest.setGuestSessionId(guestSessionId);
-        joinRoomRequest.setGuestDisplayName(guestDisplayName);
-
-        Room joinedRoom = Room.builder()
-                .id(testRoomId)
-                .roomCode(roomCode)
-                .hostId(testUserId)
-                .status(RoomStatus.WAITING)
-                .maxPlayers(2)
-                .build();
-
-        RoomDto roomDto = RoomDto.builder()
-                .id(testRoomId)
-                .roomCode(roomCode)
-                .build();
-
-        when(roomService.joinRoom(eq(roomCode), eq(null), eq(guestSessionId), eq(guestDisplayName)))
-                .thenReturn(joinedRoom);
-        when(roomMapper.toDto(joinedRoom)).thenReturn(roomDto);
+        // No userId set
 
         mockMvc.perform(post("/api/rooms/join/{roomCode}", roomCode)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(joinRoomRequest)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.id").value(testRoomId.toString()))
-                .andExpect(jsonPath("$.roomCode").value(roomCode));
+                .andExpect(status().isBadRequest());
 
-        verify(roomService, times(1)).joinRoom(eq(roomCode), eq(null), eq(guestSessionId), eq(guestDisplayName));
-        verify(roomMapper, times(1)).toDto(joinedRoom);
+        verify(roomService, never()).joinRoom(any(), any());
     }
 }

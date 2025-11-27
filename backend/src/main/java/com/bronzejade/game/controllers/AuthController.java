@@ -29,14 +29,20 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/validate")
-    public ResponseEntity<Boolean> validateToken(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.ok(false);
-        }
-
-        String token = authHeader.substring(7);
-        boolean isValid = authService.validateToken(token);
-        return ResponseEntity.ok(isValid);
+    @PostMapping("/guest")
+    public ResponseEntity<AuthResponse> createGuest() {
+        AuthResponse response = authService.createGuestUser();
+        return ResponseEntity.ok(response);
     }
+
+//    @PostMapping("/validate")
+//    public ResponseEntity<Boolean> validateToken(@RequestHeader("Authorization") String authHeader) {
+//        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+//            return ResponseEntity.ok(false);
+//        }
+//
+//        String token = authHeader.substring(7);
+//        boolean isValid = authService.validateToken(token);
+//        return ResponseEntity.ok(isValid);
+//    }
 }

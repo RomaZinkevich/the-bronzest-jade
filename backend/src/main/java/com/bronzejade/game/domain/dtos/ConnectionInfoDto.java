@@ -11,7 +11,6 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ConnectionInfoDto {
     private String roomId;
-    private UUID userId; // For authenticated users
-    private UUID guestSessionId; // For guest users
-    private String displayName; // Optional display name from session
+    private UUID userId;
+    private String displayName;
 }

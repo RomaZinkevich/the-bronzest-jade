@@ -10,8 +10,6 @@ import java.util.UUID;
 public interface RoomPlayerRepository extends JpaRepository<RoomPlayer, UUID> {
     List<RoomPlayer> findByRoomId(UUID roomId);
     Optional<RoomPlayer> findByRoomIdAndUser(UUID roomId, User user);
-    Optional<RoomPlayer> findByRoomIdAndGuestSessionId(UUID roomId, UUID guestSessionId);
     boolean existsByRoomIdAndUser(UUID roomId, User user);
-    boolean existsByRoomIdAndGuestSessionId(UUID roomId, UUID guestSessionId);
     long countByRoomId(UUID roomId);
 }

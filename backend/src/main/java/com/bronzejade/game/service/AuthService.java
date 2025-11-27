@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -26,7 +27,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
-        // Check if username or email already exists
+        // Check if username or email already exist
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username already exists");
         }
@@ -61,13 +62,28 @@ public class AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Get user details
         User user = (User) authentication.getPrincipal();
 
-        // Generate JWT token
         String token = jwtUtil.generateToken(user.getId());
 
         return new AuthResponse(token, user.getId(), user.getUsername());
+    }
+
+    public AuthResponse createGuestUser() {
+        UUID guestSessionId = UUID.randomUUID();
+
+        User guestUser = User.builder()
+                .username("guest_" + guestSessionId.toString().substring(0, 8))
+                .email(null)
+                .password("")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        User savedUser = userRepository.save(guestUser);
+
+        String token = jwtUtil.generateToken(savedUser.getId());
+
+        return new AuthResponse(token, savedUser.getId(), savedUser.getUsername());
     }
 
     public boolean validateToken(String token) {

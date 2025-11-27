@@ -16,18 +16,12 @@ public class RoomPlayerService {
     private final RoomPlayerRepository roomPlayerRepository;
     private final UserRepository userRepository;
 
-    public boolean isInRoom(UUID roomId, UUID userId, UUID guestSessionId) {
-        if (userId != null) {
-            // Check for authenticated user
-            Optional<User> user = userRepository.findById(userId);
-            if (user.isEmpty()) {
-                return false;
-            }
-            return roomPlayerRepository.existsByRoomIdAndUser(roomId, user.get());
-        } else if (guestSessionId != null) {
-            // Check for guest user
-            return roomPlayerRepository.existsByRoomIdAndGuestSessionId(roomId, guestSessionId);
-        }
-        return false;
+    public boolean isInRoom(UUID roomId, UUID userId) {
+        // Get user from database
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check if user is in the room
+        return roomPlayerRepository.existsByRoomIdAndUser(roomId, user);
     }
 }

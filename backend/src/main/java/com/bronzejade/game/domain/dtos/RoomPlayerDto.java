@@ -12,9 +12,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class RoomPlayerDto {
     private UUID id;
-    private String displayName;
     private UUID userId;
-    private UUID guestSessionId;
 
     @JsonProperty("isHost")
     private boolean host;

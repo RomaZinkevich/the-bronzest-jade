@@ -50,7 +50,6 @@ class RoomControllerTwoTest {
     private UUID testRoomId;
     private UUID testPlayerId;
     private UUID testCharacterId;
-    private UUID testGuestSessionId;
 
     @BeforeEach
     void setUp() {
@@ -61,7 +60,6 @@ class RoomControllerTwoTest {
         testRoomId = UUID.randomUUID();
         testPlayerId = UUID.randomUUID();
         testCharacterId = UUID.randomUUID();
-        testGuestSessionId = UUID.randomUUID();
     }
 
     // ===== Tests for selectCharacter API =====
@@ -70,7 +68,6 @@ class RoomControllerTwoTest {
     void selectCharacter_ShouldReturnRoomPlayerDto_WhenValidRequest() throws Exception {
         SelectCharacterRequest request = new SelectCharacterRequest();
         request.setUserId(testPlayerId);
-        request.setGuestSessionId(testGuestSessionId);
         request.setCharacterId(testCharacterId);
 
         RoomPlayer roomPlayer = RoomPlayer.builder()
@@ -80,7 +77,8 @@ class RoomControllerTwoTest {
         RoomPlayerDto roomPlayerDto = new RoomPlayerDto();
         roomPlayerDto.setId(roomPlayer.getId());
 
-        when(roomService.selectCharacter(eq(testRoomId), eq(testPlayerId), eq(testGuestSessionId), eq(testCharacterId)))
+        // Updated method call - only userId and characterId
+        when(roomService.selectCharacter(eq(testRoomId), eq(testPlayerId), eq(testCharacterId)))
                 .thenReturn(roomPlayer);
         when(roomPlayerMapper.toDto(roomPlayer)).thenReturn(roomPlayerDto);
 
@@ -90,7 +88,7 @@ class RoomControllerTwoTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(roomPlayer.getId().toString()));
 
-        verify(roomService, times(1)).selectCharacter(testRoomId, testPlayerId, testGuestSessionId, testCharacterId);
+        verify(roomService, times(1)).selectCharacter(testRoomId, testPlayerId, testCharacterId);
         verify(roomPlayerMapper, times(1)).toDto(roomPlayer);
     }
 
@@ -98,7 +96,6 @@ class RoomControllerTwoTest {
     void selectCharacter_ShouldCallService_WithCorrectParameters() throws Exception {
         SelectCharacterRequest request = new SelectCharacterRequest();
         request.setUserId(testPlayerId);
-        request.setGuestSessionId(testGuestSessionId);
         request.setCharacterId(testCharacterId);
 
         RoomPlayer roomPlayer = RoomPlayer.builder()
@@ -108,7 +105,7 @@ class RoomControllerTwoTest {
         RoomPlayerDto roomPlayerDto = new RoomPlayerDto();
         roomPlayerDto.setId(roomPlayer.getId());
 
-        when(roomService.selectCharacter(any(), any(), any(), any())).thenReturn(roomPlayer);
+        when(roomService.selectCharacter(any(), any(), any())).thenReturn(roomPlayer);
         when(roomPlayerMapper.toDto(any())).thenReturn(roomPlayerDto);
 
         mockMvc.perform(post("/api/rooms/" + testRoomId + "/select-character")
@@ -116,7 +113,8 @@ class RoomControllerTwoTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
-        verify(roomService).selectCharacter(eq(testRoomId), eq(testPlayerId), eq(testGuestSessionId), eq(testCharacterId));
+        // Updated verification - only 3 parameters now
+        verify(roomService).selectCharacter(eq(testRoomId), eq(testPlayerId), eq(testCharacterId));
         verify(roomPlayerMapper).toDto(roomPlayer);
     }
 
@@ -125,8 +123,7 @@ class RoomControllerTwoTest {
     @Test
     void leaveRoom_ShouldReturnRoomDto_WhenRoomExists() throws Exception {
         LeaveRoomRequest request = new LeaveRoomRequest();
-        request.setUserId(testPlayerId);
-        request.setGuestSessionId(testGuestSessionId);
+        request.setUserId(testPlayerId); // Only userId needed
 
         Room room = Room.builder()
                 .id(testRoomId)
@@ -135,7 +132,8 @@ class RoomControllerTwoTest {
         RoomDto roomDto = new RoomDto();
         roomDto.setId(testRoomId);
 
-        when(roomService.leaveRoom(testRoomId, testPlayerId, testGuestSessionId)).thenReturn(room);
+        // Updated method call - only userId
+        when(roomService.leaveRoom(testRoomId, testPlayerId)).thenReturn(room);
         when(roomMapper.toDto(room)).thenReturn(roomDto);
 
         mockMvc.perform(post("/api/rooms/" + testRoomId + "/leave")
@@ -144,17 +142,17 @@ class RoomControllerTwoTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(testRoomId.toString()));
 
-        verify(roomService, times(1)).leaveRoom(testRoomId, testPlayerId, testGuestSessionId);
+        verify(roomService, times(1)).leaveRoom(testRoomId, testPlayerId);
         verify(roomMapper, times(1)).toDto(room);
     }
 
     @Test
     void leaveRoom_ShouldReturnNullBody_WhenRoomDeleted() throws Exception {
         LeaveRoomRequest request = new LeaveRoomRequest();
-        request.setUserId(testPlayerId);
-        request.setGuestSessionId(testGuestSessionId);
+        request.setUserId(testPlayerId); // Only userId needed
 
-        when(roomService.leaveRoom(testRoomId, testPlayerId, testGuestSessionId)).thenReturn(null);
+        // Updated method call - only userId
+        when(roomService.leaveRoom(testRoomId, testPlayerId)).thenReturn(null);
 
         mockMvc.perform(post("/api/rooms/" + testRoomId + "/leave")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -162,7 +160,21 @@ class RoomControllerTwoTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(""));
 
-        verify(roomService, times(1)).leaveRoom(testRoomId, testPlayerId, testGuestSessionId);
+        verify(roomService, times(1)).leaveRoom(testRoomId, testPlayerId);
         verify(roomMapper, never()).toDto(any());
+    }
+
+    // Add test for missing userId
+    @Test
+    void leaveRoom_ShouldReturnBadRequest_WhenUserIdMissing() throws Exception {
+        LeaveRoomRequest request = new LeaveRoomRequest();
+        // No userId set
+
+        mockMvc.perform(post("/api/rooms/" + testRoomId + "/leave")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+
+        verify(roomService, never()).leaveRoom(any(), any());
     }
 }

@@ -30,7 +30,7 @@ public class User implements UserDetails{
     private String username;
 
     @Column(nullable = false)
-    private String password; // hashed
+    private String password;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 

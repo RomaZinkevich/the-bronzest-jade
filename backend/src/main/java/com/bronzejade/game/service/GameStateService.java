@@ -25,14 +25,18 @@ public class GameStateService {
     private final GameActionRepository gameActionRepository;
 
     @Transactional
-    public void submitQuestion(String question, UUID roomId, UUID userId, UUID guestSessionId) {
+    public void submitQuestion(String question, UUID roomId, UUID userId) {  // Remove guestSessionId parameter
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
         GameState gameState = gameStateRepo.findByRoomId(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
 
-        RoomPlayer player = getPlayerFromRoom(roomId, userId, guestSessionId);
+        // Simplified player lookup
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        RoomPlayer player = roomPlayerRepo.findByRoomIdAndUser(roomId, user)
+                .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
 
         // Room should be in progress state in order to submit a question
         if (room.getStatus() != RoomStatus.IN_PROGRESS) {
@@ -58,25 +62,29 @@ public class GameStateService {
     }
 
     @Transactional
-    public void submitAnswer(String answer, UUID roomId, UUID userId, UUID guestSessionId) {
+    public void submitAnswer(String answer, UUID roomId, UUID userId) {  // Remove guestSessionId parameter
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
         GameState gameState = gameStateRepo.findByRoomId(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
 
-        RoomPlayer player = getPlayerFromRoom(roomId, userId, guestSessionId);
+        // Simplified player lookup - no more helper method needed
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        RoomPlayer player = roomPlayerRepo.findByRoomIdAndUser(roomId, user)
+                .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
 
         // Room should be in progress state in order to submit an answer
         if (room.getStatus() != RoomStatus.IN_PROGRESS) {
             throw new IllegalArgumentException("Room is not in progress");
         }
 
-        /*
-          Counterintuitive, but turn player shows who was asking a question during Asking phase
-          So when it switches to Answer phase turn player doesn't change
-          So turn player should not be equal to player who answered a question (current player)
-         */
+    /*
+      Counterintuitive, but turn player shows who was asking a question during Asking phase
+      So when it switches to Answer phase turn player doesn't change
+      So turn player should not be equal to player who answered a question (current player)
+     */
         if (gameState.getTurnPlayer().getId().equals(player.getId())) {
             throw new IllegalArgumentException("Not user's turn to answer");
         }
@@ -98,19 +106,5 @@ public class GameStateService {
         gameState.setTurnPlayer(player);
         gameState.setRoundNumber(gameState.getRoundNumber() + 1);
         gameStateRepo.save(gameState);
-    }
-
-    private RoomPlayer getPlayerFromRoom(UUID roomId, UUID userId, UUID guestSessionId) {
-        if (userId != null) {
-            User user = userRepo.findById(userId)
-                    .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
-            return roomPlayerRepo.findByRoomIdAndUser(roomId, user)
-                    .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
-        } else if (guestSessionId != null) {
-            return roomPlayerRepo.findByRoomIdAndGuestSessionId(roomId, guestSessionId)
-                    .orElseThrow(() -> new EntityNotFoundException("Guest player not found in room"));
-        } else {
-            throw new IllegalArgumentException("Either userId or guestSessionId must be provided");
-        }
     }
 }
