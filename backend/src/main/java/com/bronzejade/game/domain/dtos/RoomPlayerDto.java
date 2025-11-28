@@ -10,6 +10,8 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class RoomPlayerDto {
     private UUID id;
     private UUID userId;

@@ -2,15 +2,12 @@ package com.bronzejade.game.domain.dtos;
 
 import lombok.*;
 
-import java.util.UUID;
-
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
-public class CharacterDto {
-    private UUID id;
+@NoArgsConstructor
+@AllArgsConstructor
+public class CreateCharacterRequest {
     private String name;
     private String imageUrl;
 }

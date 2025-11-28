@@ -117,6 +117,7 @@ public class RoomWsController {
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
     public String handleException(Exception ex) {
+        System.out.println("Error " +  ex.getMessage());
         return ex.getMessage();
     }
 
