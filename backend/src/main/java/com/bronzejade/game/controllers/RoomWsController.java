@@ -80,7 +80,7 @@ public class RoomWsController {
                 connectionInfoDto.getUserId()
         );
         MessageDto msg = messageCrafter(
-                payload,
+                ": " + payload,
                 connectionInfoDto.getUserId(),
                 connectionInfoDto.getDisplayName()
         );
@@ -96,7 +96,7 @@ public class RoomWsController {
                 connectionInfoDto.getUserId()
         );
         MessageDto msg = messageCrafter(
-                payload,
+                ": " + payload,
                 connectionInfoDto.getUserId(),
                 connectionInfoDto.getDisplayName()
         );

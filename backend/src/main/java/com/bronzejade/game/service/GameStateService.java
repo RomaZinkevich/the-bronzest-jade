@@ -11,6 +11,7 @@ import com.bronzejade.game.repositories.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.util.UUID;
 
@@ -104,7 +105,7 @@ public class GameStateService {
 
         // Finally switch turns
         gameState.setTurnPlayer(player);
-        gameState.setRoundNumber(gameState.getRoundNumber() + 1);
+        gameState.setRoundNumber((gameState.getRoundNumber() == null ? 0 : gameState.getRoundNumber()) + 1);
         gameStateRepo.save(gameState);
     }
 }

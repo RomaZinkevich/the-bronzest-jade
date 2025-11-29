@@ -102,7 +102,13 @@ public class CharacterSetDto {
     String createdBy;
     Boolean isPublic;
     LocalDateTime createdAt;
-    Set<CharacterDto> characters = new HashSet<>();
+    Set<CharacterDto> characters;
+}
+
+public class CharacterDto {
+    UUID id;
+    String name;
+    String imageUrl;
 }
 ```
 
@@ -121,8 +127,68 @@ public class CharacterSetDto {
     String createdBy;
     Boolean isPublic;
     LocalDateTime createdAt;
-    Set<CharacterDto> characters = new HashSet<>();
+    Set<CharacterDto> characters;
 }
+
+public class CharacterDto {
+    UUID id;
+    String name;
+    String imageUrl;
+}
+```
+
+#### 6. Create Character Set
+
+**POST** `/api/character-sets`
+
+**Request:** 
+
+```java
+public class CreateCharacterSetRequest {
+    String name;
+    String createdBy;
+    Boolean isPublic;
+    List<CreateCharacterRequest> characters;
+}
+
+public class CreateCharacterRequest {
+    String name;
+    String imageUrl;
+}
+```
+
+**Response:**
+
+```java
+public class CharacterSetDto {
+    UUID id;
+    String name;
+    String createdBy;
+    Boolean isPublic;
+    LocalDateTime createdAt;
+    Set<CharacterDto> characters;
+}
+
+public class CharacterDto {
+    UUID id;
+    String name;
+    String imageUrl;
+}
+```
+
+#### 7. Upload image
+
+**POST** `/api/images/uploads`
+
+**Request:** 
+```java
+    MultipartFile image (accepted file extensions: .jpeg, .jpg, .png, .heic)
+```
+
+**Response:**
+
+```java
+    String uniqueFilename;
 ```
 
 ### WebSocket
