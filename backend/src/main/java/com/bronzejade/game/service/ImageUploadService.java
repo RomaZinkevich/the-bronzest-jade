@@ -34,4 +34,26 @@ public class ImageUploadService {
 
         return uniqueFilename;
     }
+
+    public void deleteImage(String filename) throws IOException {
+        if (filename == null || filename.isBlank()) {
+            throw new BadRequestException("Filename cannot be empty");
+        }
+
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+            throw new BadRequestException("Invalid filename");
+        }
+
+        File directory = new File(BASE_PATH);
+        File targetFile = new File(directory, filename);
+
+        if (!targetFile.exists()) {
+            throw new BadRequestException("File not found: " + filename);
+        }
+
+        boolean deleted = targetFile.delete();
+        if (!deleted) {
+            throw new IOException("Failed to delete file: " + filename);
+        }
+    }
 }
