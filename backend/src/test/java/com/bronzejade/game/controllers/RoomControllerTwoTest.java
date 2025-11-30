@@ -1,9 +1,9 @@
 package com.bronzejade.game.controllers;
 
-import com.bronzejade.game.domain.RoomStatus;
 import com.bronzejade.game.domain.dtos.LeaveRoomRequest;
 import com.bronzejade.game.domain.dtos.RoomPlayerDto;
 import com.bronzejade.game.domain.dtos.SelectCharacterRequest;
+import com.bronzejade.game.domain.dtos.RoomDto;
 import com.bronzejade.game.domain.entities.Room;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.mapper.RoomMapper;
@@ -67,15 +67,17 @@ class RoomControllerTwoTest {
     @Test
     void selectCharacter_ShouldReturnRoomPlayerDto_WhenValidRequest() throws Exception {
         SelectCharacterRequest request = new SelectCharacterRequest();
-        request.setPlayerId(testPlayerId);
+        request.setUserId(testPlayerId);
         request.setCharacterId(testCharacterId);
 
-        RoomPlayer roomPlayer = new RoomPlayer();
-        roomPlayer.setUserId(testPlayerId);
+        RoomPlayer roomPlayer = RoomPlayer.builder()
+                .id(UUID.randomUUID())
+                .build();
 
         RoomPlayerDto roomPlayerDto = new RoomPlayerDto();
-        roomPlayerDto.setUserId(testPlayerId);
+        roomPlayerDto.setId(roomPlayer.getId());
 
+        // Updated method call - only userId and characterId
         when(roomService.selectCharacter(eq(testRoomId), eq(testPlayerId), eq(testCharacterId)))
                 .thenReturn(roomPlayer);
         when(roomPlayerMapper.toDto(roomPlayer)).thenReturn(roomPlayerDto);
@@ -84,7 +86,7 @@ class RoomControllerTwoTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(testPlayerId.toString()));
+                .andExpect(jsonPath("$.id").value(roomPlayer.getId().toString()));
 
         verify(roomService, times(1)).selectCharacter(testRoomId, testPlayerId, testCharacterId);
         verify(roomPlayerMapper, times(1)).toDto(roomPlayer);
@@ -93,18 +95,25 @@ class RoomControllerTwoTest {
     @Test
     void selectCharacter_ShouldCallService_WithCorrectParameters() throws Exception {
         SelectCharacterRequest request = new SelectCharacterRequest();
-        request.setPlayerId(testPlayerId);
+        request.setUserId(testPlayerId);
         request.setCharacterId(testCharacterId);
 
-        RoomPlayer roomPlayer = new RoomPlayer();
+        RoomPlayer roomPlayer = RoomPlayer.builder()
+                .id(UUID.randomUUID())
+                .build();
+
+        RoomPlayerDto roomPlayerDto = new RoomPlayerDto();
+        roomPlayerDto.setId(roomPlayer.getId());
+
         when(roomService.selectCharacter(any(), any(), any())).thenReturn(roomPlayer);
-        when(roomPlayerMapper.toDto(any())).thenReturn(new RoomPlayerDto());
+        when(roomPlayerMapper.toDto(any())).thenReturn(roomPlayerDto);
 
         mockMvc.perform(post("/api/rooms/" + testRoomId + "/select-character")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
+        // Updated verification - only 3 parameters now
         verify(roomService).selectCharacter(eq(testRoomId), eq(testPlayerId), eq(testCharacterId));
         verify(roomPlayerMapper).toDto(roomPlayer);
     }
@@ -112,14 +121,20 @@ class RoomControllerTwoTest {
     // ===== Tests for leaveRoom API =====
 
     @Test
-    void leaveRoom_ShouldReturnRoom_WhenRoomExists() throws Exception {
+    void leaveRoom_ShouldReturnRoomDto_WhenRoomExists() throws Exception {
         LeaveRoomRequest request = new LeaveRoomRequest();
-        request.setPlayerId(testPlayerId);
+        request.setUserId(testPlayerId); // Only userId needed
 
-        Room room = new Room();
-        room.setId(testRoomId);
+        Room room = Room.builder()
+                .id(testRoomId)
+                .build();
 
+        RoomDto roomDto = new RoomDto();
+        roomDto.setId(testRoomId);
+
+        // Updated method call - only userId
         when(roomService.leaveRoom(testRoomId, testPlayerId)).thenReturn(room);
+        when(roomMapper.toDto(room)).thenReturn(roomDto);
 
         mockMvc.perform(post("/api/rooms/" + testRoomId + "/leave")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -128,13 +143,15 @@ class RoomControllerTwoTest {
                 .andExpect(jsonPath("$.id").value(testRoomId.toString()));
 
         verify(roomService, times(1)).leaveRoom(testRoomId, testPlayerId);
+        verify(roomMapper, times(1)).toDto(room);
     }
 
     @Test
     void leaveRoom_ShouldReturnNullBody_WhenRoomDeleted() throws Exception {
         LeaveRoomRequest request = new LeaveRoomRequest();
-        request.setPlayerId(testPlayerId);
+        request.setUserId(testPlayerId); // Only userId needed
 
+        // Updated method call - only userId
         when(roomService.leaveRoom(testRoomId, testPlayerId)).thenReturn(null);
 
         mockMvc.perform(post("/api/rooms/" + testRoomId + "/leave")
@@ -144,5 +161,20 @@ class RoomControllerTwoTest {
                 .andExpect(content().string(""));
 
         verify(roomService, times(1)).leaveRoom(testRoomId, testPlayerId);
+        verify(roomMapper, never()).toDto(any());
+    }
+
+    // Add test for missing userId
+    @Test
+    void leaveRoom_ShouldReturnBadRequest_WhenUserIdMissing() throws Exception {
+        LeaveRoomRequest request = new LeaveRoomRequest();
+        // No userId set
+
+        mockMvc.perform(post("/api/rooms/" + testRoomId + "/leave")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+
+        verify(roomService, never()).leaveRoom(any(), any());
     }
 }

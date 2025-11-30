@@ -22,6 +22,9 @@ public class RoomPlayerDto {
     @JsonProperty("isReady")
     private boolean ready;
 
+    @JsonProperty("isGuest")
+    private boolean guest;
+
     private CharacterDto characterToGuess;
     private LocalDateTime joinedAt;
 }

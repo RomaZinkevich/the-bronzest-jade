@@ -64,11 +64,11 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
                     // Try to extract playerId from native headers
-                    String playerId = accessor.getFirstNativeHeader("playerId");
+                    String userId = accessor.getFirstNativeHeader("userId");
                     String roomId = accessor.getFirstNativeHeader("roomId");
 
-                    if (playerId != null && roomId != null) {
-                        accessor.getSessionAttributes().put("playerId", playerId);
+                    if (userId != null && roomId != null) {
+                        accessor.getSessionAttributes().put("userId", userId);
                         accessor.getSessionAttributes().put("roomId", roomId);
                     }
                 }
@@ -77,10 +77,10 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
                     String destination = accessor.getDestination();
                     // Validate that the subscribing player is actually in the room
                     if (destination.contains("room")) {
-                        UUID playerId = UUID.fromString((String) accessor.getSessionAttributes().get("playerId"));
+                        UUID userId = UUID.fromString((String) accessor.getSessionAttributes().get("userId"));
                         UUID roomId = UUID.fromString((String) accessor.getSessionAttributes().get("roomId"));
 
-                        if (!roomPlayerService.isInRoom(roomId, playerId)) {
+                        if (!roomPlayerService.isInRoom(roomId, userId)) {
                             throw new MessagingException("Access to this room is forbidden.");
                         }
                     }

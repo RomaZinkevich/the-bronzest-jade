@@ -14,7 +14,7 @@ import java.util.UUID;
 public class RoomDto {
     private UUID id;
     private String roomCode;
-    private UUID hostId;
+    private UserDto host;
     private RoomStatus status;
     private int maxPlayers;
     private CharacterSetDto characterSet;

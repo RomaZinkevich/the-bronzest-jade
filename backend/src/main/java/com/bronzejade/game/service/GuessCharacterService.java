@@ -1,6 +1,8 @@
 package com.bronzejade.game.service;
 
 import com.bronzejade.game.repositories.RoomRepository;
+import com.bronzejade.game.repositories.UserRepository;
+import com.bronzejade.game.domain.entities.User;
 import java.util.UUID;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,13 +23,14 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class GuessCharacterService{
+public class GuessCharacterService {
     private final RoomRepository roomRepo;
     private final RoomPlayerRepository roomPlayerRepo;
     private final GameStateRepository gameStateRepo;
+    private final UserRepository userRepo;
 
     @Transactional
-    public GuessCharacterResponse guessCharacter(UUID roomId, UUID playerId, UUID guessedCharacterId) {
+    public GuessCharacterResponse guessCharacter(UUID roomId, UUID userId, UUID guessedCharacterId) {
         Room room = roomRepo.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + roomId));
 
@@ -38,7 +41,10 @@ public class GuessCharacterService{
         GameState gameState = gameStateRepo.findByRoomId(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Game state not found"));
 
-        RoomPlayer guessingPlayer = roomPlayerRepo.findByRoomIdAndUserId(roomId, playerId)
+        // Simplified player lookup - no more helper method
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        RoomPlayer guessingPlayer = roomPlayerRepo.findByRoomIdAndUser(roomId, user)
                 .orElseThrow(() -> new EntityNotFoundException("Player not found in room"));
 
         // I am making essentially three checks here which determine whether,
@@ -58,7 +64,7 @@ public class GuessCharacterService{
         if (!gameState.getTurnPhase().equals(TurnPhase.ASKING)) {
             throw new IllegalArgumentException("Not in ASKING phase");
         }
-//finally switch turns
+
         // Filtering out the opponent player
         List<RoomPlayer> allPlayers = roomPlayerRepo.findByRoomId(roomId);
         RoomPlayer opponentPlayer = allPlayers.stream()
@@ -90,21 +96,25 @@ public class GuessCharacterService{
                 .actualCharacterName(actualCharacter.getName())
                 .build();
 
-        if (isCorrect) { // End the game if player guesses correctly
+        if (isCorrect) {
+            // End the game if player guesses correctly
             room.setStatus(RoomStatus.FINISHED);
             room.setFinishedAt(LocalDateTime.now());
-            gameState.setWinnerId(playerId);
+
+            // Set winner ID - always a User ID now
+            UUID winnerId = guessingPlayer.getUser().getId();
+            gameState.setWinnerId(winnerId);
 
             gameStateRepo.save(gameState);
             roomRepo.save(room);
 
             return response.toBuilder()
                     .gameEnded(true)
-                    .winnerId(playerId)
+                    .winnerId(winnerId)
                     .message("Correct! You've won the game!")
                     .build();
-        }
-        else{ // If its a wrong guess switch turns
+        } else {
+            // If it's a wrong guess, switch turns
             gameState.setTurnPlayer(opponentPlayer);
             gameState.setTurnPhase(TurnPhase.ASKING);
             gameStateRepo.save(gameState);

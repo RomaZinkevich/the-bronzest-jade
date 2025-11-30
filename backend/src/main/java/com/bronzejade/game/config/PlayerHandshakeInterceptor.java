@@ -10,7 +10,7 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 import java.util.Map;
 
 /**
- * Intercepts the WebSocket handshake to extract the "playerId" from the request
+ * Intercepts the WebSocket handshake to extract the "userId" from the request
  * and store it in WebSocket session attributes for later use (e.g., in HandshakeHandler).
  */
 @Component
@@ -19,15 +19,23 @@ public class PlayerHandshakeInterceptor implements HandshakeInterceptor {
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                    WebSocketHandler wsHandler, Map<String, Object> attributes) {
 
-        // Access underlying servlet request to read URL query parameters
-        if (request instanceof ServletServerHttpRequest) {
-            var servletRequest = ((ServletServerHttpRequest) request).getServletRequest();
-            String playerId = servletRequest.getParameter("playerId");
-            if (playerId != null && !playerId.isBlank()) {
-                attributes.put("playerId", playerId); //Store for later user
-            }
+        String userId = request.getHeaders().getFirst("userId");
+        String roomId = request.getHeaders().getFirst("roomId");
+        String displayName = request.getHeaders().getFirst("displayName");
+
+        //storing in session attributes
+        if (userId != null && !userId.isBlank()) {
+            attributes.put("userId", userId);
         }
-        return true; // Always allow connection
+
+        if (roomId != null && !roomId.isBlank()) {
+            attributes.put("roomId", roomId);
+        }
+
+        if (displayName != null && !displayName.isBlank()) {
+            attributes.put("displayName", displayName);
+        }
+        return true;
     }
 
     @Override
@@ -35,6 +43,5 @@ public class PlayerHandshakeInterceptor implements HandshakeInterceptor {
                                ServerHttpResponse response,
                                WebSocketHandler wsHandler,
                                Exception exception) {
-        // nothing needed here
     }
 }

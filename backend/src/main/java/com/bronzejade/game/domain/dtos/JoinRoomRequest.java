@@ -1,7 +1,7 @@
 package com.bronzejade.game.domain.dtos;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
-
 import java.util.UUID;
 
 @Builder
@@ -10,5 +10,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class JoinRoomRequest {
-    private UUID playerId;
+    @NotNull(message = "User ID is required")
+    private UUID userId;
 }
