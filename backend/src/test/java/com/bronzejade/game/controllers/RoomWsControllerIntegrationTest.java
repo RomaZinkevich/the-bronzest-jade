@@ -5,6 +5,7 @@ import com.bronzejade.game.domain.TurnPhase;
 import com.bronzejade.game.domain.dtos.MessageDto;
 import com.bronzejade.game.domain.entities.*;
 import com.bronzejade.game.domain.entities.Character;
+import com.bronzejade.game.jwtSetup.JwtUtil;
 import com.bronzejade.game.repositories.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,8 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import java.lang.reflect.Type;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -63,9 +66,14 @@ public class RoomWsControllerIntegrationTest {
 
     @Autowired
     private UserRepository userRepository; // Add this
+    @Autowired
+    private JwtUtil jwtUtil;
 
     private String getWsPath() {
-        return String.format("ws://localhost:%d/ws", port);
+        RoomPlayer player = roomPlayerRepository.findAll().get(0);
+        String token = jwtUtil.generateToken(player.getUser().getId());
+        String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
+        return String.format("ws://localhost:%d/ws", port) + "?token=" + encodedToken;
     }
 
     private CharacterSet createCharacterSet() {
@@ -174,6 +182,7 @@ public class RoomWsControllerIntegrationTest {
         StompHeaders connectHeaders = new StompHeaders();
         connectHeaders.add("roomId", String.valueOf(player.getRoom().getId()));
         connectHeaders.add("userId", String.valueOf(player.getUser().getId())); // Changed from playerId to userId
+
 
         StompSession session = webSocketStompClient
                 .connectAsync(

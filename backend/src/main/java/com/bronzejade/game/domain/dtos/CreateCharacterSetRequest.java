@@ -11,7 +11,6 @@ import java.util.List;
 @AllArgsConstructor
 public class CreateCharacterSetRequest {
     private String name;
-    private String createdBy;
     private Boolean isPublic;
     private List<CreateCharacterRequest> characters;
 }

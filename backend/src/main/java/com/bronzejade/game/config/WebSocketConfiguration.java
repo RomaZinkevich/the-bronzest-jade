@@ -1,6 +1,9 @@
 package com.bronzejade.game.config;
 
+import com.bronzejade.game.jwtSetup.JwtUtil;
+import com.bronzejade.game.service.AuthService;
 import com.bronzejade.game.service.RoomPlayerService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -23,14 +26,19 @@ import java.util.UUID;
  */
 @Configuration
 @EnableWebSocketMessageBroker
+@Slf4j
 public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer {
 
     private final RoomPlayerService roomPlayerService;
     private final PlayerHandshakeInterceptor playerHandshakeInterceptor;
+    private final JwtUtil jwtUtil;
+    private final AuthService authService;
 
-    public WebSocketConfiguration(RoomPlayerService roomPlayerService, PlayerHandshakeInterceptor playerHandshakeInterceptor) {
+    public WebSocketConfiguration(RoomPlayerService roomPlayerService, PlayerHandshakeInterceptor playerHandshakeInterceptor, AuthService authService, JwtUtil jwtUtil) {
         this.roomPlayerService = roomPlayerService;
         this.playerHandshakeInterceptor = playerHandshakeInterceptor;
+        this.jwtUtil = jwtUtil;
+        this.authService = authService;
     }
 
     @Override
@@ -48,7 +56,7 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
         // Register WebSocket endpoint that clients will use to connect
         registry.addEndpoint("/ws")
                 .addInterceptors(playerHandshakeInterceptor) // Extracts playerId before handshake
-                .setHandshakeHandler(new PlayerHandshakeHandler()) // Assigns Principal per connection
+                .setHandshakeHandler(new PlayerHandshakeHandler(authService, jwtUtil)) // Assigns Principal per connection
                 .setAllowedOriginPatterns("http://localhost:8080", "http://localhost:63342","http://127.0.0.1:5500", "https://guesswho.190304.xyz", "https://guess-who-web-nine.vercel.app")  // Configure CORS as needed
                 .withSockJS();  // Enable SockJS fallback options
     }
@@ -64,13 +72,13 @@ public class WebSocketConfiguration implements WebSocketMessageBrokerConfigurer 
 
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
                     // Try to extract playerId from native headers
-                    String userId = accessor.getFirstNativeHeader("userId");
+                    String userId = (String) accessor.getSessionAttributes().get("userId");
                     String roomId = accessor.getFirstNativeHeader("roomId");
 
-                    if (userId != null && roomId != null) {
-                        accessor.getSessionAttributes().put("userId", userId);
-                        accessor.getSessionAttributes().put("roomId", roomId);
+                    if (userId == null || roomId == null) {
+                        throw new MessagingException("Missing userId or roomId in WebSocket session attributes.");
                     }
+                    accessor.getSessionAttributes().put("roomId", roomId);
                 }
 
                 if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {

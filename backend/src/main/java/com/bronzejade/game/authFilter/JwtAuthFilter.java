@@ -1,6 +1,7 @@
 package com.bronzejade.game.authFilter;
 
 import com.bronzejade.game.jwtSetup.JwtUtil;
+import com.bronzejade.game.service.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,13 +16,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -41,7 +43,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             var userId = jwtUtil.validateTokenAndGetUserId(token);
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(userId.toString());
+            UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(userId));
 
             var authToken = new UsernamePasswordAuthenticationToken(
                     userDetails,
@@ -50,11 +52,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             );
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
-
-        } catch (io.jsonwebtoken.SignatureException e) {
-            System.out.println("Invalid JWT signature: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("ERROR:" + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
-
         filterChain.doFilter(request, response);
     }
 }

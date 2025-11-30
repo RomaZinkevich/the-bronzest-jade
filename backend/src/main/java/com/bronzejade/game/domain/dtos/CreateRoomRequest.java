@@ -14,7 +14,4 @@ import java.util.UUID;
 public class CreateRoomRequest {
     @NotNull(message = "CharacterSet ID is required")
     private UUID characterSetId;
-
-    @NotNull(message = "User ID is required")
-    private UUID userId;
 }

@@ -1,6 +1,5 @@
 package com.bronzejade.game.controllers;
 
-import com.bronzejade.game.domain.dtos.LeaveRoomRequest;
 import com.bronzejade.game.domain.dtos.RoomPlayerDto;
 import com.bronzejade.game.domain.dtos.SelectCharacterRequest;
 import com.bronzejade.game.domain.dtos.RoomDto;
@@ -67,7 +66,6 @@ class RoomControllerTwoTest {
     @Test
     void selectCharacter_ShouldReturnRoomPlayerDto_WhenValidRequest() throws Exception {
         SelectCharacterRequest request = new SelectCharacterRequest();
-        request.setUserId(testPlayerId);
         request.setCharacterId(testCharacterId);
 
         RoomPlayer roomPlayer = RoomPlayer.builder()
@@ -95,7 +93,6 @@ class RoomControllerTwoTest {
     @Test
     void selectCharacter_ShouldCallService_WithCorrectParameters() throws Exception {
         SelectCharacterRequest request = new SelectCharacterRequest();
-        request.setUserId(testPlayerId);
         request.setCharacterId(testCharacterId);
 
         RoomPlayer roomPlayer = RoomPlayer.builder()
@@ -122,9 +119,6 @@ class RoomControllerTwoTest {
 
     @Test
     void leaveRoom_ShouldReturnRoomDto_WhenRoomExists() throws Exception {
-        LeaveRoomRequest request = new LeaveRoomRequest();
-        request.setUserId(testPlayerId); // Only userId needed
-
         Room room = Room.builder()
                 .id(testRoomId)
                 .build();
@@ -137,8 +131,7 @@ class RoomControllerTwoTest {
         when(roomMapper.toDto(room)).thenReturn(roomDto);
 
         mockMvc.perform(post("/api/rooms/" + testRoomId + "/leave")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(testRoomId.toString()));
 
@@ -148,15 +141,11 @@ class RoomControllerTwoTest {
 
     @Test
     void leaveRoom_ShouldReturnNullBody_WhenRoomDeleted() throws Exception {
-        LeaveRoomRequest request = new LeaveRoomRequest();
-        request.setUserId(testPlayerId); // Only userId needed
-
         // Updated method call - only userId
         when(roomService.leaveRoom(testRoomId, testPlayerId)).thenReturn(null);
 
         mockMvc.perform(post("/api/rooms/" + testRoomId + "/leave")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string(""));
 
@@ -167,12 +156,9 @@ class RoomControllerTwoTest {
     // Add test for missing userId
     @Test
     void leaveRoom_ShouldReturnBadRequest_WhenUserIdMissing() throws Exception {
-        LeaveRoomRequest request = new LeaveRoomRequest();
-        // No userId set
 
         mockMvc.perform(post("/api/rooms/" + testRoomId + "/leave")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
         verify(roomService, never()).leaveRoom(any(), any());

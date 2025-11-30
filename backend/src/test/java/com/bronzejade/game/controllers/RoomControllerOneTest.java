@@ -3,7 +3,6 @@ package com.bronzejade.game.controllers;
 import com.bronzejade.game.domain.RoomStatus;
 import com.bronzejade.game.domain.dtos.CharacterSetDto;
 import com.bronzejade.game.domain.dtos.CreateRoomRequest;
-import com.bronzejade.game.domain.dtos.JoinRoomRequest;
 import com.bronzejade.game.domain.dtos.RoomDto;
 import com.bronzejade.game.domain.dtos.UserDto;
 import com.bronzejade.game.domain.entities.CharacterSet;
@@ -83,7 +82,6 @@ class RoomControllerOneTest {
     @Test
     void createRoom_ShouldReturnCreatedRoom() throws Exception {
         CreateRoomRequest request = new CreateRoomRequest();
-        request.setUserId(testUserId);
         request.setCharacterSetId(testCharacterSetId);
 
         CharacterSet characterSet = CharacterSet.builder()
@@ -116,7 +114,7 @@ class RoomControllerOneTest {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        when(roomService.createRoom(any(CreateRoomRequest.class))).thenReturn(room);
+        when(roomService.createRoom(any(CreateRoomRequest.class), testHostUser.getId())).thenReturn(room);
         when(roomMapper.toDto(any(Room.class))).thenReturn(roomDto);
 
         mockMvc.perform(post("/api/rooms")
@@ -133,7 +131,7 @@ class RoomControllerOneTest {
                 .andExpect(jsonPath("$.maxPlayers").value(2))
                 .andExpect(jsonPath("$.characterSet.id").value(testCharacterSetId.toString()));
 
-        verify(roomService, times(1)).createRoom(any(CreateRoomRequest.class));
+        verify(roomService, times(1)).createRoom(any(CreateRoomRequest.class), testHostUser.getId());
         verify(roomMapper, times(1)).toDto(any(Room.class));
     }
 
@@ -143,9 +141,6 @@ class RoomControllerOneTest {
     void joinRoom_ShouldReturnJoinedRoom() throws Exception {
         String roomCode = "ROOM123";
         UUID playerId = UUID.randomUUID();
-
-        JoinRoomRequest joinRoomRequest = new JoinRoomRequest();
-        joinRoomRequest.setUserId(playerId); // Only userId needed now
 
         CharacterSet characterSet = CharacterSet.builder()
                 .id(UUID.randomUUID())
@@ -181,8 +176,7 @@ class RoomControllerOneTest {
         when(roomMapper.toDto(joinedRoom)).thenReturn(roomDto);
 
         mockMvc.perform(post("/api/rooms/join/{roomCode}", roomCode)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(joinRoomRequest)))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(testRoomId.toString()))
@@ -200,13 +194,8 @@ class RoomControllerOneTest {
     @Test
     void joinRoom_ShouldReturnBadRequest_WhenUserIdMissing() throws Exception {
         String roomCode = "ROOM123";
-
-        JoinRoomRequest joinRoomRequest = new JoinRoomRequest();
-        // No userId set
-
         mockMvc.perform(post("/api/rooms/join/{roomCode}", roomCode)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(joinRoomRequest)))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
         verify(roomService, never()).joinRoom(any(), any());

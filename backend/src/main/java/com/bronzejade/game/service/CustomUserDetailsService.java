@@ -1,5 +1,7 @@
 package com.bronzejade.game.service;
 
+import com.bronzejade.game.authFilter.ApiUserDetails;
+import com.bronzejade.game.domain.entities.User;
 import com.bronzejade.game.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,13 +18,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-    }
-
-    public UserDetails loadUserById(UUID userId) throws UsernameNotFoundException {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+    public UserDetails loadUserByUsername(String id) throws UsernameNotFoundException {
+        User user = userRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
+        return new ApiUserDetails(user);
     }
 }

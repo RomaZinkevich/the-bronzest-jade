@@ -3,16 +3,22 @@ package com.bronzejade.game.service;
 import com.bronzejade.game.domain.dtos.AuthResponse;
 import com.bronzejade.game.domain.dtos.LoginRequest;
 import com.bronzejade.game.domain.dtos.RegisterRequest;
+import com.bronzejade.game.domain.dtos.UserDto;
 import com.bronzejade.game.domain.entities.User;
 import com.bronzejade.game.jwtSetup.JwtUtil;
+import com.bronzejade.game.mapper.UserMapper;
 import com.bronzejade.game.repositories.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -25,6 +31,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+    private final UserMapper userMapper;
 
     public AuthResponse register(RegisterRequest request) {
         // Check if username or email already exist
@@ -49,6 +56,16 @@ public class AuthService {
         String token = jwtUtil.generateToken(savedUser.getId());
 
         return new AuthResponse(token, savedUser.getId(), savedUser.getUsername());
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto getUserFromPrincipal(UserDetails userDetails) {
+        //For some reason I cant pass userDetails.getUser() directly due to LazyLoading issues
+        //So I have to reinitialize user object from ID
+        UUID userId = UUID.fromString(userDetails.getUsername());
+        User user = userRepository.findById(userId).orElseThrow(EntityNotFoundException::new);
+
+        return userMapper.toDto(user);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -93,5 +110,10 @@ public class AuthService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public String getUsername(UUID userId) {
+        User user = userRepository.findById(userId).orElseThrow(EntityNotFoundException::new);
+        return user.getUsername();
     }
 }
