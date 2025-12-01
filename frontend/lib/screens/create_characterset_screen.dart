@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:guess_who/models/character_set_draft.dart';
 import 'package:guess_who/services/draft_storage_service.dart';
 import 'package:guess_who/widgets/character_draft_dialogue.dart';
-import 'package:guess_who/widgets/popup_menu.dart';
 import 'package:guess_who/widgets/retro_icon_button.dart';
 import 'package:uuid/uuid.dart';
 
@@ -113,6 +112,8 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
             icon: Icons.add,
             iconSize: 30,
             iconColor: Theme.of(context).colorScheme.tertiary,
+
+            padding: 0,
 
             tooltip: "Create draft",
           ),

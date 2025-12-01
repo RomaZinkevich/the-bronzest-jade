@@ -1,18 +1,10 @@
-import 'dart:ffi';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:guess_who/widgets/animated_labeled_input.dart';
-import 'package:guess_who/widgets/inner_shadow_input.dart';
 import 'package:guess_who/widgets/retro_button.dart';
-import 'package:guess_who/widgets/retro_icon_button.dart';
-import 'package:http/http.dart';
 
 class CharacterDraftDialogue extends StatefulWidget {
   final Function(String name, bool isPublic) onCreateDraft;
 
-  const CharacterDraftDialogue({required this.onCreateDraft});
+  const CharacterDraftDialogue({super.key, required this.onCreateDraft});
 
   @override
   State<CharacterDraftDialogue> createState() => _CharacterDraftDialogueState();
@@ -30,18 +22,26 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context).colorScheme;
+
     return AlertDialog(
-      backgroundColor: Theme.of(context).colorScheme.tertiary,
+      backgroundColor: theme.secondary,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: Theme.of(context).colorScheme.primary,
-          width: 4,
-        ),
+        side: BorderSide(color: theme.tertiary, width: 4),
       ),
       title: Text(
-        "New Character Set",
-        style: TextStyle(color: Theme.of(context).colorScheme.primary),
+        "New Set",
+        style: TextStyle(
+          color: theme.tertiary,
+          shadows: [
+            Shadow(
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+              color: theme.shadow,
+            ),
+          ],
+        ),
         textAlign: TextAlign.center,
       ),
       content: Column(
@@ -50,11 +50,37 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
         children: [
           const SizedBox(height: 20),
 
-          AnimatedLabeledInput(
+          TextField(
+            decoration: InputDecoration(
+              floatingLabelBehavior: FloatingLabelBehavior.auto,
+
+              hintText: "Name your draft...",
+              labelText: "Draft Name",
+
+              labelStyle: TextStyle(
+                color: theme.tertiary.withAlpha(200),
+                fontWeight: FontWeight.bold,
+              ),
+              hintStyle: TextStyle(
+                color: theme.tertiary.withAlpha(140),
+                fontWeight: FontWeight.bold,
+              ),
+
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(width: 2, color: theme.primary),
+              ),
+
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(width: 2, color: theme.tertiary),
+              ),
+            ),
             controller: _nameController,
-            label: "Draft Name",
-            hint: "Name your draft...",
+            style: TextStyle(color: theme.tertiary),
           ),
+
+          const SizedBox(height: 8),
 
           InkWell(
             onTap: () {
@@ -62,40 +88,40 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
                 _isPublic = !_isPublic;
               });
             },
+            borderRadius: BorderRadius.circular(8),
             child: Container(
-              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(8),
+                // color: theme.tertiary,
+                border: Border.all(width: 2, color: theme.tertiary),
               ),
+              padding: const EdgeInsets.all(10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    "Set visibility",
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.secondary,
-                      fontSize: 18,
-                    ),
+                    "set visibility",
+                    style: TextStyle(color: theme.tertiary, fontSize: 18),
                   ),
                   Container(
                     width: 30,
                     height: 30,
                     decoration: BoxDecoration(
-                      color: _isPublic
-                          ? Colors.transparent
-                          : Theme.of(context).colorScheme.error,
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.secondary,
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(4),
+                      color: _isPublic ? theme.primary : theme.error,
+                      borderRadius: BorderRadius.circular(30),
                     ),
                     child: Icon(
                       _isPublic ? Icons.public : Icons.lock,
                       size: 22,
-                      color: _isPublic
-                          ? Theme.of(context).colorScheme.secondary
-                          : Theme.of(context).colorScheme.tertiary,
+                      color: _isPublic ? theme.tertiary : theme.tertiary,
+                      shadows: [
+                        Shadow(
+                          offset: const Offset(0, 2),
+                          color: theme.shadow,
+                          blurRadius: 8,
+                        ),
+                      ],
                     ),
                   ),
                 ],
