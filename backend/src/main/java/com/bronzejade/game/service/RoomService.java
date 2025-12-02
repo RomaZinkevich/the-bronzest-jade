@@ -34,7 +34,7 @@ public class RoomService {
     private final RoomPlayerMapper roomPlayerMapper;
 
     @Transactional
-    public Room createRoom(CreateRoomRequest createRoomRequest) {
+    public Room createRoom(CreateRoomRequest createRoomRequest, UUID userId) {
         CharacterSet characterSet = characterSetService.getCharacterSet(createRoomRequest.getCharacterSetId());
 
         Room room = Room.builder()
@@ -44,7 +44,7 @@ public class RoomService {
                 .build();
 
         // Always expect a userId (either real user or guest user)
-        User hostUser = userRepo.findById(createRoomRequest.getUserId())
+        User hostUser = userRepo.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         room.setHost(hostUser);

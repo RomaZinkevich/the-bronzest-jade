@@ -10,9 +10,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SelectCharacterRequest {
-    @NotNull(message = "User ID is required")
-    private UUID userId;
-
     @NotNull(message = "Character ID is required")
     private UUID characterId;
 }

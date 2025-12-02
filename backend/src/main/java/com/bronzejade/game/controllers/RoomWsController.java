@@ -10,6 +10,7 @@ import com.bronzejade.game.service.RoomService;
 import com.bronzejade.game.service.GuessCharacterService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -22,6 +23,7 @@ import java.util.UUID;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class RoomWsController {
 
     private final SimpMessagingTemplate messagingTemplate;
@@ -36,7 +38,6 @@ public class RoomWsController {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
         MessageDto message = messageCrafter(
                 " has joined room",
-                connectionInfoDto.getUserId(),
                 connectionInfoDto.getDisplayName()
         );
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
@@ -51,7 +52,6 @@ public class RoomWsController {
         );
         MessageDto message = messageCrafter(
                 " is " + (!roomPlayer.isReady() ? "not " : "") + "ready",
-                connectionInfoDto.getUserId(),
                 connectionInfoDto.getDisplayName()
         );
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
@@ -81,7 +81,6 @@ public class RoomWsController {
         );
         MessageDto msg = messageCrafter(
                 ": " + payload,
-                connectionInfoDto.getUserId(),
                 connectionInfoDto.getDisplayName()
         );
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), msg);
@@ -97,7 +96,6 @@ public class RoomWsController {
         );
         MessageDto msg = messageCrafter(
                 ": " + payload,
-                connectionInfoDto.getUserId(),
                 connectionInfoDto.getDisplayName()
         );
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), msg);
@@ -155,7 +153,7 @@ public class RoomWsController {
         return connectionInfoDto;
     }
 
-    private MessageDto messageCrafter(String text, UUID userId, String username) {
+    private MessageDto messageCrafter(String text, String username) {
         String message = username + text;
         return MessageDto.builder()
                 .message(message)

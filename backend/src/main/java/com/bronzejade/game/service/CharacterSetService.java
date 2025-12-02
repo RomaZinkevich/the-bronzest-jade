@@ -29,7 +29,7 @@ public class CharacterSetService {
                 .orElseThrow(() -> new EntityNotFoundException("CharacterSet with id " + id + " not found"));
     }
 
-    public CharacterSet createSet(CreateCharacterSetRequest createSetRequest) {
+    public CharacterSet createSet(CreateCharacterSetRequest createSetRequest, UUID createrId) {
         List<CreateCharacterRequest> characterRequests = createSetRequest.getCharacters();
         Set<Character> characters = characterRequests.stream().map((CreateCharacterRequest request) -> {
             Character newCharacter = new Character();
@@ -41,7 +41,7 @@ public class CharacterSetService {
         CharacterSet characterSet = new CharacterSet();
         characterSet.setCharacters(characters);
         characterSet.setName(createSetRequest.getName());
-        characterSet.setCreatedBy(createSetRequest.getCreatedBy());
+        characterSet.setCreatedBy(String.valueOf(createrId));
         characterSet.setIsPublic(createSetRequest.getIsPublic());
 
         return characterSetRepository.save(characterSet);

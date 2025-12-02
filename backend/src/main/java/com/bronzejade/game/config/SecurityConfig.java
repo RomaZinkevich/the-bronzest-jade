@@ -1,9 +1,14 @@
 package com.bronzejade.game.config;
 
 import com.bronzejade.game.authFilter.JwtAuthFilter;
+import com.bronzejade.game.jwtSetup.JwtUtil;
+import com.bronzejade.game.repositories.UserRepository;
+import com.bronzejade.game.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import com.bronzejade.game.service.CustomUserDetailsService;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -11,6 +16,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -30,7 +36,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
+    @Bean
+    public JwtAuthFilter jwtAuthFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
+        return new JwtAuthFilter(jwtUtil, userDetailsService);
+    }
+
+    @Bean
+    public UserDetailsService userDetailsService(UserRepository userRepository) {
+        CustomUserDetailsService userDetailsService = new CustomUserDetailsService(userRepository);
+        return userDetailsService;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -38,7 +53,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
         http
                 // CSRF not needed for stateless APIs/WebSockets
                 .csrf(AbstractHttpConfigurer::disable)
@@ -46,6 +61,11 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 // No authorization restrictions
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "api/character-sets/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "api/character-sets/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "api/images/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "api/rooms/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 // Do not create HTTP sessions
