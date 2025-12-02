@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:guess_who/models/character.dart';
 import 'package:guess_who/services/api_service.dart';
-import 'package:guess_who/widgets/retro_button.dart';
+import 'package:guess_who/widgets/retro_icon_button.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
@@ -137,8 +137,8 @@ class _CharacterInputCardState extends State<CharacterInputCard> {
 
   @override
   void dispose() {
-    super.dispose();
     _nameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -151,7 +151,7 @@ class _CharacterInputCardState extends State<CharacterInputCard> {
       decoration: BoxDecoration(
         color: theme.tertiary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.primary, width: 3),
+        border: Border.all(color: theme.secondary, width: 4),
         boxShadow: const [
           BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
         ],
@@ -164,7 +164,7 @@ class _CharacterInputCardState extends State<CharacterInputCard> {
             child: Container(
               height: 200,
               decoration: BoxDecoration(
-                color: theme.primary.withAlpha(100),
+                color: theme.secondary,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: theme.secondary, width: 2),
               ),
@@ -175,7 +175,7 @@ class _CharacterInputCardState extends State<CharacterInputCard> {
                         children: [
                           CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.secondary,
+                              theme.tertiary,
                             ),
                             strokeWidth: 5,
                             strokeCap: StrokeCap.round,
@@ -184,7 +184,7 @@ class _CharacterInputCardState extends State<CharacterInputCard> {
                           Text(
                             "Uploading...",
                             style: TextStyle(
-                              color: theme.primary,
+                              color: theme.tertiary,
                               fontSize: 14,
                             ),
                           ),
@@ -202,13 +202,13 @@ class _CharacterInputCardState extends State<CharacterInputCard> {
                         Icon(
                           Icons.add_photo_alternate_rounded,
                           size: 64,
-                          color: theme.secondary,
+                          color: theme.tertiary.withAlpha(200),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           "TAP TO UPLOAD IMAGE",
                           style: TextStyle(
-                            color: theme.secondary,
+                            color: theme.tertiary.withAlpha(200),
                             fontSize: 16,
                           ),
                         ),
@@ -220,69 +220,62 @@ class _CharacterInputCardState extends State<CharacterInputCard> {
           const SizedBox(height: 16),
 
           TextField(
-            controller: _nameController,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
-              color: theme.primary,
-              fontWeight: FontWeight.bold,
-            ),
             decoration: InputDecoration(
-              hintText: "Character name...",
-              hintStyle: TextStyle(
-                color: theme.primary.withAlpha(140),
+              floatingLabelBehavior: FloatingLabelBehavior.never,
+
+              hintText: "Name your character...",
+              labelText: "Character Name",
+
+              labelStyle: TextStyle(
+                color: theme.tertiary.withAlpha(140),
                 fontWeight: FontWeight.bold,
               ),
-              filled: true,
-              fillColor: theme.secondary.withAlpha(50),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: theme.secondary, width: 2),
+              hintStyle: TextStyle(
+                color: theme.tertiary.withAlpha(140),
+                fontWeight: FontWeight.bold,
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: theme.secondary, width: 2),
-              ),
+
+              border: InputBorder.none,
+
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: theme.primary, width: 3),
+                borderSide: BorderSide.none,
               ),
+
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+
+              filled: true,
+              fillColor: theme.secondary,
             ),
+            controller: _nameController,
+            style: TextStyle(color: theme.tertiary),
           ),
 
           const SizedBox(height: 16),
 
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               if (widget.onCancel != null) ...[
-                Expanded(
-                  child: RetroButton(
-                    text: "Cancel",
-                    fontSize: 16,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    backgroundColor: theme.error,
-                    foregroundColor: theme.tertiary,
-                    icon: Icons.close_rounded,
-                    iconSize: 22,
-                    iconAtEnd: false,
-                    onPressed: widget.onCancel!,
-                  ),
+                RetroIconButton(
+                  backgroundColor: theme.error,
+                  icon: Icons.close_rounded,
+                  iconSize: 40,
+                  onPressed: widget.onCancel!,
+
+                  tooltip: "Cancel character creation",
                 ),
-                const SizedBox(width: 12),
               ],
-              Expanded(
-                flex: 2,
-                child: RetroButton(
-                  text: "SUBMIT",
-                  fontSize: 18,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  backgroundColor: theme.secondary,
-                  foregroundColor: theme.tertiary,
-                  icon: Icons.check_rounded,
-                  iconSize: 24,
-                  iconAtEnd: true,
-                  onPressed: _saveCharacter,
-                ),
+
+              RetroIconButton(
+                backgroundColor: theme.secondary,
+                icon: Icons.upload_rounded,
+                iconSize: 40,
+                onPressed: _saveCharacter,
+                tooltip: "Upload character creation",
               ),
             ],
           ),

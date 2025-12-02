@@ -73,7 +73,7 @@ class ApiService {
     try {
       var request = http.MultipartRequest(
         "POST",
-        Uri.parse("$baseUrl/images/upload"),
+        Uri.parse("$baseUrl/images/uploads"),
       );
 
       request.files.add(

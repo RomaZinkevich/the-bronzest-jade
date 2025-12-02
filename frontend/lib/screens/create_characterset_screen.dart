@@ -22,13 +22,11 @@ class CreateCharactersetScreen extends StatefulWidget {
 
 class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
   List<CharacterSetDraft> _drafts = [];
-  CharacterSetDraft? _currentDraft;
+  Map<String, bool> _isAddingCharacter = {};
 
-  final TextEditingController _draftNameController = TextEditingController();
+  String? _expandedDraftId;
 
   bool _isLoading = false;
-  bool _isDraftExpanded = false;
-  bool _isAddingCharacter = false;
   bool _isSubmitting = false;
 
   @override
@@ -76,13 +74,11 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
           );
 
           setState(() {
-            _currentDraft = draft;
-            _drafts.add(draft);
-            _isDraftExpanded = false;
-            _isAddingCharacter = true;
+            _drafts.insert(0, draft);
+            _expandedDraftId = draft.id;
+            _isAddingCharacter[draft.id] = true;
           });
 
-          debugPrint("name: ${draft.name}, public: ${draft.isPublic}");
           DraftStorageService.saveDraft(draft);
           Navigator.pop(context);
         },
@@ -90,11 +86,13 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
     );
   }
 
-  void _selectDraft(CharacterSetDraft draft) {
+  void _toggleDraft(String draftId) {
     setState(() {
-      _currentDraft = draft;
-      _isDraftExpanded = false;
-      _isAddingCharacter = false;
+      if (_expandedDraftId == draftId) {
+        _expandedDraftId = null;
+      } else {
+        _expandedDraftId = draftId;
+      }
     });
   }
 
@@ -144,10 +142,11 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
 
     setState(() {
       _drafts.removeWhere((d) => d.id == draft.id);
-      if (_currentDraft?.id == draft.id) {
-        _currentDraft = null;
-        _isAddingCharacter = false;
+      if (_expandedDraftId == draft.id) {
+        _expandedDraftId = null;
       }
+
+      _isAddingCharacter.remove(draft.id);
     });
 
     if (mounted) {
@@ -173,26 +172,24 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
       if (index != -1) {
         _drafts[index] = updated;
       }
-
-      if (_currentDraft?.id == draft.id) {
-        _currentDraft = updated;
-      }
     });
   }
 
-  void _saveCharacter(Character character) {
-    if (_currentDraft == null) return;
+  void _saveCharacter(String draftId, Character character) {
+    final draftIndex = _drafts.indexWhere((d) => d.id == draftId);
+    if (draftIndex == -1) return;
 
-    final characters = List<Character>.from(_currentDraft!.characters);
+    final draft = _drafts[draftIndex];
+    final characters = List<Character>.from(draft.characters);
+
     final existingIndex = characters.indexWhere((c) => c.id == character.id);
-
     if (existingIndex != -1) {
       characters[existingIndex] = character;
     } else {
       characters.add(character);
     }
 
-    final updatedDraft = _currentDraft!.copyWith(
+    final updatedDraft = draft.copyWith(
       characters: characters,
       lastModified: DateTime.now(),
     );
@@ -200,14 +197,8 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
     DraftStorageService.saveDraft(updatedDraft);
 
     setState(() {
-      final index = _drafts.indexWhere((d) => d.id == updatedDraft.id);
-
-      if (index != -1) {
-        _drafts[index] = updatedDraft;
-      }
-
-      _currentDraft = updatedDraft;
-      _isAddingCharacter = false;
+      _drafts[draftIndex] = updatedDraft;
+      _isAddingCharacter[draftId] = false;
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -219,30 +210,31 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
     );
   }
 
-  Future<void> _submitCharacterSet() async {
-    if (_currentDraft == null || !_currentDraft!.isComplete) return;
+  Future<void> _submitCharacterSet(CharacterSetDraft draft) async {
+    if (!draft.isComplete) return;
 
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      final characterData = _currentDraft!.characters
+      final characterData = draft.characters
           .map((c) => {"name": c.name, "imageUrl": c.imageUrl})
           .toList();
 
       await ApiService.createCharacterSet(
-        _currentDraft!.name,
+        draft.name,
         widget.playerId,
-        _currentDraft!.isPublic,
+        draft.isPublic,
         characterData,
       );
 
-      await DraftStorageService.deleteDraft(_currentDraft!.id);
+      await DraftStorageService.deleteDraft(draft.id);
 
       setState(() {
-        _drafts.removeWhere((d) => d.id == _currentDraft!.id);
-        _currentDraft = null;
+        _drafts.removeWhere((d) => d.id == draft.id);
+        _expandedDraftId = null;
+        _isAddingCharacter.remove(draft.id);
         _isSubmitting = false;
       });
 
@@ -314,303 +306,386 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
             ),
           ),
 
-          Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.all(10),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: theme.error,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [
-                    BoxShadow(
-                      offset: Offset(0, 2),
-                      blurRadius: 4,
-                      color: Colors.black26,
+          _isLoading
+              ? Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(theme.primary),
+                    strokeWidth: 5,
+                    strokeCap: StrokeCap.round,
+                  ),
+                )
+              : _drafts.isEmpty
+              ? Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(40),
+                    margin: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: theme.tertiary.withAlpha(230),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: theme.primary, width: 3),
                     ),
-                  ],
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.add_photo_alternate_rounded,
+                          size: 80,
+                          color: theme.primary,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          "No drafts yet",
+                          style: TextStyle(
+                            color: theme.primary,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          "Tap the + button above to create your first character set!",
+                          style: TextStyle(
+                            color: theme.secondary,
+                            fontSize: 16,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  child: Column(
+                    children: _drafts.map((draft) {
+                      final isExpanded = _expandedDraftId == draft.id;
+                      final isAddingChar =
+                          _isAddingCharacter[draft.id] ?? false;
+
+                      return _buildDraftSection(
+                        draft,
+                        isExpanded,
+                        isAddingChar,
+                        theme,
+                      );
+                    }).toList(),
+                  ),
                 ),
-                child: InkWell(
-                  onTap: () => setState(() {
-                    _isDraftExpanded = !_isDraftExpanded;
-                  }),
-                  child: Row(
-                    children: [
-                      AnimatedRotation(
-                        turns: _isDraftExpanded ? 0 : 0.5,
-                        duration: const Duration(milliseconds: 150),
-                        child: Icon(
-                          Icons.expand_circle_down_outlined,
-                          color: theme.tertiary,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDraftSection(
+    CharacterSetDraft draft,
+    bool isExpanded,
+    bool isAddingChar,
+    ColorScheme theme,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.error,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(offset: Offset(0, 2), blurRadius: 4, color: Colors.black26),
+        ],
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => _toggleDraft(draft.id),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedRotation(
+                    turns: isExpanded ? 0 : 0.5,
+                    duration: const Duration(milliseconds: 150),
+                    child: Icon(
+                      Icons.expand_circle_down_rounded,
+                      color: isExpanded
+                          ? theme.tertiary
+                          : theme.tertiary.withAlpha(200),
+                      size: 32,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: theme.tertiary.withAlpha(200),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Icon(
+                      draft.isPublic
+                          ? Icons.public_rounded
+                          : Icons.lock_rounded,
+                      color: theme.error,
+                      size: 18,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          draft.name,
+                          style: TextStyle(color: theme.tertiary, fontSize: 18),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        Row(
+                          children: [
+                            Icon(
+                              draft.isComplete
+                                  ? Icons.check_circle_rounded
+                                  : Icons.hourglass_empty_rounded,
+                              size: 14,
+                              color: draft.isComplete
+                                  ? theme.primary
+                                  : theme.tertiary.withAlpha(200),
+                            ),
+
+                            const SizedBox(width: 6),
+
+                            Text(
+                              "${draft.characterCount} / 16",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: theme.tertiary.withAlpha(200),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: theme.tertiary),
+                    onSelected: (value) {
+                      if (value == "delete") {
+                        _deleteDraft(draft);
+                      } else if (value == "visibility") {
+                        _toggleDraftVisibility(draft);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: "visibility",
+                        child: Row(
+                          children: [
+                            Icon(
+                              draft.isPublic
+                                  ? Icons.lock_rounded
+                                  : Icons.public_rounded,
+                              size: 20,
+                              color: theme.secondary,
+                            ),
+
+                            const SizedBox(width: 8),
+
+                            Text(
+                              draft.isPublic ? "Make Private" : "Make Public",
+                              style: TextStyle(color: theme.secondary),
+                            ),
+                          ],
                         ),
                       ),
+                      PopupMenuItem(
+                        value: "delete",
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.delete_rounded,
+                              size: 20,
+                              color: theme.error,
+                            ),
 
-                      const SizedBox(width: 10),
+                            const SizedBox(width: 8),
 
-                      Text(
-                        "Character Drafts (${_drafts.length})",
-                        style: TextStyle(color: theme.tertiary, fontSize: 16),
+                            Text(
+                              "Delete Draft",
+                              style: TextStyle(color: theme.error),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
+            ),
+          ),
 
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        height: _isDraftExpanded ? null : 0,
-                        child: _isDraftExpanded
-                            ? Column(
-                                children: [
-                                  if (_isLoading)
-                                    Padding(
-                                      padding: const EdgeInsets.all(40),
-                                      child: CircularProgressIndicator(
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              theme.primary,
-                                            ),
-                                        strokeWidth: 5,
-                                        strokeCap: StrokeCap.round,
-                                      ),
-                                    )
-                                  else if (_drafts.isEmpty)
-                                    Container(
-                                      margin: const EdgeInsets.all(15),
-                                      padding: const EdgeInsets.all(40),
-                                      decoration: BoxDecoration(
-                                        color: theme.tertiary,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        "No drafts yet. Create one to get started!",
-                                        style: TextStyle(
-                                          color: theme.secondary,
-                                          fontSize: 16,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    )
-                                  else
-                                    ..._drafts.map(
-                                      (draft) => DraftListItem(
-                                        draft: draft,
-                                        onTap: () => _selectDraft(draft),
-                                        onDelete: () => _deleteDraft(draft),
-                                        onToggleVisibility: () =>
-                                            _toggleDraftVisibility(draft),
-                                      ),
-                                    ),
-                                ],
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-
-                      if (_currentDraft != null) ...[
-                        Container(
-                          margin: const EdgeInsets.all(10),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: theme.secondary,
-                            border: Border.all(color: theme.tertiary, width: 3),
-                            borderRadius: BorderRadius.circular(12),
+          SizedBox(
+            width: double.infinity,
+            child: ClipRect(
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: isExpanded
+                    ? Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.black38,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(8),
+                            bottomRight: Radius.circular(8),
                           ),
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: ClipRect(
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      _currentDraft!.name,
-                                      style: TextStyle(
-                                        color: theme.tertiary,
-                                        fontSize: 20,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-
-                                  const SizedBox(width: 8),
-
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _currentDraft!.isComplete
-                                          ? Colors.green
-                                          : theme.tertiary,
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Text(
-                                      "${_currentDraft!.characterCount} / 16",
-                                      style: TextStyle(
-                                        color: _currentDraft!.isComplete
-                                            ? theme.tertiary
-                                            : theme.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                alignment: WrapAlignment.start,
-                                children: [
-                                  ..._currentDraft!.characters.map(
-                                    (character) => SizedBox(
-                                      width: 80,
-                                      child: Column(
-                                        children: [
-                                          Container(
-                                            width: 80,
-                                            height: 80,
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              border: Border.all(
-                                                color: theme.secondary,
-                                                width: 2,
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                child: Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  alignment: WrapAlignment.start,
+                                  children: [
+                                    ...draft.characters.map(
+                                      (character) => SizedBox(
+                                        width: 80,
+                                        child: Column(
+                                          children: [
+                                            Container(
+                                              width: 80,
+                                              height: 80,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: theme.secondary,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                                child: Image.network(
+                                                  character.imageUrl,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder:
+                                                      (
+                                                        context,
+                                                        error,
+                                                        stackTrace,
+                                                      ) {
+                                                        debugPrint(
+                                                          character.imageUrl,
+                                                        );
+                                                        return Container(
+                                                          color: theme.primary,
+                                                          child: Icon(
+                                                            Icons.error,
+                                                            color: theme.error,
+                                                          ),
+                                                        );
+                                                      },
+                                                ),
                                               ),
                                             ),
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(6),
-                                              child: Image.network(
-                                                character.imageUrl,
-                                                fit: BoxFit.cover,
-                                                errorBuilder:
-                                                    (
-                                                      context,
-                                                      error,
-                                                      stackTrace,
-                                                    ) {
-                                                      return Container(
-                                                        color: theme.primary,
-                                                        child: Icon(
-                                                          Icons.error,
-                                                          color: theme.error,
-                                                        ),
-                                                      );
-                                                    },
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            character.name,
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              color: theme.tertiary,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
 
-                              if (!_currentDraft!.isComplete)
-                                GestureDetector(
-                                  onTap: () => setState(() {
-                                    _isAddingCharacter = true;
-                                  }),
-                                  child: Container(
-                                    width: 80,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      color: theme.primary.withAlpha(150),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: theme.secondary,
-                                        width: 3,
-                                        style: BorderStyle.solid,
+                                            const SizedBox(height: 4),
+
+                                            Text(
+                                              character.name,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: theme.tertiary,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.add_circle_outline,
-                                          color: theme.tertiary,
-                                          size: 32,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          "ADD NEW",
-                                          style: TextStyle(
-                                            color: theme.tertiary,
-                                            fontSize: 8,
+
+                                    if (!draft.isComplete)
+                                      GestureDetector(
+                                        onTap: () => setState(() {
+                                          _isAddingCharacter[draft.id] = true;
+                                        }),
+                                        child: Container(
+                                          width: 80,
+                                          height: 80,
+                                          decoration: BoxDecoration(
+                                            color: theme.secondary,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: theme.secondary,
+                                              width: 3,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons
+                                                    .add_circle_outline_rounded,
+                                                color: theme.tertiary,
+                                                size: 32,
+                                              ),
+                                              const SizedBox(height: 4),
+
+                                              Text(
+                                                "Add New",
+                                                style: TextStyle(
+                                                  color: theme.tertiary,
+                                                  fontSize: 8,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                  ),
+                                      ),
+
+                                    if (isAddingChar)
+                                      CharacterInputCard(
+                                        onSave: (character) =>
+                                            _saveCharacter(draft.id, character),
+                                        onCancel: () => setState(() {
+                                          _isAddingCharacter[draft.id] = false;
+                                        }),
+                                      ),
+
+                                    if (draft.isComplete && !isAddingChar) ...[
+                                      const SizedBox(height: 12),
+
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
+                              ),
                             ],
                           ),
                         ),
-
-                        if (_isAddingCharacter)
-                          CharacterInputCard(
-                            onSave: _saveCharacter,
-                            onCancel: () => setState(() {
-                              _isAddingCharacter = false;
-                            }),
-                          ),
-
-                        if (_currentDraft!.isComplete &&
-                            !_isAddingCharacter) ...[
-                          const SizedBox(height: 20),
-
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: RetroButton(
-                              text: _isSubmitting
-                                  ? "SUBMITTING..."
-                                  : "SUBMIT SET",
-                              fontSize: 20,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 16,
-                                horizontal: 40,
-                              ),
-                              backgroundColor: Colors.green,
-                              foregroundColor: theme.tertiary,
-                              icon: _isSubmitting
-                                  ? Icons.hourglass_empty
-                                  : Icons.upload_rounded,
-                              iconSize: 28,
-                              iconAtEnd: true,
-                              onPressed: _isSubmitting
-                                  ? () {}
-                                  : _submitCharacterSet,
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-                        ],
-                      ],
-                    ],
-                  ),
-                ),
+                      )
+                    : const SizedBox.shrink(),
               ),
-            ],
+            ),
           ),
         ],
       ),
