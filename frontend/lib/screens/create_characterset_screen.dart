@@ -6,6 +6,7 @@ import 'package:guess_who/services/draft_storage_service.dart';
 import 'package:guess_who/widgets/character_draft_dialogue.dart';
 import 'package:guess_who/widgets/character_input_card.dart';
 import 'package:guess_who/widgets/draft_list_item.dart';
+import 'package:guess_who/widgets/draft_section.dart';
 import 'package:guess_who/widgets/retro_button.dart';
 import 'package:guess_who/widgets/retro_icon_button.dart';
 import 'package:uuid/uuid.dart';
@@ -22,12 +23,12 @@ class CreateCharactersetScreen extends StatefulWidget {
 
 class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
   List<CharacterSetDraft> _drafts = [];
-  Map<String, bool> _isAddingCharacter = {};
-
+  final Map<String, bool> _isAddingCharacter = {};
   String? _expandedDraftId;
 
   bool _isLoading = false;
   bool _isSubmitting = false;
+  final bool _isUploading = false;
 
   @override
   void initState() {
@@ -175,7 +176,7 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
     });
   }
 
-  void _saveCharacter(String draftId, Character character) {
+  void _saveCharacter(String draftId, Character character, bool shouldUpload) {
     final draftIndex = _drafts.indexWhere((d) => d.id == draftId);
     if (draftIndex == -1) return;
 
@@ -211,6 +212,24 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
   }
 
   Future<void> _submitCharacterSet(CharacterSetDraft draft) async {
+    final hasUnuploadedImages = draft.characters.any(
+      (c) => c.uploadedFilename == null || c.uploadedFilename!.isEmpty,
+    );
+
+    if (hasUnuploadedImages) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "Please upload all images first",
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+
+      return;
+    }
+
     if (!draft.isComplete) return;
 
     setState(() {
@@ -306,70 +325,133 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
             ),
           ),
 
-          _isLoading
-              ? Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(theme.primary),
-                    strokeWidth: 5,
-                    strokeCap: StrokeCap.round,
-                  ),
-                )
-              : _drafts.isEmpty
-              ? Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(40),
-                    margin: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: theme.tertiary.withAlpha(230),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: theme.primary, width: 3),
+          if (_isLoading)
+            Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(theme.primary),
+                strokeWidth: 5,
+                strokeCap: StrokeCap.round,
+              ),
+            )
+          else if (_drafts.isEmpty)
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(40),
+                margin: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.tertiary.withAlpha(230),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: theme.primary, width: 3),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.add_photo_alternate_rounded,
+                      size: 80,
+                      color: theme.primary,
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.add_photo_alternate_rounded,
-                          size: 80,
-                          color: theme.primary,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          "No drafts yet",
-                          style: TextStyle(
-                            color: theme.primary,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          "Tap the + button above to create your first character set!",
-                          style: TextStyle(
-                            color: theme.secondary,
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                    const SizedBox(height: 20),
+                    Text(
+                      "No drafts yet",
+                      style: TextStyle(
+                        color: theme.primary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                )
-              : SingleChildScrollView(
-                  child: Column(
-                    children: _drafts.map((draft) {
-                      final isExpanded = _expandedDraftId == draft.id;
-                      final isAddingChar =
-                          _isAddingCharacter[draft.id] ?? false;
+                    const SizedBox(height: 10),
+                    Text(
+                      "Tap the + button above to create your first character set!",
+                      style: TextStyle(color: theme.secondary, fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            SingleChildScrollView(
+              child: Column(
+                children: _drafts.map((draft) {
+                  final isExpanded = _expandedDraftId == draft.id;
+                  final isAddingChar = _isAddingCharacter[draft.id] ?? false;
 
-                      return _buildDraftSection(
-                        draft,
-                        isExpanded,
-                        isAddingChar,
-                        theme,
-                      );
-                    }).toList(),
+                  return DraftSection(
+                    draft: draft,
+                    isExpanded: isExpanded,
+                    isAddingCharacter: isAddingChar,
+                    isSubmitting: _isSubmitting,
+                    onToggle: () => _toggleDraft(draft.id),
+                    onDelete: () => _deleteDraft(draft),
+                    onToggleVisibility: () => _toggleDraftVisibility(draft),
+                    onSaveCharacter: (character, shouldUpload) =>
+                        _saveCharacter(draft.id, character, shouldUpload),
+                    onAddNew: () => setState(() {
+                      if (_isAddingCharacter[draft.id] == true && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "Complete the current form first!",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.error,
+                          ),
+                        );
+
+                        return;
+                      }
+
+                      _isAddingCharacter[draft.id] = true;
+                    }),
+                    onCancelAdd: () => setState(() {
+                      _isAddingCharacter[draft.id] = false;
+                    }),
+                    onSubmit: () => _submitCharacterSet(draft),
+                    onUploadAll: () => {},
+                  );
+                }).toList(),
+              ),
+            ),
+
+          if (_isUploading)
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: theme.tertiary,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.primary, width: 3),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.secondary,
+                        ),
+                        strokeWidth: 5,
+                        strokeCap: StrokeCap.round,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        "Uploading images...",
+                        style: TextStyle(
+                          color: theme.primary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
+            ),
         ],
       ),
     );
@@ -660,8 +742,11 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
 
                                     if (isAddingChar)
                                       CharacterInputCard(
-                                        onSave: (character) =>
-                                            _saveCharacter(draft.id, character),
+                                        onSave: (character) => _saveCharacter(
+                                          draft.id,
+                                          character,
+                                          true,
+                                        ),
                                         onCancel: () => setState(() {
                                           _isAddingCharacter[draft.id] = false;
                                         }),

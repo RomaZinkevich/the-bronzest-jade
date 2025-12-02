@@ -1,0 +1,143 @@
+import "package:flutter/material.dart";
+import "package:guess_who/models/character.dart";
+import "package:guess_who/models/character_set_draft.dart";
+import "package:guess_who/widgets/character_grid.dart";
+import "package:guess_who/widgets/draft_header.dart";
+import "package:guess_who/widgets/retro_button.dart";
+
+class DraftSection extends StatelessWidget {
+  final CharacterSetDraft draft;
+  final bool isExpanded;
+  final bool isAddingCharacter;
+  final bool isSubmitting;
+  final VoidCallback onToggle;
+  final VoidCallback onDelete;
+  final VoidCallback onToggleVisibility;
+  final Function(Character character, bool shouldUpload) onSaveCharacter;
+  final VoidCallback onAddNew;
+  final VoidCallback onCancelAdd;
+  final VoidCallback onSubmit;
+  final VoidCallback onUploadAll;
+
+  const DraftSection({
+    super.key,
+    required this.draft,
+    required this.isExpanded,
+    required this.isAddingCharacter,
+    required this.isSubmitting,
+    required this.onToggle,
+    required this.onDelete,
+    required this.onToggleVisibility,
+    required this.onSaveCharacter,
+    required this.onAddNew,
+    required this.onCancelAdd,
+    required this.onSubmit,
+    required this.onUploadAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.error,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(offset: Offset(0, 2), blurRadius: 4, color: Colors.black26),
+        ],
+      ),
+      child: Column(
+        children: [
+          DraftHeader(
+            draft: draft,
+            isExpanded: isExpanded,
+            onToggle: onToggle,
+            onDelete: onDelete,
+            onToggleVisibility: onToggleVisibility,
+          ),
+
+          SizedBox(
+            width: double.infinity,
+            child: ClipRect(
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: isExpanded
+                    ? Container(
+                        width: double.infinity,
+                        decoration: const BoxDecoration(color: Colors.black38),
+                        child: ClipRect(
+                          child: Column(
+                            children: [
+                              CharacterGrid(
+                                characters: draft.characters,
+                                isAddingCharacter: isAddingCharacter,
+                                isComplete: draft.isComplete,
+                                onSaveCharacter: onSaveCharacter,
+                                onAddNew: onAddNew,
+                                onCancelAdd: onCancelAdd,
+                              ),
+
+                              if (draft.isComplete && !isAddingCharacter) ...[
+                                const SizedBox(height: 12),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      RetroButton(
+                                        text: "UPLOAD ALL IMAGES",
+                                        fontSize: 16,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 14,
+                                          horizontal: 24,
+                                        ),
+                                        backgroundColor: theme.secondary,
+                                        foregroundColor: theme.tertiary,
+                                        icon: Icons.cloud_upload_rounded,
+                                        iconSize: 24,
+                                        iconAtEnd: true,
+                                        onPressed: onUploadAll,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      RetroButton(
+                                        text: isSubmitting
+                                            ? "SUBMITTING..."
+                                            : "SUBMIT SET",
+                                        fontSize: 18,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                          horizontal: 32,
+                                        ),
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: theme.tertiary,
+                                        icon: isSubmitting
+                                            ? Icons.hourglass_empty
+                                            : Icons.check_circle_rounded,
+                                        iconSize: 26,
+                                        iconAtEnd: true,
+                                        onPressed: isSubmitting
+                                            ? () {}
+                                            : onSubmit,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                            ],
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
