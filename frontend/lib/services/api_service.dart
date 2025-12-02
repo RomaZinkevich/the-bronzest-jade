@@ -86,9 +86,11 @@ class ApiService {
       if (response.statusCode == 200) {
         return response.body;
       } else {
+        debugPrint(response.body);
         throw Exception("Failed to upload image: ${response.statusCode}");
       }
     } catch (e) {
+      debugPrint(e.toString());
       throw Exception("Error uploading images: $e");
     }
   }
