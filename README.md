@@ -4,6 +4,74 @@
 
 ### REST API
 
+#### Public Endpoints (No Authentication Required):
+
+#### 1. Create profile
+
+**POST** `/api/auth/register`
+
+**Request:**
+
+```java
+public class RegisterRequest{
+    String username;
+    String email;
+    String password;
+}
+```
+
+**Response:**
+
+```java
+public class AuthResponse {
+    String token;
+    UUID userId;
+    String username;
+}
+```
+
+#### 2. Log in
+
+**POST** `/api/auth/login`
+
+**Request:**
+
+```java
+public class LoginRequest{
+    String username;
+    String password;
+}
+```
+
+**Response:**
+
+```java
+public class AuthResponse {
+    String token;
+    UUID userId;
+    String username;
+}
+```
+
+#### 3. Log in as a guest
+
+**POST** `/api/auth/guest`
+
+**Request:** None
+
+**Response:**
+
+```java
+public class AuthResponse {
+    String token;
+    UUID userId;
+    String username;
+}
+```
+
+
+#### Private Endpoints (Authentication Required):
+
 #### 1. Create Room
 
 **POST** `/api/rooms`
@@ -12,7 +80,6 @@
 
 ```java
 public class CreateRoomRequest {
-    UUID hostId;
     UUID characterSetId;
 }
 ```
@@ -37,11 +104,7 @@ public class RoomDto {
 
 **POST** `/api/rooms/join/{roomCode}`
 
-**Request:**
-
-```java
-UUID playerId;
-```
+**Request:** None
 
 **Response:**
 
@@ -67,7 +130,6 @@ public class RoomDto {
 
 ```java
 public class SelectCharacterRequest {
-    UUID playerId;
     UUID characterId;
 }
 ```
@@ -146,7 +208,6 @@ public class CharacterDto {
 ```java
 public class CreateCharacterSetRequest {
     String name;
-    String createdBy;
     Boolean isPublic;
     List<CreateCharacterRequest> characters;
 }
@@ -195,10 +256,15 @@ public class CharacterDto {
 
 **Connection Requirements:**
 
-Headers must include:
+**Clients must provide:**
 
-- `UUID playerId`
-- `UUID roomId`
+- Header:
+
+  - UUID roomId
+
+- Query Parameter:
+  
+  - token - a valid JWT used to authenticate the WebSocket connection
 
 **Subscribe to:**
 
