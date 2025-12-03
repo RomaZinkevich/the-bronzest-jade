@@ -13,6 +13,7 @@ class CharacterDraftDialogue extends StatefulWidget {
 class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
   final TextEditingController _nameController = TextEditingController();
   bool _isPublic = true;
+  String? _errorText;
 
   @override
   void dispose() {
@@ -52,11 +53,28 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
 
           TextField(
             decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 18,
+              ),
               floatingLabelBehavior: FloatingLabelBehavior.auto,
 
               hintText: "Name your draft...",
               labelText: "Draft Name",
+              errorText: _errorText,
 
+              errorStyle: TextStyle(
+                color: theme.tertiary,
+                backgroundColor: theme.error,
+
+                shadows: [
+                  Shadow(
+                    offset: const Offset(0, 2),
+                    color: theme.shadow,
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
               labelStyle: TextStyle(
                 color: theme.tertiary,
                 fontWeight: FontWeight.bold,
@@ -70,10 +88,17 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
                 borderRadius: BorderRadius.circular(20),
                 borderSide: BorderSide(width: 2, color: theme.tertiary),
               ),
-
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(20),
                 borderSide: BorderSide(width: 2, color: theme.tertiary),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(width: 2, color: theme.error),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(width: 2, color: theme.error),
               ),
             ),
             controller: _nameController,
@@ -132,6 +157,13 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
           RetroButton(
             text: "Submit",
             onPressed: () {
+              if (_nameController.text.trim().isEmpty) {
+                setState(() {
+                  _errorText = "  Name is required‎ ‎ ";
+                });
+
+                return;
+              }
               widget.onCreateDraft(_nameController.text, _isPublic);
             },
 
