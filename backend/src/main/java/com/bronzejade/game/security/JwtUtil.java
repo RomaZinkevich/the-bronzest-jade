@@ -1,4 +1,4 @@
-package com.bronzejade.game.jwtSetup;
+package com.bronzejade.game.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

@@ -1,6 +1,5 @@
-package com.bronzejade.game.domain.dtos;
+package com.bronzejade.game.domain.dtos.Character;
 
-import jakarta.persistence.PrePersist;
 import lombok.*;
 import java.util.List;
 

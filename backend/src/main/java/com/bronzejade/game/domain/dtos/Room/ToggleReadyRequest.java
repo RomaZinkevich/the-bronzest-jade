@@ -1,4 +1,4 @@
-package com.bronzejade.game.domain.dtos;
+package com.bronzejade.game.domain.dtos.Room;
 
 import lombok.*;
 
@@ -9,8 +9,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConnectionInfoDto {
-    private String roomId;
+@Data
+public class ToggleReadyRequest {
     private UUID userId;
-    private String displayName;
 }

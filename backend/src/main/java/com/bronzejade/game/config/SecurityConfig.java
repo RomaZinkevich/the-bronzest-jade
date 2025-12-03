@@ -1,13 +1,12 @@
 package com.bronzejade.game.config;
 
-import com.bronzejade.game.authFilter.JwtAuthFilter;
-import com.bronzejade.game.jwtSetup.JwtUtil;
+import com.bronzejade.game.security.JwtAuthFilter;
+import com.bronzejade.game.security.JwtUtil;
 import com.bronzejade.game.repositories.UserRepository;
 import com.bronzejade.game.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import com.bronzejade.game.service.CustomUserDetailsService;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;

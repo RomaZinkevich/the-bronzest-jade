@@ -1,7 +1,7 @@
 package com.bronzejade.game.service;
 
-import com.bronzejade.game.domain.dtos.CreateRoomRequest;
-import com.bronzejade.game.domain.dtos.RoomPlayerDto;
+import com.bronzejade.game.domain.dtos.Room.CreateRoomRequest;
+import com.bronzejade.game.domain.dtos.User.RoomPlayerDto;
 import com.bronzejade.game.domain.entities.CharacterSet;
 import com.bronzejade.game.domain.entities.Character;
 import com.bronzejade.game.domain.entities.GameState;

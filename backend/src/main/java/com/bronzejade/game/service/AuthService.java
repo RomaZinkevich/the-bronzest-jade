@@ -1,16 +1,15 @@
 package com.bronzejade.game.service;
 
-import com.bronzejade.game.domain.dtos.AuthResponse;
-import com.bronzejade.game.domain.dtos.LoginRequest;
-import com.bronzejade.game.domain.dtos.RegisterRequest;
-import com.bronzejade.game.domain.dtos.UserDto;
+import com.bronzejade.game.domain.dtos.User.AuthResponse;
+import com.bronzejade.game.domain.dtos.User.LoginRequest;
+import com.bronzejade.game.domain.dtos.User.RegisterRequest;
+import com.bronzejade.game.domain.dtos.User.UserDto;
 import com.bronzejade.game.domain.entities.User;
-import com.bronzejade.game.jwtSetup.JwtUtil;
+import com.bronzejade.game.security.JwtUtil;
 import com.bronzejade.game.mapper.UserMapper;
 import com.bronzejade.game.repositories.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -36,11 +35,11 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
         // Check if username or email already exist
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new IllegalArgumentException("Username already exists");
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new IllegalArgumentException("Email already exists");
         }
 
         // Create new user

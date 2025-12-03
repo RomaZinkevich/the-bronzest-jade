@@ -1,6 +1,6 @@
 package com.bronzejade.game.service;
 
-import com.bronzejade.game.authFilter.ApiUserDetails;
+import com.bronzejade.game.security.ApiUserDetails;
 import com.bronzejade.game.domain.entities.User;
 import com.bronzejade.game.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;

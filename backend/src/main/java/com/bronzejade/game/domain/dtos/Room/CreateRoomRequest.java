@@ -1,4 +1,4 @@
-package com.bronzejade.game.domain.dtos;
+package com.bronzejade.game.domain.dtos.Room;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

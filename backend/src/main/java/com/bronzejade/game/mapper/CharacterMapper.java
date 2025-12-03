@@ -1,6 +1,6 @@
 package com.bronzejade.game.mapper;
 
-import com.bronzejade.game.domain.dtos.CharacterDto;
+import com.bronzejade.game.domain.dtos.Character.CharacterDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 

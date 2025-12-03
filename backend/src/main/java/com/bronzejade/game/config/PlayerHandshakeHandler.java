@@ -1,6 +1,6 @@
 package com.bronzejade.game.config;
 
-import com.bronzejade.game.jwtSetup.JwtUtil;
+import com.bronzejade.game.security.JwtUtil;
 import com.bronzejade.game.service.AuthService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.ServerHttpRequest;
