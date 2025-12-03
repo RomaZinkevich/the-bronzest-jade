@@ -6,11 +6,11 @@ import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/screens/online_lobby_screen.dart';
 import 'package:guess_who/services/api_service.dart';
-import 'package:guess_who/widgets/appbar.dart';
-import 'package:guess_who/widgets/inner_shadow_input.dart';
-import 'package:guess_who/widgets/popup_menu.dart';
-import 'package:guess_who/widgets/retro_button.dart';
-import 'package:guess_who/widgets/retro_icon_button.dart';
+import 'package:guess_who/widgets/common/appbar.dart';
+import 'package:guess_who/widgets/common/inner_shadow_input.dart';
+import 'package:guess_who/widgets/common/popup_menu.dart';
+import 'package:guess_who/widgets/common/retro_button.dart';
+import 'package:guess_who/widgets/common/retro_icon_button.dart';
 import 'package:uuid/uuid.dart';
 
 class MainMenuScreen extends StatefulWidget {

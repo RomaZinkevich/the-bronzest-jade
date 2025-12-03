@@ -6,11 +6,11 @@ import 'package:guess_who/models/character.dart';
 import 'package:guess_who/models/room.dart';
 import 'package:guess_who/services/game_state_manager.dart';
 import 'package:guess_who/services/websocket_service.dart';
-import 'package:guess_who/widgets/answering_phase_ui.dart';
-import 'package:guess_who/widgets/asking_phase_ui.dart';
-import 'package:guess_who/widgets/game_board.dart';
-import 'package:guess_who/widgets/make_guess_dialogue.dart';
-import 'package:guess_who/widgets/qa_message_log.dart';
+import 'package:guess_who/widgets/game/answering_phase_ui.dart';
+import 'package:guess_who/widgets/game/asking_phase_ui.dart';
+import 'package:guess_who/widgets/game/game_board.dart';
+import 'package:guess_who/widgets/game/make_guess_dialogue.dart';
+import 'package:guess_who/widgets/game/qa_message_log.dart';
 import 'package:provider/provider.dart';
 
 enum TurnPhase { asking, answering }

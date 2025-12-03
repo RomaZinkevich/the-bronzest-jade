@@ -45,7 +45,7 @@ class ResponsiveWrapper extends StatelessWidget {
                           borderRadius: BorderRadius.circular(50),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.7),
+                              color: Colors.black54,
                               blurRadius: 60,
                               spreadRadius: 10,
                             ),

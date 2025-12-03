@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:guess_who/widgets/retro_icon_button.dart';
+import 'package:guess_who/widgets/common/retro_icon_button.dart';
 
 class InnerShadowInput extends StatelessWidget {
   final TextEditingController controller;

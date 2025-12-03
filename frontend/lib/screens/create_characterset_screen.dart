@@ -3,10 +3,10 @@ import 'package:guess_who/models/character.dart';
 import 'package:guess_who/models/character_set_draft.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/draft_storage_service.dart';
-import 'package:guess_who/widgets/character_draft_dialogue.dart';
-import 'package:guess_who/widgets/draft_section.dart';
-import 'package:guess_who/widgets/retro_button.dart';
-import 'package:guess_who/widgets/retro_icon_button.dart';
+import 'package:guess_who/widgets/common/retro_button.dart';
+import 'package:guess_who/widgets/common/retro_icon_button.dart';
+import 'package:guess_who/widgets/draft/character_draft_dialogue.dart';
+import 'package:guess_who/widgets/draft/draft_section.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateCharactersetScreen extends StatefulWidget {
@@ -120,18 +120,6 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
             ),
           ),
 
-          // FilledButton(
-          //   onPressed: () => Navigator.pop(context, true),
-          //   style: ButtonStyle(
-          //     backgroundColor: WidgetStatePropertyAll(
-          //       Theme.of(context).colorScheme.error,
-          //     ),
-          //   ),
-          //   child: Text(
-          //     "Delete",
-          //     style: TextStyle(color: Theme.of(context).colorScheme.tertiary),
-          //   ),
-          // ),
           RetroButton(
             text: "Delete",
             onPressed: () => Navigator.pop(context, true),

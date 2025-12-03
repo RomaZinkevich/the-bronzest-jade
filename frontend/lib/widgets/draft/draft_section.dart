@@ -1,9 +1,9 @@
 import "package:flutter/material.dart";
 import "package:guess_who/models/character.dart";
 import "package:guess_who/models/character_set_draft.dart";
-import "package:guess_who/widgets/character_grid.dart";
-import "package:guess_who/widgets/draft_header.dart";
-import "package:guess_who/widgets/retro_button.dart";
+import "package:guess_who/widgets/character/character_grid.dart";
+import "package:guess_who/widgets/common/retro_button.dart";
+import "package:guess_who/widgets/draft/draft_header.dart";
 
 class DraftSection extends StatelessWidget {
   final CharacterSetDraft draft;

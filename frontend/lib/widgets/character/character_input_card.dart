@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:guess_who/models/character.dart';
 import 'package:guess_who/services/api_service.dart';
-import 'package:guess_who/widgets/retro_icon_button.dart';
+import 'package:guess_who/widgets/common/retro_icon_button.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 

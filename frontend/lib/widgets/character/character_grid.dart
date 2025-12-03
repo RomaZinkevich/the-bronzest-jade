@@ -1,8 +1,8 @@
 import "package:flutter/material.dart";
 import "package:guess_who/models/character.dart";
-import "package:guess_who/widgets/add_character_button.dart";
-import "package:guess_who/widgets/character_grid_item.dart";
-import "package:guess_who/widgets/character_input_form.dart";
+import "package:guess_who/widgets/character/character_grid_item.dart";
+import "package:guess_who/widgets/character/character_input_form.dart";
+import "package:guess_who/widgets/draft/add_character_button.dart";
 
 class CharacterGrid extends StatelessWidget {
   final List<Character> characters;
