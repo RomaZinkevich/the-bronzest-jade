@@ -1,6 +1,6 @@
 package com.bronzejade.game.mapper;
 
-import com.bronzejade.game.domain.dtos.RoomPlayerDto;
+import com.bronzejade.game.domain.dtos.User.RoomPlayerDto;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;

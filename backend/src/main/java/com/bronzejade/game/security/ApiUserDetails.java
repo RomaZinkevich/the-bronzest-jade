@@ -1,14 +1,12 @@
-package com.bronzejade.game.authFilter;
+package com.bronzejade.game.security;
 
 import com.bronzejade.game.domain.entities.User;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.List;
 
 @Getter
 @RequiredArgsConstructor

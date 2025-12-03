@@ -1,6 +1,6 @@
 package com.bronzejade.game.controllers;
 
-import com.bronzejade.game.domain.dtos.ApiErrorResponse;
+import com.bronzejade.game.domain.dtos.Error.ApiErrorResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

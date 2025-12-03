@@ -1,9 +1,9 @@
 package com.bronzejade.game.controllers;
 
-import com.bronzejade.game.authFilter.ApiUserDetails;
-import com.bronzejade.game.domain.dtos.CharacterSetDto;
-import com.bronzejade.game.domain.dtos.CreateCharacterSetRequest;
-import com.bronzejade.game.domain.dtos.UserDto;
+import com.bronzejade.game.security.ApiUserDetails;
+import com.bronzejade.game.domain.dtos.Character.CharacterSetDto;
+import com.bronzejade.game.domain.dtos.Character.CreateCharacterSetRequest;
+import com.bronzejade.game.domain.dtos.User.UserDto;
 import com.bronzejade.game.domain.entities.CharacterSet;
 import com.bronzejade.game.mapper.CharacterSetMapper;
 import com.bronzejade.game.service.AuthService;

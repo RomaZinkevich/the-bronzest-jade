@@ -1,8 +1,8 @@
 package com.bronzejade.game.controllers;
 
-import com.bronzejade.game.domain.dtos.AuthResponse;
-import com.bronzejade.game.domain.dtos.LoginRequest;
-import com.bronzejade.game.domain.dtos.RegisterRequest;
+import com.bronzejade.game.domain.dtos.User.AuthResponse;
+import com.bronzejade.game.domain.dtos.User.LoginRequest;
+import com.bronzejade.game.domain.dtos.User.RegisterRequest;
 import com.bronzejade.game.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

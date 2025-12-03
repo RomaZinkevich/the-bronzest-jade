@@ -2,10 +2,10 @@ package com.bronzejade.game.controllers;
 
 import com.bronzejade.game.domain.RoomStatus;
 import com.bronzejade.game.domain.TurnPhase;
-import com.bronzejade.game.domain.dtos.MessageDto;
+import com.bronzejade.game.domain.dtos.Room.MessageDto;
 import com.bronzejade.game.domain.entities.*;
 import com.bronzejade.game.domain.entities.Character;
-import com.bronzejade.game.jwtSetup.JwtUtil;
+import com.bronzejade.game.security.JwtUtil;
 import com.bronzejade.game.repositories.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

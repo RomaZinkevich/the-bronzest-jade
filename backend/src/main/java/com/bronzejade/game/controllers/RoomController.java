@@ -1,7 +1,11 @@
 package com.bronzejade.game.controllers;
 
-import com.bronzejade.game.authFilter.ApiUserDetails;
-import com.bronzejade.game.domain.dtos.*;
+import com.bronzejade.game.security.ApiUserDetails;
+import com.bronzejade.game.domain.dtos.Character.SelectCharacterRequest;
+import com.bronzejade.game.domain.dtos.Room.CreateRoomRequest;
+import com.bronzejade.game.domain.dtos.Room.RoomDto;
+import com.bronzejade.game.domain.dtos.User.RoomPlayerDto;
+import com.bronzejade.game.domain.dtos.User.UserDto;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.mapper.RoomMapper;
 import com.bronzejade.game.mapper.RoomPlayerMapper;
@@ -12,7 +16,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 

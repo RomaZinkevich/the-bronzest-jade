@@ -1,4 +1,4 @@
-package com.bronzejade.game.domain.dtos;
+package com.bronzejade.game.domain.dtos.Character;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

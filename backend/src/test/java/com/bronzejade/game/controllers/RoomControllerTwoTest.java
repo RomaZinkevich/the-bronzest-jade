@@ -1,10 +1,10 @@
 package com.bronzejade.game.controllers;
 
-import com.bronzejade.game.authFilter.ApiUserDetails;
-import com.bronzejade.game.domain.dtos.RoomPlayerDto;
-import com.bronzejade.game.domain.dtos.SelectCharacterRequest;
-import com.bronzejade.game.domain.dtos.RoomDto;
-import com.bronzejade.game.domain.dtos.UserDto;
+import com.bronzejade.game.security.ApiUserDetails;
+import com.bronzejade.game.domain.dtos.User.RoomPlayerDto;
+import com.bronzejade.game.domain.dtos.Character.SelectCharacterRequest;
+import com.bronzejade.game.domain.dtos.Room.RoomDto;
+import com.bronzejade.game.domain.dtos.User.UserDto;
 import com.bronzejade.game.domain.entities.Room;
 import com.bronzejade.game.domain.entities.RoomPlayer;
 import com.bronzejade.game.mapper.RoomMapper;

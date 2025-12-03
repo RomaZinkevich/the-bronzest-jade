@@ -1,4 +1,4 @@
-package com.bronzejade.game.domain.dtos;
+package com.bronzejade.game.domain.dtos.Room;
 
 import lombok.*;
 
@@ -9,7 +9,6 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
-public class ToggleReadyRequest {
-    private UUID userId;
+public class FinishGameRequest {
+    private UUID winnerId;
 }

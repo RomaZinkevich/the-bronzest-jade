@@ -1,7 +1,7 @@
 package com.bronzejade.game.service;
 
-import com.bronzejade.game.domain.dtos.CreateCharacterRequest;
-import com.bronzejade.game.domain.dtos.CreateCharacterSetRequest;
+import com.bronzejade.game.domain.dtos.Character.CreateCharacterRequest;
+import com.bronzejade.game.domain.dtos.Character.CreateCharacterSetRequest;
 import com.bronzejade.game.domain.entities.CharacterSet;
 import com.bronzejade.game.domain.entities.Character;
 import jakarta.persistence.EntityNotFoundException;
