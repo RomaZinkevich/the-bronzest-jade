@@ -20,6 +20,7 @@ class DraftHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
+    final progress = draft.characterCount / 16;
 
     return InkWell(
       onTap: onToggle,
@@ -51,7 +52,7 @@ class DraftHeader extends StatelessWidget {
               ),
               child: Icon(
                 draft.isPublic ? Icons.public_rounded : Icons.lock_rounded,
-                color: theme.error,
+                color: draft.isPublic ? theme.primary : theme.error,
                 size: 18,
               ),
             ),
@@ -78,9 +79,7 @@ class DraftHeader extends StatelessWidget {
                             ? Icons.check_circle_rounded
                             : Icons.hourglass_empty_rounded,
                         size: 14,
-                        color: draft.isComplete
-                            ? theme.primary
-                            : theme.tertiary.withAlpha(200),
+                        color: theme.tertiary.withAlpha(200),
                       ),
 
                       const SizedBox(width: 6),
@@ -92,6 +91,22 @@ class DraftHeader extends StatelessWidget {
                           color: theme.tertiary.withAlpha(200),
                         ),
                       ),
+
+                      const SizedBox(width: 8),
+
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            minHeight: 6,
+                            backgroundColor: theme.tertiary.withAlpha(100),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.tertiary,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -99,6 +114,7 @@ class DraftHeader extends StatelessWidget {
             ),
 
             PopupMenuButton<String>(
+              color: theme.tertiary,
               icon: Icon(Icons.more_vert, color: theme.tertiary),
               onSelected: (value) {
                 if (value == "delete") {

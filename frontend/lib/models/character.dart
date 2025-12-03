@@ -16,10 +16,21 @@ class Character {
   });
 
   factory Character.fromJson(Map<String, dynamic> json) {
+    final imagePath = json["imagePath"] as String?;
+    File? imageFile;
+
+    if (imagePath != null && imagePath.isNotEmpty) {
+      final file = File(imagePath);
+      if (file.existsSync()) {
+        imageFile = file;
+      }
+    }
+
     return Character(
       id: json["id"] as String,
       name: json["name"] as String,
       imageUrl: json["imageUrl"] as String,
+      imageFile: imageFile,
       uploadedFilename: json["uploadedFilename"] as String?,
     );
   }
@@ -29,6 +40,7 @@ class Character {
       "id": id,
       "name": name,
       "imageUrl": imageUrl,
+      if (imageFile != null) "imagePath": imageFile!.path,
       if (uploadedFilename != null) "uploadedFilename": uploadedFilename,
     };
   }

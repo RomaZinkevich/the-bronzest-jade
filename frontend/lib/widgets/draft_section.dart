@@ -48,7 +48,7 @@ class DraftSection extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: theme.error,
+        color: draft.isPublic ? theme.primary : theme.error,
         borderRadius: BorderRadius.circular(8),
         boxShadow: const [
           BoxShadow(offset: Offset(0, 2), blurRadius: 4, color: Colors.black26),
@@ -107,8 +107,8 @@ class DraftSection extends StatelessWidget {
                                         text: "UPLOAD ALL IMAGES",
                                         fontSize: 16,
                                         padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                          horizontal: 24,
+                                          vertical: 16,
+                                          horizontal: 32,
                                         ),
                                         backgroundColor: theme.secondary,
                                         foregroundColor: theme.tertiary,
@@ -127,11 +127,11 @@ class DraftSection extends StatelessWidget {
                                           vertical: 16,
                                           horizontal: 32,
                                         ),
-                                        backgroundColor: Colors.green,
+                                        backgroundColor: theme.error,
                                         foregroundColor: theme.tertiary,
                                         icon: isSubmitting
                                             ? Icons.hourglass_empty
-                                            : Icons.check_circle_rounded,
+                                            : Icons.send_rounded,
                                         iconSize: 26,
                                         iconAtEnd: true,
                                         onPressed: isSubmitting

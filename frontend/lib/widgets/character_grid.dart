@@ -31,13 +31,10 @@ class CharacterGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEditing = editingCharacter != null;
-    final displayCharacters = isEditing
-        ? characters.where((c) => c.id != editingCharacter!.id).toList()
-        : characters;
 
-    final itemCount = isComplete
-        ? displayCharacters.length
-        : displayCharacters.length + (isAddingCharacter || isEditing ? 2 : 1);
+    int itemCount = characters.length;
+    if ((isAddingCharacter || isEditing) && !isComplete) itemCount++;
+    if (!isComplete && !isAddingCharacter && !isEditing) itemCount++;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -51,20 +48,24 @@ class CharacterGrid extends StatelessWidget {
       ),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (index < displayCharacters.length) {
+        if (index < characters.length) {
+          final character = characters[index];
+
+          if (isEditing && character.id == editingCharacter!.id) {
+            return CharacterInputForm(
+              character: editingCharacter,
+              onSave: onSaveCharacter,
+              onCancel: onCancelAdd,
+            );
+          }
+
           return CharacterGridItem(
-            character: displayCharacters[index],
-            onTap: () => onEditCharacter(displayCharacters[index]),
-            onEdit: () => onEditCharacter(displayCharacters[index]),
-            onDelete: () => onDeleteCharacter(displayCharacters[index]),
+            character: character,
+            onTap: () => onEditCharacter(character),
+            onEdit: () => onEditCharacter(character),
+            onDelete: () => onDeleteCharacter(character),
           );
-        } else if (isEditing && index == displayCharacters.length) {
-          return CharacterInputForm(
-            character: editingCharacter,
-            onSave: onSaveCharacter,
-            onCancel: onCancelAdd,
-          );
-        } else if (isAddingCharacter && index == displayCharacters.length) {
+        } else if (isAddingCharacter) {
           return CharacterInputForm(
             onSave: onSaveCharacter,
             onCancel: onCancelAdd,

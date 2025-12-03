@@ -31,7 +31,7 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
         side: BorderSide(color: theme.tertiary, width: 4),
       ),
       title: Text(
-        "New Set",
+        "Define New Set",
         style: TextStyle(
           color: theme.tertiary,
           shadows: [
@@ -48,7 +48,7 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
 
           TextField(
             decoration: InputDecoration(
@@ -58,7 +58,7 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
               labelText: "Draft Name",
 
               labelStyle: TextStyle(
-                color: theme.tertiary.withAlpha(200),
+                color: theme.tertiary,
                 fontWeight: FontWeight.bold,
               ),
               hintStyle: TextStyle(
@@ -67,12 +67,12 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
               ),
 
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(width: 2, color: theme.primary),
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(width: 2, color: theme.tertiary),
               ),
 
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(20),
                 borderSide: BorderSide(width: 2, color: theme.tertiary),
               ),
             ),
@@ -80,7 +80,7 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
             style: TextStyle(color: theme.tertiary),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           InkWell(
             onTap: () {
@@ -88,16 +88,15 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
                 _isPublic = !_isPublic;
               });
             },
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(30),
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                // color: theme.tertiary,
+                borderRadius: BorderRadius.circular(30),
                 border: Border.all(width: 2, color: theme.tertiary),
               ),
               padding: const EdgeInsets.all(10),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
@@ -105,11 +104,10 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
                     style: TextStyle(color: theme.tertiary, fontSize: 18),
                   ),
                   Container(
-                    width: 30,
-                    height: 30,
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: _isPublic ? theme.primary : theme.error,
-                      borderRadius: BorderRadius.circular(30),
+                      shape: BoxShape.circle,
                     ),
                     child: Icon(
                       _isPublic ? Icons.public : Icons.lock,
@@ -137,12 +135,8 @@ class _CharacterDraftDialogueState extends State<CharacterDraftDialogue> {
               widget.onCreateDraft(_nameController.text, _isPublic);
             },
 
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-
-            icon: Icons.upload_rounded,
-            iconSize: 30,
-            iconAtEnd: false,
-            iconSpacing: 0,
+            fontSize: 18,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           ),
         ],
       ),

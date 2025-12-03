@@ -28,7 +28,7 @@ class CharacterGridItem extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isUploaded ? Colors.green : theme.secondary,
+            color: isUploaded ? Colors.green : theme.tertiary,
             width: isUploaded ? 3 : 2,
           ),
           color: theme.secondary,
@@ -59,7 +59,7 @@ class CharacterGridItem extends StatelessWidget {
             ),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-              color: isUploaded ? Colors.green : theme.secondary,
+              color: isUploaded ? Colors.green : theme.tertiary,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -69,7 +69,7 @@ class CharacterGridItem extends StatelessWidget {
                     icon: Icon(
                       Icons.more_vert,
                       size: 26,
-                      color: theme.tertiary,
+                      color: theme.secondary,
                     ),
                     onSelected: (value) {
                       if (value == "edit" && onEdit != null) {
@@ -113,11 +113,7 @@ class CharacterGridItem extends StatelessWidget {
                   Expanded(
                     child: Text(
                       character.name,
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: theme.tertiary,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 20, color: theme.secondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,

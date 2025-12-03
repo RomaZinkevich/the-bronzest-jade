@@ -3,7 +3,9 @@ import "dart:io";
 import "package:flutter/material.dart";
 import "package:guess_who/models/character.dart";
 import "package:image_picker/image_picker.dart";
+import "package:path_provider/path_provider.dart";
 import "package:uuid/uuid.dart";
+import "package:path/path.dart" as path;
 
 class CharacterInputForm extends StatefulWidget {
   final Character? character;
@@ -37,6 +39,20 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
     }
   }
 
+  Future<File> _copyToAppDirectory(File sourceFile) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final imagesDir = Directory("${directory.path}/character_images");
+
+    if (!await imagesDir.exists()) {
+      await imagesDir.create(recursive: true);
+    }
+
+    final fileName = "${const Uuid().v4()}${path.extension(sourceFile.path)}";
+    final targetPath = "${imagesDir.path}/$fileName";
+
+    return await sourceFile.copy(targetPath);
+  }
+
   Future<void> _pickImage() async {
     try {
       final XFile? pickedFile = await _imagePicker.pickImage(
@@ -51,8 +67,11 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
         return;
       }
 
+      final tempFile = File(pickedFile.path);
+      final permanentFile = await _copyToAppDirectory(tempFile);
+
       setState(() {
-        _selectedImage = File(pickedFile.path);
+        _selectedImage = permanentFile;
       });
     } catch (e) {
       if (!mounted) return;
@@ -369,7 +388,7 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: theme.primary,
+                color: theme.secondary,
                 fontWeight: FontWeight.bold,
               ),
               decoration: InputDecoration(
@@ -378,8 +397,6 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
                   color: theme.primary.withAlpha(140),
                   fontWeight: FontWeight.bold,
                 ),
-                filled: true,
-                fillColor: theme.secondary.withAlpha(50),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
                   borderSide: BorderSide(color: theme.secondary, width: 2),

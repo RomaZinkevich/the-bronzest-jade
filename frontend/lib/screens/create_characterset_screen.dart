@@ -5,6 +5,7 @@ import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/draft_storage_service.dart';
 import 'package:guess_who/widgets/character_draft_dialogue.dart';
 import 'package:guess_who/widgets/draft_section.dart';
+import 'package:guess_who/widgets/retro_button.dart';
 import 'package:guess_who/widgets/retro_icon_button.dart';
 import 'package:uuid/uuid.dart';
 
@@ -119,17 +120,23 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
             ),
           ),
 
-          FilledButton(
+          // FilledButton(
+          //   onPressed: () => Navigator.pop(context, true),
+          //   style: ButtonStyle(
+          //     backgroundColor: WidgetStatePropertyAll(
+          //       Theme.of(context).colorScheme.error,
+          //     ),
+          //   ),
+          //   child: Text(
+          //     "Delete",
+          //     style: TextStyle(color: Theme.of(context).colorScheme.tertiary),
+          //   ),
+          // ),
+          RetroButton(
+            text: "Delete",
             onPressed: () => Navigator.pop(context, true),
-            style: ButtonStyle(
-              backgroundColor: WidgetStatePropertyAll(
-                Theme.of(context).colorScheme.error,
-              ),
-            ),
-            child: Text(
-              "Delete",
-              style: TextStyle(color: Theme.of(context).colorScheme.tertiary),
-            ),
+            fontSize: 14,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           ),
         ],
       ),
@@ -659,70 +666,73 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
           else
             SingleChildScrollView(
               child: Column(
-                children: _drafts.map((draft) {
-                  final isExpanded = _expandedDraftId == draft.id;
-                  final isAddingChar = _isAddingCharacter[draft.id] ?? false;
-                  final editingChar = _editingCharacter[draft.id];
+                children: [
+                  ..._drafts.map((draft) {
+                    final isExpanded = _expandedDraftId == draft.id;
+                    final isAddingChar = _isAddingCharacter[draft.id] ?? false;
+                    final editingChar = _editingCharacter[draft.id];
 
-                  return DraftSection(
-                    draft: draft,
-                    isExpanded: isExpanded,
-                    isAddingCharacter: isAddingChar,
-                    editingCharacter: editingChar,
-                    isSubmitting: _isSubmitting,
-                    onToggle: () => _toggleDraft(draft.id),
-                    onDelete: () => _deleteDraft(draft),
-                    onToggleVisibility: () => _toggleDraftVisibility(draft),
-                    onSaveCharacter: (character, shouldUpload) =>
-                        _saveCharacter(draft.id, character, shouldUpload),
-                    onEditCharacter: (character) {
-                      if (editingChar != null) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Finish editing character first",
-                                textAlign: TextAlign.center,
+                    return DraftSection(
+                      draft: draft,
+                      isExpanded: isExpanded,
+                      isAddingCharacter: isAddingChar,
+                      editingCharacter: editingChar,
+                      isSubmitting: _isSubmitting,
+                      onToggle: () => _toggleDraft(draft.id),
+                      onDelete: () => _deleteDraft(draft),
+                      onToggleVisibility: () => _toggleDraftVisibility(draft),
+                      onSaveCharacter: (character, shouldUpload) =>
+                          _saveCharacter(draft.id, character, shouldUpload),
+                      onEditCharacter: (character) {
+                        if (editingChar != null) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "Finish editing character first",
+                                  textAlign: TextAlign.center,
+                                ),
+                                backgroundColor: theme.error,
                               ),
-                              backgroundColor: theme.error,
-                            ),
-                          );
-                        }
+                            );
+                          }
 
-                        return;
-                      }
-                      _editCharacter(draft.id, character);
-                    },
-                    onDeleteCharacter: (character) =>
-                        _showDeleteCharacterConfirmation(draft.id, character),
-                    onAddNew: () => setState(() {
-                      if (_isAddingCharacter[draft.id] == true ||
-                          editingChar != null) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                "Finish adding or editing your character",
-                                textAlign: TextAlign.center,
+                          return;
+                        }
+                        _editCharacter(draft.id, character);
+                      },
+                      onDeleteCharacter: (character) =>
+                          _showDeleteCharacterConfirmation(draft.id, character),
+                      onAddNew: () => setState(() {
+                        if (_isAddingCharacter[draft.id] == true ||
+                            editingChar != null) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  "Finish adding or editing your character",
+                                  textAlign: TextAlign.center,
+                                ),
+                                backgroundColor: theme.error,
                               ),
-                              backgroundColor: theme.error,
-                            ),
-                          );
-                        }
+                            );
+                          }
 
-                        return;
-                      }
-                      _isAddingCharacter[draft.id] = true;
-                      _editingCharacter[draft.id] = null;
-                    }),
-                    onCancelAdd: () => setState(() {
-                      _isAddingCharacter[draft.id] = false;
-                      _editingCharacter[draft.id] = null;
-                    }),
-                    onUploadAll: () => _uploadAllImages(draft),
-                    onSubmit: () => _submitCharacterSet(draft),
-                  );
-                }).toList(),
+                          return;
+                        }
+                        _isAddingCharacter[draft.id] = true;
+                        _editingCharacter[draft.id] = null;
+                      }),
+                      onCancelAdd: () => setState(() {
+                        _isAddingCharacter[draft.id] = false;
+                        _editingCharacter[draft.id] = null;
+                      }),
+                      onUploadAll: () => _uploadAllImages(draft),
+                      onSubmit: () => _submitCharacterSet(draft),
+                    );
+                  }),
+                  const SizedBox(height: 100),
+                ],
               ),
             ),
 
