@@ -6,12 +6,12 @@ import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/screens/online_lobby_screen.dart';
 import 'package:guess_who/services/api_service.dart';
+import 'package:guess_who/services/auth_service.dart';
 import 'package:guess_who/widgets/common/appbar.dart';
 import 'package:guess_who/widgets/common/inner_shadow_input.dart';
 import 'package:guess_who/widgets/common/popup_menu.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
 import 'package:guess_who/widgets/common/retro_icon_button.dart';
-import 'package:uuid/uuid.dart';
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -22,7 +22,25 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
-  final String _playerId = const Uuid().v4();
+
+  String _playerId = "";
+  String _playerName = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final userId = await AuthService.getUserId();
+    final username = await AuthService.getUsername();
+
+    setState(() {
+      _playerId = userId ?? "";
+      _playerName = username ?? "Guest";
+    });
+  }
 
   @override
   void dispose() {
@@ -267,6 +285,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   Future<List<Map<String, dynamic>>> _fetchSampleRooms() async {
     final randomNum = Random.secure().nextInt(5);
     await Future.delayed(Duration(seconds: randomNum));
+    debugPrint(
+      "Authorized? ${await AuthService.isAuthenticated()}, name: ${await AuthService.getUsername()}, id: ${await AuthService.getUserId()}",
+    );
 
     return [
       {
@@ -449,8 +470,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        playerName: "Guest Player",
-        playerId: "#${_playerId.substring(0, 6)}",
+        playerName: _playerName,
+        playerId: "#${_playerId.isNotEmpty ? _playerId.substring(0, 6) : ""}",
         onSettingsPressed: () {},
         onCreateCharacterSetPressed: () {
           Navigator.push(

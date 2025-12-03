@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:guess_who/services/auth_service.dart';
 import 'package:stomp_dart_client/stomp_dart_client.dart';
 
 class WebsocketService {
@@ -44,9 +45,16 @@ class WebsocketService {
     }
   }
 
-  void connect(String roomId, String playerId) {
+  Future<void> connect(String roomId, String playerId) async {
     _roomId = roomId;
     _playerId = playerId;
+
+    final token = await AuthService.getToken();
+    if (token == null || token.isEmpty) {
+      debugPrint("No authentication token found");
+      _addToErrorStream("Authentication required");
+      return;
+    }
 
     _stompClient = StompClient(
       config: StompConfig.sockJS(
@@ -67,7 +75,7 @@ class WebsocketService {
           _isConnected = false;
           _addToConnectionStream(false);
         },
-        stompConnectHeaders: {"playerId": playerId, "roomId": roomId},
+        stompConnectHeaders: {"roomId": roomId},
       ),
     );
 
