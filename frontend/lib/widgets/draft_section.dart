@@ -10,10 +10,13 @@ class DraftSection extends StatelessWidget {
   final bool isExpanded;
   final bool isAddingCharacter;
   final bool isSubmitting;
+  final Character? editingCharacter;
   final VoidCallback onToggle;
   final VoidCallback onDelete;
   final VoidCallback onToggleVisibility;
   final Function(Character character, bool shouldUpload) onSaveCharacter;
+  final Function(Character character) onEditCharacter;
+  final Function(Character character) onDeleteCharacter;
   final VoidCallback onAddNew;
   final VoidCallback onCancelAdd;
   final VoidCallback onSubmit;
@@ -33,6 +36,9 @@ class DraftSection extends StatelessWidget {
     required this.onCancelAdd,
     required this.onSubmit,
     required this.onUploadAll,
+    required this.onEditCharacter,
+    required this.onDeleteCharacter,
+    this.editingCharacter,
   });
 
   @override
@@ -67,17 +73,26 @@ class DraftSection extends StatelessWidget {
                 child: isExpanded
                     ? Container(
                         width: double.infinity,
-                        decoration: const BoxDecoration(color: Colors.black38),
+                        decoration: const BoxDecoration(
+                          color: Colors.black38,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(8),
+                            bottomRight: Radius.circular(8),
+                          ),
+                        ),
                         child: ClipRect(
                           child: Column(
                             children: [
                               CharacterGrid(
                                 characters: draft.characters,
                                 isAddingCharacter: isAddingCharacter,
+                                editingCharacter: editingCharacter,
                                 isComplete: draft.isComplete,
                                 onSaveCharacter: onSaveCharacter,
                                 onAddNew: onAddNew,
                                 onCancelAdd: onCancelAdd,
+                                onEditCharacter: onEditCharacter,
+                                onDeleteCharacter: onDeleteCharacter,
                               ),
 
                               if (draft.isComplete && !isAddingCharacter) ...[

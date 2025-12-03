@@ -95,6 +95,21 @@ class ApiService {
     }
   }
 
+  static Future<void> deleteImage(String filename) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("$baseUrl/images/$filename"),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception("Failed to delete image: ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("Error deleting image: $e");
+    }
+  }
+
   static Future<CharacterSet> createCharacterSet(
     String name,
     String createdBy,

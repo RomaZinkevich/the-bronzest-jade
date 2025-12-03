@@ -4,10 +4,7 @@ import 'package:guess_who/models/character_set_draft.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/draft_storage_service.dart';
 import 'package:guess_who/widgets/character_draft_dialogue.dart';
-import 'package:guess_who/widgets/character_input_card.dart';
-import 'package:guess_who/widgets/draft_list_item.dart';
 import 'package:guess_who/widgets/draft_section.dart';
-import 'package:guess_who/widgets/retro_button.dart';
 import 'package:guess_who/widgets/retro_icon_button.dart';
 import 'package:uuid/uuid.dart';
 
@@ -24,11 +21,12 @@ class CreateCharactersetScreen extends StatefulWidget {
 class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
   List<CharacterSetDraft> _drafts = [];
   final Map<String, bool> _isAddingCharacter = {};
+  final Map<String, Character?> _editingCharacter = {};
   String? _expandedDraftId;
 
   bool _isLoading = false;
   bool _isSubmitting = false;
-  final bool _isUploading = false;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -176,18 +174,87 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
     });
   }
 
-  void _saveCharacter(String draftId, Character character, bool shouldUpload) {
+  void _saveCharacter(
+    String draftId,
+    Character character,
+    bool shouldUpload,
+  ) async {
     final draftIndex = _drafts.indexWhere((d) => d.id == draftId);
     if (draftIndex == -1) return;
 
     final draft = _drafts[draftIndex];
     final characters = List<Character>.from(draft.characters);
 
-    final existingIndex = characters.indexWhere((c) => c.id == character.id);
+    Character finalCharacter = character;
+
+    if (shouldUpload && character.imageFile != null) {
+      try {
+        setState(() {
+          _isUploading = true;
+        });
+
+        final existingCharacter = characters
+            .where((c) => c.id == character.id)
+            .firstOrNull;
+
+        final oldFilename = existingCharacter?.uploadedFilename;
+
+        final filename = await ApiService.uploadImage(character.imageFile!);
+        final imageUrl = "${ApiService.baseUrl}/images/$filename";
+
+        if (oldFilename != null &&
+            oldFilename.isNotEmpty &&
+            oldFilename != filename) {
+          try {
+            await ApiService.deleteImage(oldFilename);
+          } catch (e) {
+            debugPrint("Failed to delete old image: $e");
+          }
+        }
+
+        finalCharacter = character.copyWith(
+          uploadedFilename: filename,
+          imageUrl: imageUrl,
+        );
+
+        setState(() {
+          _isUploading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                "Image uploaded successfully",
+                textAlign: TextAlign.center,
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        }
+      } catch (e) {
+        setState(() => _isUploading = false);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Failed to upload image: $e"),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    final existingIndex = characters.indexWhere(
+      (c) => c.id == finalCharacter.id,
+    );
     if (existingIndex != -1) {
-      characters[existingIndex] = character;
+      characters[existingIndex] = finalCharacter;
     } else {
-      characters.add(character);
+      characters.add(finalCharacter);
     }
 
     final updatedDraft = draft.copyWith(
@@ -195,20 +262,234 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
       lastModified: DateTime.now(),
     );
 
-    DraftStorageService.saveDraft(updatedDraft);
+    await DraftStorageService.saveDraft(updatedDraft);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _drafts[draftIndex] = updatedDraft;
+          _isAddingCharacter[draftId] = false;
+          _editingCharacter[draftId] = null;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              shouldUpload
+                  ? "Character saved and uploaded"
+                  : "Character saved locally",
+              textAlign: TextAlign.center,
+            ),
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    });
+  }
+
+  void _editCharacter(String draftId, Character character) {
+    setState(() {
+      _editingCharacter[draftId] = character;
+      _isAddingCharacter[draftId] = false;
+    });
+  }
+
+  void _showDeleteCharacterConfirmation(String draftId, Character character) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.error,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: Theme.of(context).colorScheme.tertiary,
+            width: 3,
+          ),
+        ),
+        title: Text(
+          "Delete Character?",
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.tertiary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "Are you sure you want to delete \"${character.name}\"?",
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.tertiary,
+                fontSize: 16,
+              ),
+            ),
+            if (character.uploadedFilename != null &&
+                character.uploadedFilename!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  "This will also delete the uploaded image from the server.",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: Theme.of(context).colorScheme.tertiary),
+            ),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteCharacter(
+                draftId,
+                character.id,
+                character.uploadedFilename,
+              );
+            },
+            style: ButtonStyle(
+              backgroundColor: WidgetStatePropertyAll(
+                Theme.of(context).colorScheme.tertiary,
+              ),
+            ),
+            child: Text(
+              "Delete",
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteCharacter(
+    String draftId,
+    String characterId,
+    String? filenameToDelete,
+  ) async {
+    if (filenameToDelete != null && filenameToDelete.isNotEmpty) {
+      try {
+        await ApiService.deleteImage(filenameToDelete);
+      } catch (e) {
+        debugPrint("Failed to delete image from server: $e");
+      }
+    }
+
+    final draftIndex = _drafts.indexWhere((d) => d.id == draftId);
+    if (draftIndex == -1) return;
+
+    final draft = _drafts[draftIndex];
+    final characters = List<Character>.from(draft.characters);
+
+    characters.removeWhere((c) => c.id == characterId);
+
+    final updatedDraft = draft.copyWith(
+      characters: characters,
+      lastModified: DateTime.now(),
+    );
+
+    await DraftStorageService.saveDraft(updatedDraft);
 
     setState(() {
       _drafts[draftIndex] = updatedDraft;
-      _isAddingCharacter[draftId] = false;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text("Character saved", textAlign: TextAlign.center),
-        backgroundColor: Theme.of(context).colorScheme.secondary,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Character deleted", textAlign: TextAlign.center),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _uploadAllImages(CharacterSetDraft draft) async {
+    final unuploadedCount = draft.characters
+        .where((c) => c.uploadedFilename == null || c.uploadedFilename!.isEmpty)
+        .length;
+
+    if (unuploadedCount == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "All images already uploaded!",
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    try {
+      final updatedCharacters = <Character>[];
+      int uploadedCount = 0;
+
+      for (final character in draft.characters) {
+        if (character.imageFile != null &&
+            (character.uploadedFilename == null ||
+                character.uploadedFilename!.isEmpty)) {
+          final filename = await ApiService.uploadImage(character.imageFile!);
+          final imageUrl = "${ApiService.baseUrl}/images/$filename";
+
+          updatedCharacters.add(
+            character.copyWith(uploadedFilename: filename, imageUrl: imageUrl),
+          );
+          uploadedCount++;
+        } else {
+          updatedCharacters.add(character);
+        }
+      }
+
+      final updatedDraft = draft.copyWith(
+        characters: updatedCharacters,
+        lastModified: DateTime.now(),
+      );
+
+      await DraftStorageService.saveDraft(updatedDraft);
+
+      setState(() {
+        final index = _drafts.indexWhere((d) => d.id == draft.id);
+        if (index != -1) {
+          _drafts[index] = updatedDraft;
+        }
+        _isUploading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Uploaded $uploadedCount images successfully!",
+              textAlign: TextAlign.center,
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isUploading = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to upload images: $e"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _submitCharacterSet(CharacterSetDraft draft) async {
@@ -335,38 +616,43 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
             )
           else if (_drafts.isEmpty)
             Center(
-              child: Container(
-                padding: const EdgeInsets.all(40),
-                margin: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: theme.tertiary.withAlpha(230),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: theme.primary, width: 3),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.add_photo_alternate_rounded,
-                      size: 80,
-                      color: theme.primary,
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      "No drafts yet",
-                      style: TextStyle(
-                        color: theme.primary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+              child: InkWell(
+                onTap: _createNewDraft,
+                highlightColor: theme.tertiary,
+                child: Container(
+                  padding: const EdgeInsets.all(40),
+                  margin: const EdgeInsets.symmetric(horizontal: 50),
+                  decoration: BoxDecoration(
+                    color: theme.secondary.withAlpha(230),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: theme.tertiary, width: 3),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.add_circle_rounded,
+                        size: 80,
+                        color: theme.tertiary,
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      "Tap the + button above to create your first character set!",
-                      style: TextStyle(color: theme.secondary, fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      const SizedBox(height: 20),
+                      Text(
+                        "No drafts yet",
+                        style: TextStyle(
+                          color: theme.tertiary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      Text(
+                        "Click here to add a new character set draft",
+                        style: TextStyle(color: theme.tertiary, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
@@ -376,42 +662,65 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
                 children: _drafts.map((draft) {
                   final isExpanded = _expandedDraftId == draft.id;
                   final isAddingChar = _isAddingCharacter[draft.id] ?? false;
+                  final editingChar = _editingCharacter[draft.id];
 
                   return DraftSection(
                     draft: draft,
                     isExpanded: isExpanded,
                     isAddingCharacter: isAddingChar,
+                    editingCharacter: editingChar,
                     isSubmitting: _isSubmitting,
                     onToggle: () => _toggleDraft(draft.id),
                     onDelete: () => _deleteDraft(draft),
                     onToggleVisibility: () => _toggleDraftVisibility(draft),
                     onSaveCharacter: (character, shouldUpload) =>
                         _saveCharacter(draft.id, character, shouldUpload),
-                    onAddNew: () => setState(() {
-                      if (_isAddingCharacter[draft.id] == true && mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              "Complete the current form first!",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 16),
+                    onEditCharacter: (character) {
+                      if (editingChar != null) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Finish editing character first",
+                                textAlign: TextAlign.center,
+                              ),
+                              backgroundColor: theme.error,
                             ),
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.error,
-                          ),
-                        );
+                          );
+                        }
 
                         return;
                       }
+                      _editCharacter(draft.id, character);
+                    },
+                    onDeleteCharacter: (character) =>
+                        _showDeleteCharacterConfirmation(draft.id, character),
+                    onAddNew: () => setState(() {
+                      if (_isAddingCharacter[draft.id] == true ||
+                          editingChar != null) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Finish adding or editing your character",
+                                textAlign: TextAlign.center,
+                              ),
+                              backgroundColor: theme.error,
+                            ),
+                          );
+                        }
 
+                        return;
+                      }
                       _isAddingCharacter[draft.id] = true;
+                      _editingCharacter[draft.id] = null;
                     }),
                     onCancelAdd: () => setState(() {
                       _isAddingCharacter[draft.id] = false;
+                      _editingCharacter[draft.id] = null;
                     }),
+                    onUploadAll: () => _uploadAllImages(draft),
                     onSubmit: () => _submitCharacterSet(draft),
-                    onUploadAll: () => {},
                   );
                 }).toList(),
               ),
@@ -452,326 +761,6 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
                 ),
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDraftSection(
-    CharacterSetDraft draft,
-    bool isExpanded,
-    bool isAddingChar,
-    ColorScheme theme,
-  ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: theme.error,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: const [
-          BoxShadow(offset: Offset(0, 2), blurRadius: 4, color: Colors.black26),
-        ],
-      ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: () => _toggleDraft(draft.id),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AnimatedRotation(
-                    turns: isExpanded ? 0 : 0.5,
-                    duration: const Duration(milliseconds: 150),
-                    child: Icon(
-                      Icons.expand_circle_down_rounded,
-                      color: isExpanded
-                          ? theme.tertiary
-                          : theme.tertiary.withAlpha(200),
-                      size: 32,
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: theme.tertiary.withAlpha(200),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(
-                      draft.isPublic
-                          ? Icons.public_rounded
-                          : Icons.lock_rounded,
-                      color: theme.error,
-                      size: 18,
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          draft.name,
-                          style: TextStyle(color: theme.tertiary, fontSize: 18),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-
-                        const SizedBox(height: 4),
-
-                        Row(
-                          children: [
-                            Icon(
-                              draft.isComplete
-                                  ? Icons.check_circle_rounded
-                                  : Icons.hourglass_empty_rounded,
-                              size: 14,
-                              color: draft.isComplete
-                                  ? theme.primary
-                                  : theme.tertiary.withAlpha(200),
-                            ),
-
-                            const SizedBox(width: 6),
-
-                            Text(
-                              "${draft.characterCount} / 16",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: theme.tertiary.withAlpha(200),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert, color: theme.tertiary),
-                    onSelected: (value) {
-                      if (value == "delete") {
-                        _deleteDraft(draft);
-                      } else if (value == "visibility") {
-                        _toggleDraftVisibility(draft);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: "visibility",
-                        child: Row(
-                          children: [
-                            Icon(
-                              draft.isPublic
-                                  ? Icons.lock_rounded
-                                  : Icons.public_rounded,
-                              size: 20,
-                              color: theme.secondary,
-                            ),
-
-                            const SizedBox(width: 8),
-
-                            Text(
-                              draft.isPublic ? "Make Private" : "Make Public",
-                              style: TextStyle(color: theme.secondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: "delete",
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.delete_rounded,
-                              size: 20,
-                              color: theme.error,
-                            ),
-
-                            const SizedBox(width: 8),
-
-                            Text(
-                              "Delete Draft",
-                              style: TextStyle(color: theme.error),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          SizedBox(
-            width: double.infinity,
-            child: ClipRect(
-              child: AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                child: isExpanded
-                    ? Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.black38,
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(8),
-                        child: ClipRect(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                child: Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  alignment: WrapAlignment.start,
-                                  children: [
-                                    ...draft.characters.map(
-                                      (character) => SizedBox(
-                                        width: 80,
-                                        child: Column(
-                                          children: [
-                                            Container(
-                                              width: 80,
-                                              height: 80,
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                                border: Border.all(
-                                                  color: theme.secondary,
-                                                  width: 2,
-                                                ),
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                child: Image.network(
-                                                  character.imageUrl,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder:
-                                                      (
-                                                        context,
-                                                        error,
-                                                        stackTrace,
-                                                      ) {
-                                                        debugPrint(
-                                                          character.imageUrl,
-                                                        );
-                                                        return Container(
-                                                          color: theme.primary,
-                                                          child: Icon(
-                                                            Icons.error,
-                                                            color: theme.error,
-                                                          ),
-                                                        );
-                                                      },
-                                                ),
-                                              ),
-                                            ),
-
-                                            const SizedBox(height: 4),
-
-                                            Text(
-                                              character.name,
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: theme.tertiary,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-
-                                    if (!draft.isComplete)
-                                      GestureDetector(
-                                        onTap: () => setState(() {
-                                          _isAddingCharacter[draft.id] = true;
-                                        }),
-                                        child: Container(
-                                          width: 80,
-                                          height: 80,
-                                          decoration: BoxDecoration(
-                                            color: theme.secondary,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                            border: Border.all(
-                                              color: theme.secondary,
-                                              width: 3,
-                                            ),
-                                          ),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons
-                                                    .add_circle_outline_rounded,
-                                                color: theme.tertiary,
-                                                size: 32,
-                                              ),
-                                              const SizedBox(height: 4),
-
-                                              Text(
-                                                "Add New",
-                                                style: TextStyle(
-                                                  color: theme.tertiary,
-                                                  fontSize: 8,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-
-                                    if (isAddingChar)
-                                      CharacterInputCard(
-                                        onSave: (character) => _saveCharacter(
-                                          draft.id,
-                                          character,
-                                          true,
-                                        ),
-                                        onCancel: () => setState(() {
-                                          _isAddingCharacter[draft.id] = false;
-                                        }),
-                                      ),
-
-                                    if (draft.isComplete && !isAddingChar) ...[
-                                      const SizedBox(height: 12),
-
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ),
-          ),
         ],
       ),
     );

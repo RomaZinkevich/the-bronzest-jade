@@ -26,7 +26,6 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
   final ImagePicker _imagePicker = ImagePicker();
 
   File? _selectedImage;
-  bool _hasImage = false;
 
   @override
   void initState() {
@@ -35,7 +34,6 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
     if (widget.character != null) {
       _nameController.text = widget.character!.name;
       _selectedImage = widget.character!.imageFile;
-      _hasImage = widget.character!.imageFile != null;
     }
   }
 
@@ -48,11 +46,13 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
         imageQuality: 85,
       );
 
-      if (pickedFile == null) return;
+      if (pickedFile == null) {
+        debugPrint("Something went wrong when picking image");
+        return;
+      }
 
       setState(() {
         _selectedImage = File(pickedFile.path);
-        _hasImage = true;
       });
     } catch (e) {
       if (!mounted) return;
@@ -64,6 +64,114 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
         ),
       );
     }
+  }
+
+  Future<void> _confirmAndUpload() async {
+    final theme = Theme.of(context).colorScheme;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: theme.tertiary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: theme.primary, width: 3),
+        ),
+        title: Text(
+          "Upload Image?",
+          style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "This will:",
+              style: TextStyle(
+                color: theme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildBulletPoint(
+              "Upload image to server",
+              Icons.circle,
+              theme.primary,
+            ),
+            _buildBulletPoint(
+              "Save character with upload",
+              Icons.circle,
+              theme.secondary,
+            ),
+            if (widget.character?.uploadedFilename != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.error.withAlpha(50),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: theme.error, width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_rounded, color: theme.error, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Old image will be replaced",
+                        style: TextStyle(color: theme.error, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text("Cancel", style: TextStyle(color: theme.secondary)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.secondary,
+              foregroundColor: theme.tertiary,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            icon: const Icon(Icons.cloud_upload_rounded, size: 18),
+            label: const Text("Upload"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      _saveCharacter(shouldUpload: true);
+    }
+  }
+
+  Widget _buildBulletPoint(String text, IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, top: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _saveCharacter({required bool shouldUpload}) {
@@ -95,12 +203,20 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
       return;
     }
 
+    final bool imageChanged =
+        widget.character != null &&
+        _selectedImage != widget.character!.imageFile;
+
     final character = Character(
       id: widget.character?.id ?? const Uuid().v4(),
       name: name,
-      imageUrl: widget.character?.imageUrl ?? "",
+      imageUrl: (imageChanged && !shouldUpload)
+          ? ""
+          : (widget.character?.imageUrl ?? ""),
       imageFile: _selectedImage,
-      uploadedFilename: widget.character?.uploadedFilename,
+      uploadedFilename: (imageChanged && !shouldUpload)
+          ? null
+          : widget.character?.uploadedFilename,
     );
 
     widget.onSave(character, shouldUpload);
@@ -135,33 +251,113 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: theme.secondary, width: 2),
                 ),
-                child: _selectedImage != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: Image.file(_selectedImage!, fit: BoxFit.cover),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.add_photo_alternate_rounded,
-                            size: 48,
-                            color: theme.secondary,
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          Text(
-                            "TAP TO\nSELECT",
-                            style: TextStyle(
-                              color: theme.secondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: _selectedImage != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Image.file(
+                                _selectedImage!,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate_rounded,
+                                  size: 48,
+                                  color: theme.secondary,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "TAP TO\nSELECT",
+                                  style: TextStyle(
+                                    color: theme.secondary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                            textAlign: TextAlign.center,
+                    ),
+
+                    if (_selectedImage != null)
+                      Positioned(
+                        right: 4,
+                        bottom: 4,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _confirmAndUpload(),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: theme.secondary,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: theme.tertiary,
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withAlpha(100),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.cloud_upload_rounded,
+                                color: theme.tertiary,
+                                size: 24,
+                              ),
+                            ),
                           ),
-                        ],
+                        ),
                       ),
+
+                    if (widget.character?.uploadedFilename != null &&
+                        widget.character?.uploadedFilename!.isNotEmpty == true)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: theme.tertiary, width: 2),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.cloud_done_rounded,
+                                color: theme.tertiary,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "UPLOADED",
+                                style: TextStyle(
+                                  color: theme.tertiary,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -7,10 +7,13 @@ import "package:guess_who/widgets/character_input_form.dart";
 class CharacterGrid extends StatelessWidget {
   final List<Character> characters;
   final bool isAddingCharacter;
+  final Character? editingCharacter;
   final bool isComplete;
   final Function(Character character, bool shouldUpload) onSaveCharacter;
   final VoidCallback onAddNew;
   final VoidCallback onCancelAdd;
+  final Function(Character character) onEditCharacter;
+  final Function(Character character) onDeleteCharacter;
 
   const CharacterGrid({
     super.key,
@@ -20,13 +23,21 @@ class CharacterGrid extends StatelessWidget {
     required this.onSaveCharacter,
     required this.onAddNew,
     required this.onCancelAdd,
+    required this.onEditCharacter,
+    required this.onDeleteCharacter,
+    this.editingCharacter,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = editingCharacter != null;
+    final displayCharacters = isEditing
+        ? characters.where((c) => c.id != editingCharacter!.id).toList()
+        : characters;
+
     final itemCount = isComplete
-        ? characters.length
-        : characters.length + (isAddingCharacter ? 2 : 1);
+        ? displayCharacters.length
+        : displayCharacters.length + (isAddingCharacter || isEditing ? 2 : 1);
 
     return GridView.builder(
       shrinkWrap: true,
@@ -40,16 +51,25 @@ class CharacterGrid extends StatelessWidget {
       ),
       itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (index < characters.length) {
-          return CharacterGridItem(character: characters[index], onTap: () {});
-        } else if (isAddingCharacter && index == characters.length) {
+        if (index < displayCharacters.length) {
+          return CharacterGridItem(
+            character: displayCharacters[index],
+            onTap: () => onEditCharacter(displayCharacters[index]),
+            onEdit: () => onEditCharacter(displayCharacters[index]),
+            onDelete: () => onDeleteCharacter(displayCharacters[index]),
+          );
+        } else if (isEditing && index == displayCharacters.length) {
+          return CharacterInputForm(
+            character: editingCharacter,
+            onSave: onSaveCharacter,
+            onCancel: onCancelAdd,
+          );
+        } else if (isAddingCharacter && index == displayCharacters.length) {
           return CharacterInputForm(
             onSave: onSaveCharacter,
             onCancel: onCancelAdd,
           );
-        }
-
-        if (!isComplete) {
+        } else if (!isComplete) {
           return AddCharacterButton(onTap: onAddNew);
         }
 
