@@ -46,7 +46,6 @@ public class PlayerHandshakeInterceptor implements HandshakeInterceptor {
 
         String roomId = request.getHeaders().getFirst("roomId");
         UUID userId = jwtUtil.validateTokenAndGetUserId(token);
-        System.out.println("HandshakeInterceptor: userId from token=" + userId);
         String stringUserId = String.valueOf(userId);
 
         if (stringUserId != null && !stringUserId.isBlank()) {
