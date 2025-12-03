@@ -1,6 +1,6 @@
 import "package:flutter/material.dart";
 import "package:guess_who/services/game_state_manager.dart";
-import "package:guess_who/widgets/retro_button.dart";
+import "package:guess_who/widgets/common/retro_button.dart";
 
 class AskingPhaseUI extends StatelessWidget {
   final GameStateManager gameState;

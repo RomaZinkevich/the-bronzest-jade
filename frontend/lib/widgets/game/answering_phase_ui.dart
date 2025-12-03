@@ -1,5 +1,5 @@
 import "package:flutter/material.dart";
-import "package:guess_who/widgets/retro_button.dart";
+import "package:guess_who/widgets/common/retro_button.dart";
 
 class AnsweringPhaseUI extends StatelessWidget {
   final bool isMyTurn;

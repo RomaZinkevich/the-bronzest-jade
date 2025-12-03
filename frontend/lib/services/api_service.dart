@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:guess_who/models/character_set.dart';
@@ -65,6 +66,77 @@ class ApiService {
       }
     } catch (e) {
       throw Exception("Error selecting character: $e");
+    }
+  }
+
+  static Future<String> uploadImage(File imageFile) async {
+    try {
+      var request = http.MultipartRequest(
+        "POST",
+        Uri.parse("$baseUrl/images/uploads"),
+      );
+
+      request.files.add(
+        await http.MultipartFile.fromPath("image", imageFile.path),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        debugPrint(response.body);
+        throw Exception("Failed to upload image: ${response.statusCode}");
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+      throw Exception("Error uploading images: $e");
+    }
+  }
+
+  static Future<void> deleteImage(String filename) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("$baseUrl/images/$filename"),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception("Failed to delete image: ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("Error deleting image: $e");
+    }
+  }
+
+  static Future<CharacterSet> createCharacterSet(
+    String name,
+    String createdBy,
+    bool isPublic,
+    List<Map<String, String>> characters,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/character-sets"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "name": name,
+          "createdBy": createdBy,
+          "isPublic": isPublic,
+          "characters": characters,
+        }),
+      );
+
+      if (response.statusCode != 201) {
+        throw Exception("Failed to create character set: ${response.body}");
+      }
+
+      final jsonBody = json.decode(response.body);
+      return CharacterSet.fromJson(jsonBody);
+    } catch (e) {
+      debugPrint(e.toString());
+      throw Exception("Something went wrong: $e");
     }
   }
 

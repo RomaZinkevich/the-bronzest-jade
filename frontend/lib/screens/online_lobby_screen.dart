@@ -7,8 +7,8 @@ import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/websocket_service.dart';
 import 'package:guess_who/models/character.dart';
 import 'package:guess_who/screens/online_game_screen.dart';
-import 'package:guess_who/widgets/character_card.dart';
-import 'package:guess_who/widgets/retro_button.dart';
+import 'package:guess_who/widgets/character/character_card.dart';
+import 'package:guess_who/widgets/common/retro_button.dart';
 
 class OnlineLobbyScreen extends StatefulWidget {
   final Room room;
