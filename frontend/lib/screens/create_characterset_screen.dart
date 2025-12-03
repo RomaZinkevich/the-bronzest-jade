@@ -519,7 +519,6 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
 
       await ApiService.createCharacterSet(
         draft.name,
-        widget.playerId,
         draft.isPublic,
         characterData,
       );
