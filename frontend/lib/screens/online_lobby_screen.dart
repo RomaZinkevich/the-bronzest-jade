@@ -13,12 +13,14 @@ import 'package:guess_who/widgets/common/retro_button.dart';
 class OnlineLobbyScreen extends StatefulWidget {
   final Room room;
   final String playerId;
+  final String playerName;
   final bool isHost;
 
   const OnlineLobbyScreen({
     super.key,
     required this.room,
     required this.playerId,
+    required this.playerName,
     required this.isHost,
   });
 
@@ -121,7 +123,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     });
   }
 
-  //! Call API only after ready.
   Future<void> _selectCharacter(Character character) async {
     try {
       await ApiService.selectCharacter(
@@ -232,6 +233,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
         builder: (context) => OnlineGameScreen(
           room: widget.room,
           playerId: widget.playerId,
+          playerName: widget.playerName,
           isHost: widget.isHost,
           selectedCharacter: _selectedCharacter!,
           wsService: _wsService,
@@ -326,7 +328,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
         ),
         body: Column(
           children: [
-            //* Status bar
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(8),
@@ -368,7 +369,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
               ),
             ),
 
-            //* Characters grid
             Expanded(
               child: Container(
                 color: Theme.of(context).colorScheme.tertiary,
@@ -401,7 +401,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
           mainAxisSize: MainAxisSize.min,
 
           children: [
-            //* Message log
             if (_messages.isNotEmpty)
               Container(
                 decoration: BoxDecoration(
@@ -547,7 +546,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
                 ),
               ),
 
-            //* Action buttons
             Container(
               padding: const EdgeInsets.only(
                 top: 15,

@@ -73,6 +73,8 @@ class AskingPhaseUI extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: questionController,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).colorScheme.primary,
@@ -118,7 +120,7 @@ class AskingPhaseUI extends StatelessWidget {
       child: Text(
         isWaitingForAnswer
             ? "Waiting for opponent's answer..."
-            : "Opponent's cooking...",
+            : "Wait! Opponent's cooking...",
         style: TextStyle(
           fontSize: 14,
           color: Theme.of(context).colorScheme.tertiary,

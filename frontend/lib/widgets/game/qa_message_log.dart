@@ -6,6 +6,8 @@ class QAMessageLog extends StatelessWidget {
   final VoidCallback onToggleExpanded;
   final ScrollController scrollController;
   final String currentPlayerId;
+  final String? myPlayerName;
+  final String? opponentPlayerName;
 
   const QAMessageLog({
     super.key,
@@ -14,6 +16,8 @@ class QAMessageLog extends StatelessWidget {
     required this.onToggleExpanded,
     required this.scrollController,
     required this.currentPlayerId,
+    this.myPlayerName,
+    this.opponentPlayerName,
   });
 
   @override
@@ -95,6 +99,10 @@ class QAMessageLog extends StatelessWidget {
     );
   }
 
+  String _getDisplayName(String fullName, bool isMe) {
+    return isMe ? "$fullName (You)" : "$fullName (Opponent)";
+  }
+
   Widget _buildMessageList(BuildContext context) {
     return AnimatedSize(
       clipBehavior: Clip.none,
@@ -102,20 +110,30 @@ class QAMessageLog extends StatelessWidget {
       curve: Curves.easeInOut,
       child: isExpanded
           ? Container(
-              constraints: BoxConstraints(maxHeight: 300),
+              constraints: const BoxConstraints(maxHeight: 300),
               child: ListView.builder(
                 controller: scrollController,
-                padding: const EdgeInsets.all(8),
                 itemCount: qaHistory.length,
                 itemBuilder: (context, index) {
                   final qa = qaHistory[index];
-                  final currentPlayerIdPrefix = currentPlayerId.substring(0, 6);
+
+                  final isMyQuestion = qa["isMyQuestion"] == "true";
+                  final isMyAnswer = qa["isMyAnswer"] == "true";
+
+                  final questionerName = qa["questionerName"] ?? "Unknown";
+                  final answererName = qa["answererName"] ?? "Unknown";
 
                   return QAMessageItem(
                     question: qa["question"]!,
                     answer: qa["answer"]!,
-                    isMyQuestion: qa["questionerId"] == currentPlayerIdPrefix,
-                    isMyAnswer: qa["answererId"] == currentPlayerIdPrefix,
+                    questionerDisplayName: _getDisplayName(
+                      questionerName,
+                      isMyQuestion,
+                    ),
+                    answererDisplayName: _getDisplayName(
+                      answererName,
+                      isMyAnswer,
+                    ),
                   );
                 },
               ),
@@ -128,92 +146,93 @@ class QAMessageLog extends StatelessWidget {
 class QAMessageItem extends StatelessWidget {
   final String question;
   final String answer;
-  final bool isMyQuestion;
-  final bool isMyAnswer;
+  final String questionerDisplayName;
+  final String answererDisplayName;
 
   const QAMessageItem({
     super.key,
     required this.question,
     required this.answer,
-    required this.isMyQuestion,
-    required this.isMyAnswer,
+    required this.questionerDisplayName,
+    required this.answererDisplayName,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context).colorScheme;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            width: 1,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          top: BorderSide(
-            width: 1,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      ),
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(color: theme.secondary),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.question_mark_rounded,
-                size: 16,
-                color: Theme.of(context).colorScheme.primary,
+          Container(
+            padding: const EdgeInsets.only(bottom: 6),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(width: 1, color: theme.tertiary),
               ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.question_mark_rounded,
+                  size: 12,
+                  color: theme.tertiary.withAlpha(200),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextSpan(text: "${isMyQuestion ? "You" : "Opponent"}: "),
-                      TextSpan(
-                        text: question,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      Text(
+                        questionerDisplayName,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: theme.tertiary.withAlpha(200),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        question,
+                        style: TextStyle(fontSize: 14, color: theme.tertiary),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
           Padding(
-            padding: const EdgeInsets.only(left: 15),
+            padding: const EdgeInsets.only(left: 10, top: 6),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
                   Icons.arrow_right_rounded,
-                  size: 30,
-                  color: Theme.of(context).colorScheme.secondary,
+                  size: 25,
+                  color: theme.tertiary.withAlpha(200),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                      children: [
-                        TextSpan(text: "${isMyAnswer ? "You" : "Opponent"}: "),
-                        TextSpan(
-                          text: answer,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        answererDisplayName,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: theme.tertiary.withAlpha(200),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        answer,
+                        style: TextStyle(fontSize: 14, color: theme.tertiary),
+                      ),
+                    ],
                   ),
                 ),
               ],

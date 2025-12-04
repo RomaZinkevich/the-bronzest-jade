@@ -1,23 +1,24 @@
-import 'dart:async';
-import 'dart:convert';
+import "dart:async";
+import "dart:convert";
 
-import 'package:flutter/material.dart';
-import 'package:guess_who/models/character.dart';
-import 'package:guess_who/models/room.dart';
-import 'package:guess_who/services/game_state_manager.dart';
-import 'package:guess_who/services/websocket_service.dart';
-import 'package:guess_who/widgets/game/answering_phase_ui.dart';
-import 'package:guess_who/widgets/game/asking_phase_ui.dart';
-import 'package:guess_who/widgets/game/game_board.dart';
-import 'package:guess_who/widgets/game/make_guess_dialogue.dart';
-import 'package:guess_who/widgets/game/qa_message_log.dart';
-import 'package:provider/provider.dart';
+import "package:flutter/material.dart";
+import "package:guess_who/models/character.dart";
+import "package:guess_who/models/room.dart";
+import "package:guess_who/services/game_state_manager.dart";
+import "package:guess_who/services/websocket_service.dart";
+import "package:guess_who/widgets/game/answering_phase_ui.dart";
+import "package:guess_who/widgets/game/asking_phase_ui.dart";
+import "package:guess_who/widgets/game/game_board.dart";
+import "package:guess_who/widgets/game/make_guess_dialogue.dart";
+import "package:guess_who/widgets/game/qa_message_log.dart";
+import "package:provider/provider.dart";
 
 enum TurnPhase { asking, answering }
 
 class OnlineGameScreen extends StatefulWidget {
   final Room room;
   final String playerId;
+  final String playerName;
   final bool isHost;
   final Character selectedCharacter;
   final WebsocketService wsService;
@@ -27,6 +28,7 @@ class OnlineGameScreen extends StatefulWidget {
     super.key,
     required this.room,
     required this.playerId,
+    required this.playerName,
     required this.isHost,
     required this.selectedCharacter,
     required this.wsService,
@@ -43,7 +45,10 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
   TurnPhase _currentPhase = TurnPhase.asking;
   String? _currentQuestion;
+  String? _currentQuestionerName;
   bool _waitingForAnswer = false;
+
+  String? _opponentPlayerName;
 
   final List<Map<String, String>> _qaHistory = [];
   final ScrollController _scrollController = ScrollController();
@@ -66,7 +71,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     _gameState.initializeGame(
       mode: GameMode.online,
       characters: widget.room.characterSet!.characters,
-      playerId: widget.room.id,
+      playerId: widget.playerId,
       roomId: widget.room.id,
       roomCode: widget.room.roomCode,
       isHost: widget.isHost,
@@ -125,47 +130,74 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     debugPrint("Websocket listeners set up successfully");
   }
 
+  String _extractPlayerName(String message) {
+    final colonIndex = message.indexOf(":");
+    if (colonIndex != -1) {
+      return message.substring(0, colonIndex).trim();
+    }
+    return "Unknown";
+  }
+
   void _handleMessageDto(String messageText) {
     if (messageText.contains("joined")) {
       debugPrint("Player joined: $messageText");
     } else if (messageText.contains("ready") ||
         messageText.contains("not ready")) {
       debugPrint("Ready status changed: $messageText");
-    } else if (messageText.contains("asked:")) {
+    } else if (messageText.contains(" asked: ")) {
       final parts = messageText.split(" asked: ");
       if (parts.length < 2) return;
 
+      final questionerName = _extractPlayerName(parts[0]);
+      final question = parts[1];
+
+      final isMyQuestion = questionerName == widget.playerName;
+
+      debugPrint(
+        "questionerName: $questionerName, playerName: ${widget.playerName}",
+      );
+
+      if (!isMyQuestion && _opponentPlayerName == null) {
+        _opponentPlayerName = questionerName;
+      }
+
       if (!mounted) return;
 
       setState(() {
-        _currentQuestion = parts[1];
+        _currentQuestion = question;
+        _currentQuestionerName = questionerName;
         _currentPhase = TurnPhase.answering;
       });
-    } else if (messageText.contains("answered:")) {
+    } else if (messageText.contains(" answered: ")) {
       final parts = messageText.split(" answered: ");
       if (parts.length < 2) return;
 
-      final answererId = parts[0].replaceAll("guest-player-", "");
+      final answererName = _extractPlayerName(parts[0]);
       final answer = parts[1];
+
+      final isMyAnswer = answererName == widget.playerName;
+
+      if (!isMyAnswer && _opponentPlayerName == null) {
+        _opponentPlayerName = answererName;
+      }
 
       if (!mounted) return;
 
       setState(() {
-        if (_currentQuestion != null) {
-          final questionerId = _gameState.isMyTurn
-              ? widget.playerId.substring(0, 6)
-              : (answererId == widget.playerId.substring(0, 6)
-                    ? "Opponent"
-                    : answererId);
+        if (_currentQuestion != null && _currentQuestionerName != null) {
+          final isQuestionerMe = _currentQuestionerName == widget.playerName;
 
           _qaHistory.add({
             "question": _currentQuestion!,
-            "questionerId": questionerId,
+            "questionerName": _currentQuestionerName!,
+            "isMyQuestion": isQuestionerMe.toString(),
             "answer": answer,
-            "answererId": answererId,
+            "answererName": answererName,
+            "isMyAnswer": isMyAnswer.toString(),
           });
 
           _currentQuestion = null;
+          _currentQuestionerName = null;
         }
 
         _gameState.switchTurn();
@@ -339,7 +371,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     try {
       widget.wsService.sendGuess(guessedCharacter.id);
     } catch (e) {
-      debugPrint('Error finishing game: $e');
+      debugPrint("Error finishing game: $e");
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -505,6 +537,8 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                     },
                     scrollController: _scrollController,
                     currentPlayerId: widget.playerId,
+                    myPlayerName: widget.playerName,
+                    opponentPlayerName: _opponentPlayerName,
                   ),
 
                   AnimatedContainer(

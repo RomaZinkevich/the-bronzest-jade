@@ -121,6 +121,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             builder: (context) => OnlineLobbyScreen(
               room: room,
               playerId: _playerId,
+              playerName: _playerName,
               isHost: false,
             ),
           ),
@@ -227,6 +228,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             builder: (context) => OnlineLobbyScreen(
               room: room,
               playerId: _playerId,
+              playerName: _playerName,
               isHost: true,
             ),
           ),
