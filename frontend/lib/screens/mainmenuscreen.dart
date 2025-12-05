@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:guess_who/constants/assets/audio_assets.dart';
 import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/screens/online_lobby_screen.dart';
@@ -31,6 +32,13 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   @override
   void initState() {
     super.initState();
+    _audioManager.init();
+    _audioManager.setMusicVolume(0);
+    _audioManager.playBackgroundMusic(
+      AudioAssets.menuMusic,
+      fadeDuration: const Duration(seconds: 6),
+    );
+
     _loadUserData();
   }
 
