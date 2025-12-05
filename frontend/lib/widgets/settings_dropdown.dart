@@ -37,48 +37,42 @@ class SettingsDropdown extends StatelessWidget {
             return [
               PopupMenuItem<String>(
                 value: 'theme',
-                child: GestureDetector(
-                  onTap: () {
-                    settings.toggleTheme();
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 4,
-                    ),
-                    child: Center(
-                      child: Icon(
-                        settings.isDarkMode
-                            ? Icons.dark_mode
-                            : Icons.light_mode,
-                        color: Theme.of(context).colorScheme.secondary,
-                        size: 28,
-                      ),
+                onTap: () {
+                  settings.toggleTheme();
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 4,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      settings.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                      color: Theme.of(context).colorScheme.secondary,
+                      size: 28,
                     ),
                   ),
                 ),
               ),
               PopupMenuItem<String>(
                 value: 'sound',
-                child: GestureDetector(
-                  onTap: () {
-                    settings.toggleSound();
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 4,
-                    ),
-                    child: Center(
-                      child: Icon(
-                        settings.isSoundEnabled
-                            ? Icons.volume_up
-                            : Icons.volume_off,
-                        color: Theme.of(context).colorScheme.secondary,
-                        size: 28,
-                      ),
+                onTap: () {
+                  settings.toggleSound();
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 4,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      settings.isSoundEnabled
+                          ? Icons.volume_up
+                          : Icons.volume_off,
+                      color: Theme.of(context).colorScheme.secondary,
+                      size: 28,
                     ),
                   ),
                 ),
