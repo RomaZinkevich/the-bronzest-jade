@@ -45,7 +45,7 @@ class SettingsDropdown extends StatelessWidget {
                   ),
                 ),
               ),
-              const PopupMenuDivider(),
+              // const PopupMenuDivider(),
               PopupMenuItem<String>(
                 value: 'theme',
                 child: Row(
