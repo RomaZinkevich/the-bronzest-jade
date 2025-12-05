@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:guess_who/widgets/common/retro_icon_button.dart';
+import 'package:guess_who/widgets/settings_dropdown.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String playerName;
