@@ -179,10 +179,10 @@ class GameStateManager extends ChangeNotifier {
         _player1FlippedCards.add(characterId);
       }
     } else {
-      if (_player1FlippedCards.contains(characterId)) {
-        _player1FlippedCards.remove(characterId);
+      if (_player2FlippedCards.contains(characterId)) {
+        _player2FlippedCards.remove(characterId);
       } else {
-        _player1FlippedCards.add(characterId);
+        _player2FlippedCards.add(characterId);
       }
     }
 

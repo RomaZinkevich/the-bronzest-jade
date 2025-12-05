@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import 'settings_dropdown.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String playerName;
   final String playerId;
   final String profilePicture;
+  final VoidCallback onSettingsPressed;
+  final VoidCallback? onCreateCharacterSetPressed;
 
   const CustomAppBar({
     super.key,
     this.profilePicture = "assets/icons/default_user.png",
     required this.playerName,
     required this.playerId,
+    required this.onSettingsPressed,
+    this.onCreateCharacterSetPressed,
   });
 
   @override
@@ -26,8 +29,39 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       shadowColor: Colors.black,
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const SettingsDropdown(),
+          Row(
+            children: [
+              RetroIconButton(
+                onPressed: () {},
+                icon: Icons.settings_rounded,
+                iconSize: 30,
+                padding: 10,
+
+                tooltip: "Settings",
+
+                backgroundColor: Theme.of(context).colorScheme.tertiary,
+                iconColor: Theme.of(context).colorScheme.secondary,
+              ),
+
+              RetroIconButton(
+                onPressed: () {
+                  onCreateCharacterSetPressed?.call();
+                },
+                icon: Icons.person_add_alt_1_rounded,
+                iconSize: 30,
+                padding: 10,
+
+                tooltip: "Add character set",
+
+                backgroundColor: Theme.of(context).colorScheme.tertiary,
+                iconColor: Theme.of(context).colorScheme.secondary,
+              ),
+            ],
+          ),
+
           Row(
             children: [
               Column(

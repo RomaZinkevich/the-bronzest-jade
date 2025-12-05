@@ -1,6 +1,6 @@
 import "package:flutter/material.dart";
 import "package:guess_who/services/game_state_manager.dart";
-import "package:guess_who/widgets/retro_button.dart";
+import "package:guess_who/widgets/common/retro_button.dart";
 
 class AskingPhaseUI extends StatelessWidget {
   final GameStateManager gameState;
@@ -73,6 +73,8 @@ class AskingPhaseUI extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: questionController,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).colorScheme.primary,
@@ -118,7 +120,7 @@ class AskingPhaseUI extends StatelessWidget {
       child: Text(
         isWaitingForAnswer
             ? "Waiting for opponent's answer..."
-            : "Opponent's cooking...",
+            : "Wait! Opponent's cooking...",
         style: TextStyle(
           fontSize: 14,
           color: Theme.of(context).colorScheme.tertiary,

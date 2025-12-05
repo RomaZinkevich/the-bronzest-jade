@@ -2,14 +2,17 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/screens/online_lobby_screen.dart';
 import 'package:guess_who/services/api_service.dart';
-import 'package:guess_who/widgets/appbar.dart';
-import 'package:guess_who/widgets/popup_menu.dart';
-import 'package:guess_who/widgets/retro_button.dart';
-import 'package:guess_who/widgets/retro_icon_button.dart';
-import 'package:uuid/uuid.dart';
+import 'package:guess_who/services/audio_manager.dart';
+import 'package:guess_who/services/auth_service.dart';
+import 'package:guess_who/widgets/common/appbar.dart';
+import 'package:guess_who/widgets/common/inner_shadow_input.dart';
+import 'package:guess_who/widgets/common/popup_menu.dart';
+import 'package:guess_who/widgets/common/retro_button.dart';
+import 'package:guess_who/widgets/common/retro_icon_button.dart';
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -20,7 +23,26 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
-  final String _playerId = const Uuid().v4();
+  final AudioManager _audioManager = AudioManager();
+
+  String _playerId = "";
+  String _playerName = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final userId = await AuthService.getUserId();
+    final username = await AuthService.getUsername();
+
+    setState(() {
+      _playerId = userId ?? "";
+      _playerName = username ?? "Guest";
+    });
+  }
 
   @override
   void dispose() {
@@ -101,6 +123,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             builder: (context) => OnlineLobbyScreen(
               room: room,
               playerId: _playerId,
+              playerName: _playerName,
               isHost: false,
             ),
           ),
@@ -122,6 +145,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Future<void> _showCreateRoomMenu() async {
+    _audioManager.playButtonClickVariation();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -159,7 +183,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               .map(
                 (characterSets) => RetroPopupMenuItem(
                   text: characterSets.name,
-                  onTap: () => _createRoom(characterSets.id),
+                  onTap: () {
+                    _audioManager.playGameStart();
+                    Future.delayed(const Duration(milliseconds: 100));
+                    _createRoom(characterSets.id);
+                  },
                 ),
               )
               .toList(),
@@ -207,6 +235,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             builder: (context) => OnlineLobbyScreen(
               room: room,
               playerId: _playerId,
+              playerName: _playerName,
               isHost: true,
             ),
           ),
@@ -265,6 +294,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   Future<List<Map<String, dynamic>>> _fetchSampleRooms() async {
     final randomNum = Random.secure().nextInt(5);
     await Future.delayed(Duration(seconds: randomNum));
+    debugPrint(
+      "Authorized? ${await AuthService.isAuthenticated()}, name: ${await AuthService.getUsername()}, id: ${await AuthService.getUserId()}",
+    );
 
     return [
       {
@@ -447,8 +479,18 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        playerName: "Guest Player",
-        playerId: "#${_playerId.substring(0, 6)}",
+        playerName: _playerName,
+        playerId: "#${_playerId.isNotEmpty ? _playerId.substring(0, 6) : ""}",
+        onSettingsPressed: () {},
+        onCreateCharacterSetPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  CreateCharactersetScreen(playerId: _playerId),
+            ),
+          );
+        },
       ),
       body: Stack(
         children: [
@@ -471,21 +513,22 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     ),
 
                     const SizedBox(height: 100),
-
                     RetroButton(
                       text: "Play local",
-                      fontSize: 18,
+                      fontSize: 20,
 
                       icon: Icons.videogame_asset,
-                      iconSize: 30,
+                      iconSize: 34,
                       iconAtEnd: true,
 
                       padding: EdgeInsets.symmetric(
-                        horizontal: 25,
-                        vertical: 15,
+                        horizontal: 26,
+                        vertical: 16,
                       ),
 
                       onPressed: () {
+                        _audioManager.playGameStart();
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -497,78 +540,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
                     const SizedBox(height: 60),
 
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 30),
-                      padding: EdgeInsets.symmetric(vertical: 4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.rectangle,
-                        border: BoxBorder.all(
-                          color: Theme.of(context).colorScheme.primary,
-                          width: 4,
-                        ),
-                        borderRadius: BorderRadius.circular(100),
-                        color: Theme.of(context).colorScheme.tertiary,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Container(
-                              margin: EdgeInsets.only(left: 8),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                boxShadow: [
-                                  const BoxShadow(color: Color(0xFF5B7B76)),
-                                  BoxShadow(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.secondary,
-                                    blurRadius: 4,
-                                    spreadRadius: -2,
-                                  ),
-                                ],
-                              ),
-                              child: TextField(
-                                controller: _roomCodeController,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.tertiary,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: "Join with code...",
-                                  hintStyle: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.tertiary.withAlpha(150),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(width: 4),
-
-                          RetroIconButton(
-                            onPressed: _joinWithCode,
-                            tooltip: "Join with code",
-                            imagePath: "assets/icons/join_submit.png",
-                            iconSize: 65,
-                            padding: 0,
-                            margin: EdgeInsets.only(right: 5),
-
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.secondary,
-                          ),
-                        ],
-                      ),
+                    InnerShadowInput(
+                      controller: _roomCodeController,
+                      onSubmit: _joinWithCode,
+                      submitTooltip: "Join with code",
+                      hintText: "Join with code...",
                     ),
 
                     const SizedBox(height: 10),
@@ -581,7 +557,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           fontSize: 18,
 
                           padding: EdgeInsets.symmetric(
-                            horizontal: 50,
+                            horizontal: 40,
                             vertical: 20,
                           ),
 
@@ -591,7 +567,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           onPressed: _showCreateRoomMenu,
                         ),
 
-                        SizedBox(width: 8),
+                        SizedBox(width: 4),
 
                         RetroIconButton(
                           onPressed: _showFindRoomsMenu,
@@ -599,6 +575,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           imagePath: "assets/icons/find_room.png",
                           iconSize: 55,
                           padding: 6,
+                          borderWidth: 0,
                         ),
                       ],
                     ),
