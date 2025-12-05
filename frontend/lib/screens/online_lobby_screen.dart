@@ -13,12 +13,14 @@ import 'package:guess_who/widgets/common/retro_button.dart';
 class OnlineLobbyScreen extends StatefulWidget {
   final Room room;
   final String playerId;
+  final String playerName;
   final bool isHost;
 
   const OnlineLobbyScreen({
     super.key,
     required this.room,
     required this.playerId,
+    required this.playerName,
     required this.isHost,
   });
 
@@ -55,6 +57,12 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
       setState(() {
         _isConnected = connected;
       });
+
+      if (connected) {
+        debugPrint("[Lobby] WebSocket connected");
+      } else {
+        debugPrint("[Lobby] WebSocket disconnected");
+      }
     });
 
     _messageSubsciption = _wsService.messageStream.listen((message) {
@@ -68,12 +76,14 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
         final Map<String, dynamic> jsonData = json.decode(message);
 
         if (jsonData.containsKey("turnPlayer")) {
-          debugPrint("YO!!!");
+          debugPrint("[Lobby] Game starting, navigating to game screen");
           _navigateToGame(jsonData);
         } else if (jsonData.containsKey("message")) {
           final messageText = jsonData["message"];
           if (messageText.contains("joined") && _messages.length > 1) {
-            _isMessageLogExpanded = true;
+            setState(() {
+              _isMessageLogExpanded = true;
+            });
           }
         }
       } catch (e) {
@@ -82,7 +92,9 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
         }
 
         if (message.contains("joined") && _messages.length > 1) {
-          _isMessageLogExpanded = true;
+          setState(() {
+            _isMessageLogExpanded = true;
+          });
         }
       }
     });
@@ -111,7 +123,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     });
   }
 
-  //! Call API only after ready.
   Future<void> _selectCharacter(Character character) async {
     try {
       await ApiService.selectCharacter(
@@ -126,6 +137,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
 
       if (!mounted) return;
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to select character: $e'),
@@ -136,13 +148,12 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
   }
 
   Future<void> _toggleReady() async {
-    _isMessageLogExpanded = true;
     if (_selectedCharacter == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Theme.of(context).colorScheme.error,
           content: Text(
-            'Please select a character first',
+            "Please select a character first",
             textAlign: TextAlign.center,
             style: TextStyle(color: Theme.of(context).colorScheme.tertiary),
           ),
@@ -153,11 +164,11 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     }
 
     try {
-      // await ApiService.toggleReady(widget.room.id, widget.playerId);
       _wsService.sendReady();
 
       setState(() {
         _isReady = !_isReady;
+        _isMessageLogExpanded = true;
       });
     } catch (e) {
       if (!mounted) return;
@@ -187,6 +198,8 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     try {
       _wsService.sendStart();
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to start game: $e'),
@@ -210,12 +223,17 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
       isMyTurnInitially = turnPlayerId == widget.playerId;
     }
 
+    debugPrint(
+      "\nMy turn? $isMyTurnInitially, Start response: ${startGameResponse != null ? startGameResponse["turnPlayer"] : "No start game response"}\n",
+    );
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => OnlineGameScreen(
           room: widget.room,
           playerId: widget.playerId,
+          playerName: widget.playerName,
           isHost: widget.isHost,
           selectedCharacter: _selectedCharacter!,
           wsService: _wsService,
@@ -226,19 +244,11 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
   }
 
   Future<void> _leaveRoom() async {
+    _wsService.disconnect();
     try {
-      _wsService.disconnect();
+      await ApiService.leaveRoom(widget.room.id, widget.playerId);
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to leave room: $e',
-            textAlign: TextAlign.center,
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      debugPrint("[Lobby] Failed to leave room via API: $e");
     }
   }
 
@@ -312,13 +322,12 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
             color: Theme.of(context).colorScheme.tertiary,
           ),
           title: Text(
-            'Room: ${widget.room.roomCode}',
+            "Room: ${widget.room.roomCode}",
             style: TextStyle(color: Theme.of(context).colorScheme.tertiary),
           ),
         ),
         body: Column(
           children: [
-            // Status bar
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(8),
@@ -360,7 +369,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
               ),
             ),
 
-            // Characters grid
             Expanded(
               child: Container(
                 color: Theme.of(context).colorScheme.tertiary,
@@ -393,7 +401,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
           mainAxisSize: MainAxisSize.min,
 
           children: [
-            // Message log
             if (_messages.isNotEmpty)
               Container(
                 decoration: BoxDecoration(
@@ -539,7 +546,6 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
                 ),
               ),
 
-            // Action buttons
             Container(
               padding: const EdgeInsets.only(
                 top: 15,
@@ -597,9 +603,9 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
                         vertical: 12,
                       ),
                       onPressed: _startGame,
-                      backgroundColor: Colors.green,
+                      backgroundColor: Theme.of(context).colorScheme.error,
                       foregroundColor: Theme.of(context).colorScheme.tertiary,
-                      icon: Icons.play_arrow,
+                      icon: Icons.play_arrow_rounded,
                     ),
                 ],
               ),

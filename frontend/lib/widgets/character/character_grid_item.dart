@@ -28,10 +28,10 @@ class CharacterGridItem extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isUploaded ? Colors.green : theme.tertiary,
+            color: isUploaded ? theme.secondary : theme.tertiary,
             width: isUploaded ? 3 : 2,
           ),
-          color: theme.secondary,
+          color: theme.tertiary,
         ),
         child: Column(
           children: [
@@ -59,17 +59,16 @@ class CharacterGridItem extends StatelessWidget {
             ),
             Container(
               padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-              color: isUploaded ? Colors.green : theme.tertiary,
+              color: isUploaded ? theme.secondary : theme.tertiary,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   PopupMenuButton<String>(
-                    color: theme.tertiary,
                     padding: EdgeInsets.zero,
                     icon: Icon(
                       Icons.more_vert,
                       size: 26,
-                      color: theme.secondary,
+                      color: isUploaded ? theme.tertiary : theme.secondary,
                     ),
                     onSelected: (value) {
                       if (value == "edit" && onEdit != null) {
@@ -113,7 +112,10 @@ class CharacterGridItem extends StatelessWidget {
                   Expanded(
                     child: Text(
                       character.name,
-                      style: TextStyle(fontSize: 20, color: theme.secondary),
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: isUploaded ? theme.tertiary : theme.secondary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
@@ -127,17 +129,15 @@ class CharacterGridItem extends StatelessWidget {
               Positioned(
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black26, blurRadius: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Text(
+                        "Image Uploaded",
+                        style: TextStyle(fontSize: 10, color: theme.secondary),
+                      ),
+                      Icon(Icons.cloud_done, color: theme.secondary, size: 16),
                     ],
-                  ),
-                  child: const Icon(
-                    Icons.cloud_done,
-                    color: Colors.white,
-                    size: 16,
                   ),
                 ),
               ),

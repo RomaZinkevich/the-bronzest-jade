@@ -1,4 +1,5 @@
 import 'package:guess_who/models/character_set.dart';
+import 'package:guess_who/models/user.dart';
 
 enum RoomStatus { waiting, inProgress, finished }
 
@@ -32,7 +33,7 @@ extension RoomStatusX on RoomStatus {
 class Room {
   final String id;
   final String roomCode;
-  final String hostId;
+  final User host;
 
   final RoomStatus status;
   final int maxPlayers;
@@ -44,7 +45,7 @@ class Room {
   Room({
     required this.id,
     required this.roomCode,
-    required this.hostId,
+    required this.host,
     required this.status,
     required this.maxPlayers,
 
@@ -59,7 +60,7 @@ class Room {
     return Room(
       id: json["id"] as String,
       roomCode: json["roomCode"] as String,
-      hostId: json["hostId"] as String,
+      host: User.fromJson(json["host"] as Map<String, dynamic>),
       status: RoomStatusX.fromApi(json["status"] as String),
       maxPlayers: json["maxPlayers"] as int,
 
