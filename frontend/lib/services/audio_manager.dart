@@ -114,12 +114,24 @@ class AudioManager {
   Future<void> playGameLost() => playSfx("sounds/game_lost.mp3");
   Future<void> playQuestionAsked() => playSfx("sounds/question.mp3");
 
-  void toggleMusic() {
+  Future<void> toggleMusic() async {
     _musicEnabled = !_musicEnabled;
+
+    if (!_musicEnabled) {
+      await _musicPlayer.pause();
+    } else {
+      await _musicPlayer.resume();
+    }
   }
 
-  void toggleSfx() {
+  Future<void> toggleSfx() async {
     _sfxEnabled = !_sfxEnabled;
+
+    if (!_sfxEnabled) {
+      await _sfxPlayer.setVolume(0);
+    } else {
+      await _musicPlayer.setVolume(_sfxVolume);
+    }
   }
 
   Future<void> setMusicVolume(double volume) async {
