@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:guess_who/constants/assets/audio_assets.dart';
 
 class AudioManager {
   static final AudioManager _instance = AudioManager._internal();
@@ -101,9 +102,9 @@ class AudioManager {
   }
 
   Future<void> playButtonClick() =>
-      playSfx("sounds/button_click1.mp3", randomizedPitch: true);
+      playSfx(AudioAssets.buttonClick, randomizedPitch: true);
   Future<void> playButtonClickVariation() =>
-      playSfxVariation("sounds/button_click.mp3", 3);
+      playSfxVariation(AudioAssets.buttonClickVariation, 3);
 
   Future<void> playGameStart() => playSfx("sounds/game_start.mp3");
   Future<void> playCardFlip() => playSfx("sounds/card_flip.mp3");

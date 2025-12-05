@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:guess_who/constants/assets/audio_assets.dart';
 import 'package:guess_who/models/room.dart';
 import 'package:guess_who/services/api_service.dart';
+import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/services/websocket_service.dart';
 import 'package:guess_who/models/character.dart';
 import 'package:guess_who/screens/online_game_screen.dart';
@@ -29,6 +31,7 @@ class OnlineLobbyScreen extends StatefulWidget {
 }
 
 class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
+  final AudioManager _audioManager = AudioManager();
   late WebsocketService _wsService;
   Character? _selectedCharacter;
   bool _isReady = false;
@@ -45,6 +48,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
   @override
   void initState() {
     super.initState();
+    _audioManager.playBackgroundMusic(AudioAssets.lobbyMusic);
     _initializeWebSocket();
   }
 
