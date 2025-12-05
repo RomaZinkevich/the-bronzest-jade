@@ -33,21 +33,21 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SettingsDropdown(),
           Row(
             children: [
-              RetroIconButton(
-                onPressed: () {},
-                icon: Icons.settings_rounded,
-                iconSize: 30,
-                padding: 10,
+              const SettingsDropdown(),
 
-                tooltip: "Settings",
+              // RetroIconButton(
+              //   onPressed: () {},
+              //   icon: Icons.settings_rounded,
+              //   iconSize: 30,
+              //   padding: 10,
 
-                backgroundColor: Theme.of(context).colorScheme.tertiary,
-                iconColor: Theme.of(context).colorScheme.secondary,
-              ),
+              //   tooltip: "Settings",
 
+              //   backgroundColor: Theme.of(context).colorScheme.tertiary,
+              //   iconColor: Theme.of(context).colorScheme.secondary,
+              // ),
               RetroIconButton(
                 onPressed: () {
                   onCreateCharacterSetPressed?.call();

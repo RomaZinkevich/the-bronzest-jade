@@ -509,8 +509,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             ),
           ),
 
-          Expanded(
-            child: SingleChildScrollView(
+          SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height - 90,
+              ),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
