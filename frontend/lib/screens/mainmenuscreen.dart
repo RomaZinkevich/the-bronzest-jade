@@ -187,11 +187,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           title: "Select Character Set",
           items: characterSets
               .map(
-                (characterSets) => RetroPopupMenuItem(
-                  text: characterSets.name,
+                (characterSet) => RetroPopupMenuItem(
+                  text: characterSet.name,
                   onTap: () {
                     AudioManager().playGameStart();
-                    _createRoom(characterSets.id);
+                    _createRoom(characterSet.id);
                   },
                 ),
               )
