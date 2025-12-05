@@ -10,12 +10,12 @@ class AppTheme {
   static const Color black = Color(0xFF000000);
 
   //dark theme colors
-  static const Color darkCream = Color(0xFF1A1A1A);
-  static const Color darkTeal = Color(0xFF4A7873);
-  static const Color darkTealShadow = Color(0xFF3A5E5B);
-  static const Color darkSage = Color(0xFF7B8C6F);
-  static const Color darkCoral = Color(0xFFB85A4A);
-  static const Color darkBlack = Color(0xFFE0E0E0);
+  static const Color darkCream = Color(0xFF0D0D0D);
+  static const Color darkTeal = Color(0xFF5A9B94);
+  static const Color darkTealShadow = Color(0xFF3F7075);
+  static const Color darkSage = Color(0xFF8FA082);
+  static const Color darkCoral = Color(0xFFE07A6A);
+  static const Color darkBlack = Color(0xFFF5F5F5);
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -51,22 +51,22 @@ class AppTheme {
     return ThemeData(
       colorScheme: ColorScheme.dark(
         primary: darkSage,
-        onPrimary: darkBlack,
+        onPrimary: Colors.black,
 
         secondary: darkTeal,
-        onSecondaryContainer: darkBlack,
+        onSecondaryContainer: Colors.white,
         shadow: darkTealShadow,
 
-        tertiary: Color(0xFF2A2A2A),
-        onTertiary: darkBlack,
+        tertiary: Color(0xFF1F1F1F),
+        onTertiary: Colors.white,
 
         error: darkCoral,
-        onError: darkBlack,
+        onError: Colors.black,
 
         errorContainer: darkCoral,
-        onErrorContainer: darkBlack,
+        onErrorContainer: Colors.black,
 
-        surface: Color(0xFF121212),
+        surface: Color(0xFF181818),
         onSurface: darkBlack,
 
         brightness: Brightness.dark,

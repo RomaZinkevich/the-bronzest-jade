@@ -35,71 +35,64 @@ class SettingsDropdown extends StatelessWidget {
           itemBuilder: (BuildContext context) {
             return [
               PopupMenuItem<String>(
-                enabled: false,
-                child: Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-              // const PopupMenuDivider(),
-              PopupMenuItem<String>(
                 value: 'theme',
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(
+                child: GestureDetector(
+                  onTap: () {
+                    settings.toggleTheme();
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Icon(
                       settings.isDarkMode ? Icons.dark_mode : Icons.light_mode,
                       color: Theme.of(context).colorScheme.secondary,
-                      size: 24,
+                      size: 28,
                     ),
-                    Switch(
-                      value: settings.isDarkMode,
-                      onChanged: (value) {
-                        settings.toggleTheme();
-                      },
-                      activeThumbColor: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ],
+                  ),
                 ),
               ),
               PopupMenuItem<String>(
                 value: 'sound',
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(
+                child: GestureDetector(
+                  onTap: () {
+                    settings.toggleSound();
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Icon(
                       settings.isSoundEnabled
                           ? Icons.volume_up
                           : Icons.volume_off,
                       color: Theme.of(context).colorScheme.secondary,
-                      size: 24,
+                      size: 28,
                     ),
-                    Switch(
-                      value: settings.isSoundEnabled,
-                      onChanged: (value) {
-                        settings.toggleSound();
-                      },
-                      activeThumbColor: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'music',
+                child: GestureDetector(
+                  onTap: () {
+                    settings.toggleMusic();
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Icon(
+                      settings.isMusicEnabled
+                          ? Icons.music_note
+                          : Icons.music_off_rounded,
+                      color: Theme.of(context).colorScheme.secondary,
+                      size: 28,
                     ),
-                  ],
+                  ),
                 ),
               ),
             ];
-          },
-          onSelected: (String value) {
-            // Handle menu item selection if needed
-            switch (value) {
-              case 'theme':
-                // Theme toggle is handled by the switch
-                break;
-              case 'sound':
-                // Sound toggle is handled by the switch
-                break;
-            }
           },
         );
       },
