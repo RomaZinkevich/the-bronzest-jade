@@ -33,7 +33,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   void initState() {
     super.initState();
     _audioManager.init();
-    _audioManager.setMusicVolume(0);
     _audioManager.playBackgroundMusic(
       AudioAssets.menuMusic,
       fadeDuration: const Duration(seconds: 6),
