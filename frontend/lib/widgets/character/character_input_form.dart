@@ -87,6 +87,7 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
 
   Future<void> _confirmAndUpload() async {
     final theme = Theme.of(context).colorScheme;
+    final imageUploaded = widget.character?.uploadedFilename != null;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -97,7 +98,7 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
           side: BorderSide(color: theme.primary, width: 3),
         ),
         title: Text(
-          "Upload Image?",
+          imageUploaded ? "Re-Upload Image?" : "Upload Image?",
           style: TextStyle(color: theme.primary, fontWeight: FontWeight.bold),
         ),
         content: Column(
@@ -123,7 +124,7 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
               Icons.circle,
               theme.secondary,
             ),
-            if (widget.character?.uploadedFilename != null) ...[
+            if (imageUploaded) ...[
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(8),
@@ -250,6 +251,7 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
+    final imageUploaded = widget.character?.uploadedFilename != null;
 
     return Container(
       decoration: BoxDecoration(
@@ -330,48 +332,13 @@ class _CharacterInputFormState extends State<CharacterInputForm> {
                                 ],
                               ),
                               child: Icon(
-                                Icons.cloud_upload_rounded,
+                                imageUploaded
+                                    ? Icons.cloud_sync_rounded
+                                    : Icons.cloud_upload_rounded,
                                 color: theme.tertiary,
                                 size: 24,
                               ),
                             ),
-                          ),
-                        ),
-                      ),
-
-                    if (widget.character?.uploadedFilename != null &&
-                        widget.character?.uploadedFilename!.isNotEmpty == true)
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: theme.tertiary, width: 2),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.cloud_done_rounded,
-                                color: theme.tertiary,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                "UPLOADED",
-                                style: TextStyle(
-                                  color: theme.tertiary,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ),
