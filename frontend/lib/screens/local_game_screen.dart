@@ -31,11 +31,6 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
     _gameState = GameStateManager();
     _gameState.addListener(_onGameStateChanged);
     _initializeGame();
-
-    AudioManager().playBackgroundMusic(
-      AudioAssets.lobbyMusic,
-      fadeDuration: const Duration(seconds: 6),
-    );
   }
 
   Future<void> _initializeGame() async {
@@ -263,6 +258,7 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
   //TODO: POLISH
   void _makeGuess() {
     final availableCharacters = _gameState.getAvailableCharacters();
+    AudioManager().playButtonClickVariation();
 
     makeGuessDialogue(
       context,

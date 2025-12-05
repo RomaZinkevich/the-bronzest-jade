@@ -41,6 +41,15 @@ class AudioManager {
     _currentMusicPath = assetPath;
 
     try {
+      if (_musicPlayer.state == PlayerState.playing) {
+        await _fadeVolume(
+          _musicPlayer,
+          _musicPlayer.volume,
+          0,
+          const Duration(milliseconds: 800),
+        );
+      }
+
       await _musicPlayer.stop();
       await _musicPlayer.setVolume(0);
       await _musicPlayer.play(AssetSource(assetPath));
