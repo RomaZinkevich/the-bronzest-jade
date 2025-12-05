@@ -9,13 +9,29 @@ class AppTheme {
   static const Color coral = Color(0xFFC66859);
   static const Color black = Color(0xFF000000);
 
-  //dark theme colors
-  static const Color darkCream = Color(0xFF0D0D0D);
-  static const Color darkTeal = Color(0xFF5A9B94);
-  static const Color darkTealShadow = Color(0xFF3F7075);
-  static const Color darkSage = Color(0xFF8FA082);
-  static const Color darkCoral = Color(0xFFE07A6A);
-  static const Color darkBlack = Color(0xFFF5F5F5);
+  // // dark theme colors
+  // static const Color darkCream = Color(0xFF121212);
+  // static const Color darkTeal = Color(0xFF4F6F6B);
+  // static const Color darkTealShadow = Color(0xFF39524F);
+  // static const Color darkSage = Color(0xFF7F8F7C);
+  // static const Color darkCoral = Color(0xFFB35E51);
+  // static const Color darkBlack = Color(0xFFE6E6E6);
+
+  // ultra-dark theme colors (almost black, subtle hints)
+  static const Color darkCream = Color(0xFF0A0A0A); // deep neutral
+  static const Color darkTeal = Color(0xFF1A2423); // almost black, teal hue
+  static const Color darkTealShadow = Color(
+    0xFF111818,
+  ); // even darker teal shadow
+  static const Color darkSage = Color(
+    0xFF1C1F1A,
+  ); // nearly black with sage tint
+  static const Color darkCoral = Color(
+    0xFF241716,
+  ); // warm near-black coral tone
+  static const Color darkBlack = Color(
+    0xFFE0E0E0,
+  ); // soft white for readability
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -54,11 +70,11 @@ class AppTheme {
         onPrimary: Colors.black,
 
         secondary: darkTeal,
-        onSecondaryContainer: Colors.white,
+        onSecondaryContainer: darkBlack,
         shadow: darkTealShadow,
 
-        tertiary: Color(0xFF1F1F1F),
-        onTertiary: Colors.white,
+        tertiary: Color(0xFFE6DFC9),
+        onTertiary: darkBlack,
 
         error: darkCoral,
         onError: Colors.black,

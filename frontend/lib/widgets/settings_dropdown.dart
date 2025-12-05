@@ -24,6 +24,7 @@ class SettingsDropdown extends StatelessWidget {
             ],
           ),
           color: Theme.of(context).colorScheme.tertiary,
+          constraints: BoxConstraints(minWidth: 60, maxWidth: 60),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
@@ -42,12 +43,18 @@ class SettingsDropdown extends StatelessWidget {
                     Navigator.pop(context);
                   },
                   child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Icon(
-                      settings.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                      color: Theme.of(context).colorScheme.secondary,
-                      size: 28,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 4,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        settings.isDarkMode
+                            ? Icons.dark_mode
+                            : Icons.light_mode,
+                        color: Theme.of(context).colorScheme.secondary,
+                        size: 28,
+                      ),
                     ),
                   ),
                 ),
@@ -60,14 +67,18 @@ class SettingsDropdown extends StatelessWidget {
                     Navigator.pop(context);
                   },
                   child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Icon(
-                      settings.isSoundEnabled
-                          ? Icons.volume_up
-                          : Icons.volume_off,
-                      color: Theme.of(context).colorScheme.secondary,
-                      size: 28,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 4,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        settings.isSoundEnabled
+                            ? Icons.volume_up
+                            : Icons.volume_off,
+                        color: Theme.of(context).colorScheme.secondary,
+                        size: 28,
+                      ),
                     ),
                   ),
                 ),
@@ -80,14 +91,18 @@ class SettingsDropdown extends StatelessWidget {
                     Navigator.pop(context);
                   },
                   child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Icon(
-                      settings.isMusicEnabled
-                          ? Icons.music_note
-                          : Icons.music_off_rounded,
-                      color: Theme.of(context).colorScheme.secondary,
-                      size: 28,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 4,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        settings.isMusicEnabled
+                            ? Icons.music_note
+                            : Icons.music_off_rounded,
+                        color: Theme.of(context).colorScheme.secondary,
+                        size: 28,
+                      ),
                     ),
                   ),
                 ),
