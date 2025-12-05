@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:guess_who/constants/assets/audio_assets.dart';
 import 'package:guess_who/data/game_data.dart';
 import 'package:guess_who/models/character.dart';
+import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/services/game_state_manager.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
 import 'package:guess_who/widgets/game/make_guess_dialogue.dart';
@@ -19,6 +21,7 @@ class LocalGameScreen extends StatefulWidget {
 
 class _LocalGameScreenState extends State<LocalGameScreen> {
   late GameStateManager _gameState;
+  GamePhase? _previousPhase;
   bool _isLoading = false;
   bool _isCharacterNameRevealed = false;
 
@@ -26,7 +29,13 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
   void initState() {
     super.initState();
     _gameState = GameStateManager();
+    _gameState.addListener(_onGameStateChanged);
     _initializeGame();
+
+    AudioManager().playBackgroundMusic(
+      AudioAssets.lobbyMusic,
+      fadeDuration: const Duration(seconds: 6),
+    );
   }
 
   Future<void> _initializeGame() async {
@@ -418,6 +427,46 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
   }
 
   @override
+  void dispose() {
+    _gameState.removeListener(_onGameStateChanged);
+    AudioManager().playBackgroundMusic(
+      AudioAssets.menuMusic,
+      fadeDuration: const Duration(seconds: 6),
+    );
+    super.dispose();
+  }
+
+  void _onGameStateChanged() {
+    if (_previousPhase != _gameState.gamePhase) {
+      _previousPhase = _gameState.gamePhase;
+
+      switch (_gameState.gamePhase) {
+        case GamePhase.characterSelection:
+          AudioManager().playBackgroundMusic(
+            AudioAssets.lobbyMusic,
+            fadeDuration: const Duration(seconds: 3),
+          );
+          break;
+
+        case GamePhase.playing:
+          AudioManager().playBackgroundMusic(
+            AudioAssets.gameMusic,
+            fadeDuration: const Duration(seconds: 3),
+          );
+          break;
+
+        case GamePhase.gameOver:
+          // Optionally play different music or stop music on game over
+          // AudioManager().stopBackgroundMusic();
+          break;
+
+        default:
+          break;
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _gameState,
@@ -526,36 +575,59 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
     final isPlayer1Selecting = gameState.player1Character == null;
     final currentPlayerName = isPlayer1Selecting ? "Player 1" : "Player 2";
 
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.secondary,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (gameState.player1Character != null) ...[
+    return Container(
+      color: Theme.of(context).colorScheme.tertiary,
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.secondary,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (gameState.player1Character != null) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
+                      SizedBox(width: 14),
+                      Text(
+                        "Player 1 picked a character",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context).colorScheme.tertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                ],
+
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.check_circle_rounded,
+                      Icons.check_box_outline_blank_rounded,
                       color: Theme.of(context).colorScheme.tertiary,
                     ),
                     SizedBox(width: 14),
                     Text(
-                      "Player 1 picked a character",
+                      "$currentPlayerName picks a character",
                       style: TextStyle(
                         fontSize: 16,
                         color: Theme.of(context).colorScheme.tertiary,
@@ -563,70 +635,51 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
               ],
-
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.check_box_outline_blank_rounded,
-                    color: Theme.of(context).colorScheme.tertiary,
-                  ),
-                  SizedBox(width: 14),
-                  Text(
-                    "$currentPlayerName picks a character",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.tertiary,
+            ),
+          ),
+          Expanded(
+            child: !_isLoading
+                ? GridView.builder(
+                    padding: const EdgeInsets.all(8),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          childAspectRatio: 0.7,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                    itemCount: gameState.allCharacters.length,
+                    itemBuilder: (context, index) {
+                      final character = gameState.allCharacters[index];
+                      return _buildCharacterCard(
+                        character,
+                        isFlipped: false,
+                        isSelectionMode: true,
+                      );
+                    },
+                  )
+                : SizedBox(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Loading Characters...",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        LinearProgressIndicator(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ],
           ),
-        ),
-        Expanded(
-          child: !_isLoading
-              ? GridView.builder(
-                  padding: const EdgeInsets.all(8),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    childAspectRatio: 0.7,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                  ),
-                  itemCount: gameState.allCharacters.length,
-                  itemBuilder: (context, index) {
-                    final character = gameState.allCharacters[index];
-                    return _buildCharacterCard(
-                      character,
-                      isFlipped: false,
-                      isSelectionMode: true,
-                    );
-                  },
-                )
-              : SizedBox(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "Loading Characters...",
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      LinearProgressIndicator(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ],
-                  ),
-                ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

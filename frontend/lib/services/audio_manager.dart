@@ -14,6 +14,8 @@ class AudioManager {
   final AudioPlayer _sfxPlayer = AudioPlayer();
   final Random _random = Random();
 
+  String? _currentMusicPath;
+
   bool _musicEnabled = true;
   bool _sfxEnabled = true;
   double _musicVolume = 0.5;
@@ -35,6 +37,9 @@ class AudioManager {
   }) async {
     if (!_musicEnabled) return;
 
+    if (_currentMusicPath == assetPath) return;
+    _currentMusicPath = assetPath;
+
     try {
       await _musicPlayer.stop();
       await _musicPlayer.setVolume(0);
@@ -52,6 +57,7 @@ class AudioManager {
     try {
       await _fadeVolume(_musicPlayer, _musicPlayer.volume, 0, fadeDuration);
       await _musicPlayer.stop();
+      _currentMusicPath = null;
     } catch (e) {
       debugPrint('Error stopping background music: $e');
     }

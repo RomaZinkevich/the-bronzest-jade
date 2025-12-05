@@ -24,7 +24,6 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
-  final AudioManager _audioManager = AudioManager();
 
   String _playerId = "";
   String _playerName = "";
@@ -32,12 +31,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   @override
   void initState() {
     super.initState();
-    _audioManager.init();
-    _audioManager.playBackgroundMusic(
+    AudioManager().setMusicVolume(0.3);
+
+    AudioManager().playBackgroundMusic(
       AudioAssets.menuMusic,
       fadeDuration: const Duration(seconds: 6),
     );
-
     _loadUserData();
   }
 
@@ -152,7 +151,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Future<void> _showCreateRoomMenu() async {
-    _audioManager.playButtonClickVariation();
+    AudioManager().playButtonClickVariation();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -191,8 +190,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 (characterSets) => RetroPopupMenuItem(
                   text: characterSets.name,
                   onTap: () {
-                    _audioManager.playGameStart();
-                    Future.delayed(const Duration(milliseconds: 100));
+                    AudioManager().playGameStart();
                     _createRoom(characterSets.id);
                   },
                 ),
@@ -537,7 +535,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                       ),
 
                       onPressed: () {
-                        _audioManager.playGameStart();
+                        AudioManager().playGameStart();
 
                         Navigator.push(
                           context,
