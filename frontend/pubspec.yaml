@@ -18,6 +18,7 @@ dependencies:
   image_picker: 1.2.1
   path_provider: ^2.1.1
   path: ^1.8.3
+  audioplayers: ^6.5.1
 
 dev_dependencies:
   flutter_test:
@@ -30,6 +31,11 @@ flutter:
   assets:
     - assets/main_menu.png
     - assets/main_logo.png
+
+    - assets/sounds/button_click1.mp3
+    - assets/sounds/button_click2.mp3
+    - assets/sounds/button_click3.mp3
+    - assets/sounds/game_start.mp3
 
     - assets/icons/default_user.png
     - assets/icons/find_room.png

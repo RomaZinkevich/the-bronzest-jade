@@ -6,6 +6,7 @@ import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/screens/online_lobby_screen.dart';
 import 'package:guess_who/services/api_service.dart';
+import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/services/auth_service.dart';
 import 'package:guess_who/widgets/common/appbar.dart';
 import 'package:guess_who/widgets/common/inner_shadow_input.dart';
@@ -22,6 +23,7 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
+  final AudioManager _audioManager = AudioManager();
 
   String _playerId = "";
   String _playerName = "";
@@ -143,6 +145,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Future<void> _showCreateRoomMenu() async {
+    _audioManager.playButtonClickVariation();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -180,7 +183,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               .map(
                 (characterSets) => RetroPopupMenuItem(
                   text: characterSets.name,
-                  onTap: () => _createRoom(characterSets.id),
+                  onTap: () {
+                    _audioManager.playGameStart();
+                    Future.delayed(const Duration(milliseconds: 100));
+                    _createRoom(characterSets.id);
+                  },
                 ),
               )
               .toList(),
@@ -509,7 +516,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     ),
 
                     const SizedBox(height: 100),
-
                     RetroButton(
                       text: "Play local",
                       fontSize: 20,
@@ -524,6 +530,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                       ),
 
                       onPressed: () {
+                        _audioManager.playGameStart();
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
