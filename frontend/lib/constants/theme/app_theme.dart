@@ -10,12 +10,12 @@ class AppTheme {
   static const Color black = Color(0xFF000000);
 
   //dark theme colors
-  static const Color darkCream = Color(0xFF2E2B26);
-  static const Color darkTeal = Color(0xFF4A6563);
-  static const Color darkTealShadow = Color(0xFF374B4A);
-  static const Color darkSage = Color(0xFF6E7F73);
-  static const Color darkCoral = Color(0xFF8C4A42);
-  static const Color darkBlack = Color(0xFFFFFFFF);
+  static const Color darkCream = Color(0xFF1A1A1A);
+  static const Color darkTeal = Color(0xFF4A7873);
+  static const Color darkTealShadow = Color(0xFF3A5E5B);
+  static const Color darkSage = Color(0xFF7B8C6F);
+  static const Color darkCoral = Color(0xFFB85A4A);
+  static const Color darkBlack = Color(0xFFE0E0E0);
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -38,7 +38,10 @@ class AppTheme {
 
         surface: Colors.white,
         onSurface: black,
+
+        brightness: Brightness.light,
       ),
+      scaffoldBackgroundColor: Colors.white,
       useMaterial3: true,
       fontFamily: "BowlbyOneSC",
     );
@@ -48,24 +51,27 @@ class AppTheme {
     return ThemeData(
       colorScheme: ColorScheme.dark(
         primary: darkSage,
-        onPrimary: Colors.black,
+        onPrimary: darkBlack,
 
         secondary: darkTeal,
         onSecondaryContainer: darkBlack,
         shadow: darkTealShadow,
 
-        tertiary: darkCream,
-        onTertiary: Colors.black,
+        tertiary: Color(0xFF2A2A2A),
+        onTertiary: darkBlack,
 
         error: darkCoral,
-        onError: Colors.black,
+        onError: darkBlack,
 
         errorContainer: darkCoral,
-        onErrorContainer: Colors.black,
+        onErrorContainer: darkBlack,
 
-        surface: darkBlack,
-        onSurface: Colors.white,
+        surface: Color(0xFF121212),
+        onSurface: darkBlack,
+
+        brightness: Brightness.dark,
       ),
+      scaffoldBackgroundColor: darkCream,
       useMaterial3: true,
       fontFamily: "BowlbyOneSC",
     );

@@ -449,7 +449,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       appBar: CustomAppBar(
         playerName: "Guest Player",
         playerId: "#${_playerId.substring(0, 6)}",
-        onSettingsPressed: () {},
       ),
       body: Stack(
         children: [
@@ -460,11 +459,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             ),
           ),
 
-          SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height - 90,
-              ),
+          Expanded(
+            child: SingleChildScrollView(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
