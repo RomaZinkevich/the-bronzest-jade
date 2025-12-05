@@ -34,6 +34,7 @@ flutter:
 
     - assets/music/background_loop.mp3
     - assets/music/lobby_loop.mp3
+    - assets/music/game_loop.mp3
 
     - assets/sounds/button_click1.mp3
     - assets/sounds/button_click2.mp3

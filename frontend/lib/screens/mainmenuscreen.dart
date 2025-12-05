@@ -33,13 +33,17 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   @override
   void initState() {
     super.initState();
-    AudioManager().setMusicVolume(0.3);
+    _initializeAudio();
+    _loadUserData();
+  }
 
-    AudioManager().playBackgroundMusic(
+  Future<void> _initializeAudio() async {
+    await AudioManager().setMusicVolume(0.3);
+
+    await AudioManager().playBackgroundMusic(
       AudioAssets.menuMusic,
       fadeDuration: const Duration(seconds: 6),
     );
-    _loadUserData();
   }
 
   Future<void> _loadUserData() async {
