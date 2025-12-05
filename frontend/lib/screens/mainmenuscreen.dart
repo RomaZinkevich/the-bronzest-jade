@@ -14,6 +14,8 @@ import 'package:guess_who/widgets/common/inner_shadow_input.dart';
 import 'package:guess_who/widgets/common/popup_menu.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
 import 'package:guess_who/widgets/common/retro_icon_button.dart';
+import 'package:guess_who/providers/settings_provider.dart';
+import 'package:provider/provider.dart';
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -482,118 +484,127 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        playerName: _playerName,
-        playerId: "#${_playerId.isNotEmpty ? _playerId.substring(0, 6) : ""}",
-        onSettingsPressed: () {},
-        onCreateCharacterSetPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  CreateCharactersetScreen(playerId: _playerId),
-            ),
-          );
-        },
-      ),
-      body: Stack(
-        children: [
-          SizedBox.expand(
-            child: Image(
-              image: AssetImage("assets/main_menu.png"),
-              fit: BoxFit.cover,
-            ),
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        return Scaffold(
+          appBar: CustomAppBar(
+            playerName: _playerName,
+            playerId:
+                "#${_playerId.isNotEmpty ? _playerId.substring(0, 6) : ""}",
+            onSettingsPressed: () {},
+            onCreateCharacterSetPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      CreateCharactersetScreen(playerId: _playerId),
+                ),
+              );
+            },
           ),
-
-          SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height - 90,
+          body: Stack(
+            children: [
+              SizedBox.expand(
+                child: Image.asset(
+                  "assets/main_menu.png",
+                  fit: BoxFit.cover,
+                  color: settings.isDarkMode
+                      ? Colors.black.withOpacity(0.5)
+                      : null,
+                  colorBlendMode: settings.isDarkMode ? BlendMode.darken : null,
+                ),
               ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Image(
-                      image: AssetImage("assets/main_logo.png"),
-                      width: 300,
-                    ),
 
-                    const SizedBox(height: 100),
-                    RetroButton(
-                      text: "Play local",
-                      fontSize: 20,
-
-                      icon: Icons.videogame_asset,
-                      iconSize: 34,
-                      iconAtEnd: true,
-
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 26,
-                        vertical: 16,
-                      ),
-
-                      onPressed: () {
-                        AudioManager().playGameStart();
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LocalGameScreen(),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 60),
-
-                    InnerShadowInput(
-                      controller: _roomCodeController,
-                      onSubmit: _joinWithCode,
-                      submitTooltip: "Join with code",
-                      hintText: "Join with code...",
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    Row(
+              SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height - 90,
+                  ),
+                  child: Center(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        RetroButton(
-                          text: 'Create a room',
-                          fontSize: 18,
-
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 40,
-                            vertical: 20,
-                          ),
-
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          onPressed: _showCreateRoomMenu,
+                        const Image(
+                          image: AssetImage("assets/main_logo.png"),
+                          width: 300,
                         ),
 
-                        SizedBox(width: 4),
+                        const SizedBox(height: 100),
+                        RetroButton(
+                          text: "Play local",
+                          fontSize: 20,
 
-                        RetroIconButton(
-                          onPressed: _showFindRoomsMenu,
-                          tooltip: "Find rooms",
-                          imagePath: "assets/icons/find_room.png",
-                          iconSize: 55,
-                          padding: 6,
-                          borderWidth: 0,
+                          icon: Icons.videogame_asset,
+                          iconSize: 34,
+                          iconAtEnd: true,
+
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 26,
+                            vertical: 16,
+                          ),
+
+                          onPressed: () {
+                            AudioManager().playGameStart();
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LocalGameScreen(),
+                              ),
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: 60),
+
+                        InnerShadowInput(
+                          controller: _roomCodeController,
+                          onSubmit: _joinWithCode,
+                          submitTooltip: "Join with code",
+                          hintText: "Join with code...",
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            RetroButton(
+                              text: 'Create a room',
+                              fontSize: 18,
+
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 40,
+                                vertical: 20,
+                              ),
+
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              onPressed: _showCreateRoomMenu,
+                            ),
+
+                            SizedBox(width: 4),
+
+                            RetroIconButton(
+                              onPressed: _showFindRoomsMenu,
+                              tooltip: "Find rooms",
+                              imagePath: "assets/icons/find_room.png",
+                              iconSize: 55,
+                              padding: 6,
+                              borderWidth: 0,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
