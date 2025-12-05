@@ -39,7 +39,6 @@ class SettingsDropdown extends StatelessWidget {
                 value: 'theme',
                 onTap: () {
                   settings.toggleTheme();
-                  Navigator.pop(context);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -59,7 +58,6 @@ class SettingsDropdown extends StatelessWidget {
                 value: 'sound',
                 onTap: () {
                   settings.toggleSound();
-                  Navigator.pop(context);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -79,24 +77,21 @@ class SettingsDropdown extends StatelessWidget {
               ),
               PopupMenuItem<String>(
                 value: 'music',
-                child: GestureDetector(
-                  onTap: () {
-                    settings.toggleMusic();
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 4,
-                    ),
-                    child: Center(
-                      child: Icon(
-                        settings.isMusicEnabled
-                            ? Icons.music_note
-                            : Icons.music_off_rounded,
-                        color: Theme.of(context).colorScheme.secondary,
-                        size: 28,
-                      ),
+                onTap: () {
+                  settings.toggleMusic();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 4,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      settings.isMusicEnabled
+                          ? Icons.music_note
+                          : Icons.music_off_rounded,
+                      color: Theme.of(context).colorScheme.secondary,
+                      size: 28,
                     ),
                   ),
                 ),
