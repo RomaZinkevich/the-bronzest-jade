@@ -195,7 +195,7 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
         final oldFilename = existingCharacter?.uploadedFilename;
 
         final filename = await ApiService.uploadImage(character.imageFile!);
-        final imageUrl = "${ApiService.baseUrl}/images/$filename";
+        final imageUrl = "https://guesswho.190304.xyz/images/$filename";
 
         if (oldFilename != null &&
             oldFilename.isNotEmpty &&
@@ -316,13 +316,20 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
               "Are you sure you want to delete \"${character.name}\"?",
               style: TextStyle(
                 color: Theme.of(context).colorScheme.tertiary,
-                fontSize: 16,
+                fontSize: 12,
               ),
             ),
+
+            const SizedBox(height: 10),
+
             if (character.uploadedFilename != null &&
                 character.uploadedFilename!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.tertiary,
+                  borderRadius: BorderRadius.circular(4),
+                ),
                 child: Text(
                   "This will also delete the uploaded image from the server.",
                   style: TextStyle(
@@ -436,7 +443,7 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
             (character.uploadedFilename == null ||
                 character.uploadedFilename!.isEmpty)) {
           final filename = await ApiService.uploadImage(character.imageFile!);
-          final imageUrl = "${ApiService.baseUrl}/images/$filename";
+          final imageUrl = "https://guesswho.190304.xyz/images/$filename";
 
           updatedCharacters.add(
             character.copyWith(uploadedFilename: filename, imageUrl: imageUrl),

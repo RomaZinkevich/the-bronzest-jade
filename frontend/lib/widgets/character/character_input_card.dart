@@ -128,7 +128,7 @@ class _CharacterInputCardState extends State<CharacterInputCard> {
     final character = Character(
       id: widget.character?.id ?? const Uuid().v4(),
       name: name,
-      imageUrl: "${ApiService.baseUrl}/images/$_uploadedFilename",
+      imageUrl: "https://guesswho.190304.xyz/images/$_uploadedFilename",
       uploadedFilename: _uploadedFilename,
     );
 

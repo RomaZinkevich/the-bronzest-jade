@@ -126,7 +126,8 @@ class CharacterGridItem extends StatelessWidget {
             ),
 
             if (isUploaded)
-              Positioned(
+              Container(
+                padding: const EdgeInsets.all(4),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   child: Row(

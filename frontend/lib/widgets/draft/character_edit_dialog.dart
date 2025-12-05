@@ -101,7 +101,7 @@ class _CharacterEditDialogState extends State<CharacterEditDialog> {
 
       try {
         newFilename = await ApiService.uploadImage(_selectedImage!);
-        newImageUrl = "https://guesswho.190304.xyz/api/images/$newFilename";
+        newImageUrl = "https://guesswho.190304.xyz/images/$newFilename";
 
         if (widget.character.uploadedFilename != null &&
             widget.character.uploadedFilename!.isNotEmpty) {
