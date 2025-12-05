@@ -122,7 +122,7 @@ class ApiService {
     try {
       final headers = await _getHeaders();
       final response = await http.delete(
-        Uri.parse("$baseUrl/images/$filename"),
+        Uri.parse("$baseUrl/images?filename=$filename"),
         headers: headers,
       );
 
