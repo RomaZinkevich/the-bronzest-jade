@@ -8,6 +8,7 @@ class InnerShadowInput extends StatelessWidget {
   final String iconPath;
   final String hintText;
   final String submitTooltip;
+  final bool showIcon;
 
   final double? width;
 
@@ -18,6 +19,7 @@ class InnerShadowInput extends StatelessWidget {
     this.hintText = "Set name...",
     this.submitTooltip = "Submit",
     this.iconPath = "assets/icons/join_submit.png",
+    this.showIcon = true,
     this.width,
   });
 
@@ -43,7 +45,7 @@ class InnerShadowInput extends StatelessWidget {
         children: [
           Expanded(
             child: Container(
-              margin: const EdgeInsets.only(left: 6),
+              margin: EdgeInsets.only(left: 6, right: showIcon ? 0 : 6),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(100),
                 boxShadow: [
@@ -78,19 +80,21 @@ class InnerShadowInput extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 4),
+          if (showIcon) ...[
+            const SizedBox(width: 4),
 
-          // Keep your existing button widget
-          RetroIconButton(
-            onPressed: onSubmit,
-            tooltip: "Submit",
-            imagePath: iconPath,
-            iconSize: 64,
-            padding: 0,
-            margin: const EdgeInsets.only(top: 2, bottom: 2, right: 4),
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-            borderWidth: 0,
-          ),
+            // Keep your existing button widget
+            RetroIconButton(
+              onPressed: onSubmit,
+              tooltip: "Submit",
+              imagePath: iconPath,
+              iconSize: 64,
+              padding: 0,
+              margin: const EdgeInsets.only(top: 2, bottom: 2, right: 4),
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              borderWidth: 0,
+            ),
+          ],
         ],
       ),
     );
