@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "M8X643FP89.com.dai.guesswho",
+        "paths": ["/join", "/join/*"]
+      }
+    ]
+  }
+}
