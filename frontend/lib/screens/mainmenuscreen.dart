@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:guess_who/constants/assets/audio_assets.dart';
 import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
@@ -33,25 +32,24 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   String _playerId = "";
   String _playerName = "";
 
+  bool _isJoining = false;
+  bool _dialogOpen = false;
+  bool _screenActive = true;
+
   @override
   void initState() {
     super.initState();
     _initializeAudio();
-    _loadUserData();
-    _checkPendingDeepLink();
-  }
+    _initialize();
 
-  void _checkPendingDeepLink() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final deepLinkService = DeepLinkService();
-      final roomCode = deepLinkService.pendingRoomCode;
-
-      if (roomCode != null) {
-        deepLinkService.clearPendingRoomCode();
-        // _roomCodeController.text = roomCode;
-        _joinWithCode(roomCode);
-      }
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).popUntil((route) => route.isFirst);
     });
+
+    DeepLinkService().addListener(_checkPendingDeepLink);
   }
 
   Future<void> _initializeAudio() async {
@@ -63,6 +61,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     );
   }
 
+  Future<void> _initialize() async {
+    await _loadUserData();
+  }
+
   Future<void> _loadUserData() async {
     final userId = await AuthService.getUserId();
     final username = await AuthService.getUsername();
@@ -71,11 +73,30 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       _playerId = userId ?? "";
       _playerName = username ?? "Guest";
     });
+
+    _checkPendingDeepLink();
+  }
+
+  void _checkPendingDeepLink() {
+    final deepLinkService = DeepLinkService();
+    final roomCode = deepLinkService.pendingRoomCode;
+
+    if (roomCode == null || roomCode.isEmpty) return;
+
+    deepLinkService.clearPendingRoomCode();
+    _roomCodeController.text = roomCode;
+
+    if (_playerId.isEmpty) return;
+
+    if (mounted) {
+      _joinWithCode();
+    }
   }
 
   @override
   void dispose() {
     _roomCodeController.dispose();
+    _screenActive = false;
     super.dispose();
   }
 
@@ -109,48 +130,29 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     );
   }
 
-  Future<void> _joinWithCode(String? linkCode) async {
-    if (linkCode != null && linkCode.isNotEmpty) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
+  Future<void> _joinWithCode() async {
+    if (!_screenActive) return;
+    if (_isJoining) return;
+    _isJoining = true;
+
+    String code = _roomCodeController.text.trim().toUpperCase();
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "Please enter a room code",
+            textAlign: TextAlign.center,
+          ),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
 
-      try {
-        await ApiService.joinRoom(linkCode, _playerId);
-        if (mounted) {
-          Navigator.pop(context);
-          context.go('/game');
-        }
-      } catch (e) {
-        debugPrint("$e");
-        if (mounted) {
-          Navigator.pop(context);
+      _isJoining = false;
+      return;
+    }
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Failed to join shared room: $e"),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-        }
-      }
-    } else {
-      String code = _roomCodeController.text.trim().toUpperCase();
-      if (code.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              "Please enter a room code",
-              textAlign: TextAlign.center,
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-
-        return;
-      }
+    if (mounted) {
+      _dialogOpen = true;
 
       //* LOADING
       showDialog(
@@ -165,39 +167,49 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             strokeWidth: 5,
           ),
         ),
-      );
+      ).then((_) {
+        _dialogOpen = false;
+      });
+    }
 
-      try {
-        final room = await ApiService.joinRoom(code, _playerId);
+    try {
+      final room = await ApiService.joinRoom(code, _playerId);
 
-        if (mounted) {
-          Navigator.pop(context);
+      if (!mounted) return;
 
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => OnlineLobbyScreen(
-                room: room,
-                playerId: _playerId,
-                playerName: _playerName,
-                isHost: false,
-              ),
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint("$e");
-        if (mounted) {
-          Navigator.pop(context);
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Failed to join room: $e"),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-        }
+      if (_dialogOpen && _screenActive) {
+        Navigator.of(context, rootNavigator: true).pop();
+        _dialogOpen = false;
       }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OnlineLobbyScreen(
+            room: room,
+            playerId: _playerId,
+            playerName: _playerName,
+            isHost: false,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint("$e");
+      if (mounted && _dialogOpen) {
+        Navigator.of(context, rootNavigator: true).pop(context);
+        _dialogOpen = true;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to join room: $e"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      _isJoining = false;
     }
   }
 
@@ -616,7 +628,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
                         InnerShadowInput(
                           controller: _roomCodeController,
-                          onSubmit: () => _joinWithCode(null),
+                          onSubmit: () => _joinWithCode(),
                           submitTooltip: "Join with code",
                           hintText: "Join with code...",
                         ),

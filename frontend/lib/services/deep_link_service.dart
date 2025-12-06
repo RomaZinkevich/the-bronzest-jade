@@ -3,10 +3,9 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 
-class DeepLinkService {
+class DeepLinkService extends ChangeNotifier {
   static final DeepLinkService _instance = DeepLinkService._internal();
   factory DeepLinkService() => _instance;
-
   DeepLinkService._internal();
 
   final _appLinks = AppLinks();
@@ -15,8 +14,14 @@ class DeepLinkService {
   String? _pendingRoomCode;
   String? get pendingRoomCode => _pendingRoomCode;
 
+  void setPendingRoomCode(String code) {
+    _pendingRoomCode = code;
+    notifyListeners();
+  }
+
   void clearPendingRoomCode() {
     _pendingRoomCode = null;
+    notifyListeners();
   }
 
   Future<void> initialize() async {
@@ -41,16 +46,25 @@ class DeepLinkService {
 
   void _handleDeepLink(Uri uri) {
     debugPrint("Recieved deep link: $uri");
-    if (uri.path.startsWith("/join")) {
+    if (uri.host == "join" ||
+        uri.path == "/join" ||
+        uri.path.contains("join")) {
       final roomCode = uri.queryParameters["code"];
+
       if (roomCode != null && roomCode.isNotEmpty) {
-        _pendingRoomCode = roomCode;
-        debugPrint("Extracted room code: $_pendingRoomCode");
+        setPendingRoomCode(roomCode);
+        debugPrint("Room code extracted and stored: $roomCode");
+      } else {
+        debugPrint("No 'code' parameter found in URI");
       }
+    } else {
+      debugPrint("URI doesn't match join pattern");
     }
   }
 
+  @override
   void dispose() {
     _linkSubscription?.cancel();
+    super.dispose();
   }
 }
