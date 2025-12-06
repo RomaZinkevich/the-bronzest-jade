@@ -5,6 +5,7 @@ import com.bronzejade.game.domain.dtos.User.LoginRequest;
 import com.bronzejade.game.domain.dtos.User.RegisterRequest;
 import com.bronzejade.game.domain.dtos.User.UserDto;
 import com.bronzejade.game.domain.entities.User;
+import com.bronzejade.game.security.ApiUserDetails;
 import com.bronzejade.game.security.JwtUtil;
 import com.bronzejade.game.mapper.UserMapper;
 import com.bronzejade.game.repositories.UserRepository;
@@ -68,21 +69,26 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        // Authenticate user
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()
+                    )
+            );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        User user = (User) authentication.getPrincipal();
+            ApiUserDetails user = (ApiUserDetails) authentication.getPrincipal();
 
-        String token = jwtUtil.generateToken(user.getId());
+            String token = jwtUtil.generateToken(user.getId());
 
-        return new AuthResponse(token, user.getId(), user.getUsername());
+            return new AuthResponse(token, user.getId(), user.getUsername());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;  // or return an error response
+        }
     }
 
     public AuthResponse createGuestUser() {
