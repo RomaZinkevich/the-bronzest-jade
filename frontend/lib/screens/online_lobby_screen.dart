@@ -11,6 +11,7 @@ import 'package:guess_who/models/character.dart';
 import 'package:guess_who/screens/online_game_screen.dart';
 import 'package:guess_who/widgets/character/character_card.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
+import 'package:share_plus/share_plus.dart';
 
 class OnlineLobbyScreen extends StatefulWidget {
   final Room room;
@@ -256,6 +257,28 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     }
   }
 
+  Future<void> _shareRoomCode() async {
+    final roomCode = widget.room.roomCode;
+    final deepLink = "https://guesswho.190304.xyz/join?code=$roomCode";
+
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: "Join my Guess Who game with room code $roomCode!\n\n$deepLink",
+          subject: "Join Guess Who Game - $roomCode",
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to share: $e"),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _messageSubsciption?.cancel();
@@ -326,9 +349,31 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
             color: Theme.of(context).colorScheme.tertiary,
           ),
           title: Text(
-            "Room: ${widget.room.roomCode}",
-            style: TextStyle(color: Theme.of(context).colorScheme.tertiary),
+            "code: ${widget.room.roomCode}",
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.tertiary,
+              fontSize: 16,
+            ),
           ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: RetroButton(
+                text: "Share Code",
+                fontSize: 14,
+                iconSize: 20,
+                iconAtEnd: false,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 8,
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.tertiary,
+                icon: Icons.share_rounded,
+                onPressed: _shareRoomCode,
+              ),
+            ),
+          ],
         ),
         body: Column(
           children: [
