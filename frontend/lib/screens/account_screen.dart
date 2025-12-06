@@ -29,11 +29,13 @@ class _AccountScreenState extends State<AccountScreen> {
   final TextEditingController _usernameController = TextEditingController();
   bool _isEditingUsername = false;
   bool _isUpdatingUsername = false;
+  bool _isAuthenticated = false;
 
   @override
   void initState() {
     super.initState();
     _loadCurrentUsername();
+    _loadAuthenticationStatus();
   }
 
   @override
@@ -48,6 +50,15 @@ class _AccountScreenState extends State<AccountScreen> {
       setState(() {
         _currentUsername = username;
         _usernameController.text = username ?? widget.playerName;
+      });
+    }
+  }
+
+  Future<void> _loadAuthenticationStatus() async {
+    final isAuth = await AuthService.isAuthenticated();
+    if (mounted) {
+      setState(() {
+        _isAuthenticated = isAuth;
       });
     }
   }
@@ -74,6 +85,7 @@ class _AccountScreenState extends State<AccountScreen> {
         token: response["token"] ?? await AuthService.getToken() ?? "",
         userId: response["userId"] ?? await AuthService.getUserId() ?? "",
         username: response["username"],
+        isGuest: await AuthService.isGuestUser(),
       );
 
       if (mounted) {
@@ -114,6 +126,7 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
+  @override
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
@@ -348,141 +361,147 @@ class _AccountScreenState extends State<AccountScreen> {
                           // Action buttons
                           Column(
                             children: [
-                              RetroButton(
-                                text: "SIGN UP",
-                                fontSize: 16,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 50,
-                                  vertical: 16,
-                                ),
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.secondary,
-                                foregroundColor: Colors.white,
-                                onPressed: () async {
-                                  final result = await AuthPopup.showSignUp(
+                              // Show Sign Up and Log In buttons only if user is not authenticated (guest user)
+                              if (!_isAuthenticated) ...[
+                                RetroButton(
+                                  text: "SIGN UP",
+                                  fontSize: 16,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 50,
+                                    vertical: 16,
+                                  ),
+                                  backgroundColor: Theme.of(
                                     context,
-                                  );
-                                  if (result == true && mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text(
-                                          "Account created successfully!",
-                                        ),
-                                        backgroundColor: Theme.of(
-                                          context,
-                                        ).colorScheme.secondary,
-                                      ),
-                                    );
-                                    Navigator.pop(
+                                  ).colorScheme.secondary,
+                                  foregroundColor: Colors.white,
+                                  onPressed: () async {
+                                    final result = await AuthPopup.showSignUp(
                                       context,
-                                    ); // Return to main menu
-                                  }
-                                },
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              RetroButton(
-                                text: "LOG IN",
-                                fontSize: 16,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 50,
-                                  vertical: 16,
-                                ),
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.secondary,
-                                foregroundColor: Colors.white,
-                                onPressed: () async {
-                                  final result = await AuthPopup.showLogin(
-                                    context,
-                                  );
-                                  if (result == true && mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text(
-                                          "Logged in successfully!",
-                                        ),
-                                        backgroundColor: Theme.of(
-                                          context,
-                                        ).colorScheme.secondary,
-                                      ),
                                     );
-                                    Navigator.pop(
-                                      context,
-                                    ); // Return to main menu
-                                  }
-                                },
-                              ),
-
-                              const SizedBox(height: 20),
-
-                              RetroButton(
-                                text: "LOGOUT",
-                                fontSize: 16,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 50,
-                                  vertical: 16,
-                                ),
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.error,
-                                foregroundColor: Colors.white,
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: const Text("Logout"),
-                                        content: const Text(
-                                          "Are you sure you want to logout?",
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(),
-                                            child: const Text("Cancel"),
+                                    if (result == true && mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: const Text(
+                                            "Account created successfully!",
                                           ),
-                                          TextButton(
-                                            onPressed: () async {
-                                              await AuthService.clearAuthData();
-                                              if (mounted) {
-                                                Navigator.of(
-                                                  context,
-                                                ).pop(); // Close dialog
-                                                Navigator.pop(
-                                                  context,
-                                                ); // Return to main menu
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: const Text(
-                                                      "Logged out successfully",
+                                          backgroundColor: Theme.of(
+                                            context,
+                                          ).colorScheme.secondary,
+                                        ),
+                                      );
+                                      await _loadAuthenticationStatus(); // Refresh auth status
+                                      await _loadCurrentUsername(); // Refresh username
+                                    }
+                                  },
+                                ),
+
+                                const SizedBox(height: 20),
+
+                                RetroButton(
+                                  text: "LOG IN",
+                                  fontSize: 16,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 50,
+                                    vertical: 16,
+                                  ),
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.secondary,
+                                  foregroundColor: Colors.white,
+                                  onPressed: () async {
+                                    final result = await AuthPopup.showLogin(
+                                      context,
+                                    );
+                                    if (result == true && mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: const Text(
+                                            "Logged in successfully!",
+                                          ),
+                                          backgroundColor: Theme.of(
+                                            context,
+                                          ).colorScheme.secondary,
+                                        ),
+                                      );
+                                      await _loadAuthenticationStatus(); // Refresh auth status
+                                      await _loadCurrentUsername(); // Refresh username
+                                    }
+                                  },
+                                ),
+                              ],
+
+                              // Show Logout button only if user is authenticated
+                              if (_isAuthenticated) ...[
+                                RetroButton(
+                                  text: "LOGOUT",
+                                  fontSize: 16,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 50,
+                                    vertical: 16,
+                                  ),
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.error,
+                                  foregroundColor: Colors.white,
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: const Text("Logout"),
+                                          content: const Text(
+                                            "Are you sure you want to logout?",
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context).pop(),
+                                              child: const Text("Cancel"),
+                                            ),
+                                            TextButton(
+                                              onPressed: () async {
+                                                await AuthService.clearAuthData();
+                                                if (mounted) {
+                                                  Navigator.of(
+                                                    context,
+                                                  ).pop(); // Close dialog
+                                                  Navigator.pop(
+                                                    context,
+                                                  ); // Return to main menu
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: const Text(
+                                                        "Logged out successfully",
+                                                      ),
+                                                      backgroundColor: Theme.of(
+                                                        context,
+                                                      ).colorScheme.secondary,
                                                     ),
-                                                    backgroundColor: Theme.of(
-                                                      context,
-                                                    ).colorScheme.secondary,
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                            child: Text(
-                                              "Logout",
-                                              style: TextStyle(
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.error,
+                                                  );
+                                                }
+                                              },
+                                              child: Text(
+                                                "Logout",
+                                                style: TextStyle(
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.error,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
                             ],
                           ),
                         ],
