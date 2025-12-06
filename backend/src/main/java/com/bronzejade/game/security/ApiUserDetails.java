@@ -34,7 +34,7 @@ public class ApiUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return String.valueOf(id);
+        return username;
     }
 
     @Override
