@@ -4,6 +4,7 @@ import 'package:guess_who/constants/utils/responsive_wrapper.dart';
 import 'package:guess_who/screens/mainmenuscreen.dart';
 import 'package:guess_who/providers/settings_provider.dart';
 import 'package:guess_who/services/audio_manager.dart';
+import 'package:guess_who/services/deep_link_service.dart';
 import 'package:provider/provider.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/auth_service.dart';
@@ -12,6 +13,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await AudioManager().init();
+  await DeepLinkService().initialize();
+
   final isAuthenticated = await AuthService.isAuthenticated();
   if (!isAuthenticated) {
     try {
