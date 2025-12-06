@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.dai.guesswho",
+      "sha256_cert_fingerprints": [
+        "62:73:85:70:80:E2:D6:9A:87:70:90:BD:A5:21:E0:DF:E4:00:49:B8:D5:FD:5B:3F:C2:97:A4:9C:42:7E:6E:66"
+      ]
+    }
+  }
+]
