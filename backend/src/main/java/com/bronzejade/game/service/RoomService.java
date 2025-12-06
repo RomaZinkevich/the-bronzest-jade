@@ -266,4 +266,9 @@ public class RoomService {
         return roomRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found with id: " + id));
     }
+
+    public Room getRoomByCode(String roomCode) {
+        return roomRepo.findByRoomCode(roomCode.toUpperCase())
+                .orElseThrow(() -> new EntityNotFoundException("Room not found with code: " + roomCode));
+    }
 }

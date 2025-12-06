@@ -85,4 +85,11 @@ public class RoomController {
         RoomDto roomDto = roomMapper.toDto(room);
         return ResponseEntity.ok(roomDto);
     }
+
+    @GetMapping("/code/{roomCode}")
+    public ResponseEntity<RoomDto> getRoomByCode(@PathVariable String roomCode) {
+        Room room = roomService.getRoomByCode(roomCode);
+        RoomDto roomDto = roomMapper.toDto(room);
+        return ResponseEntity.ok(roomDto);
+    }
 }

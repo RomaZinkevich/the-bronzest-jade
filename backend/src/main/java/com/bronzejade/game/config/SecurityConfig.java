@@ -28,7 +28,8 @@ import java.util.List;
 
 /**
  * Basic security configuration that allows all requests, enables CORS,
- * disables CSRF (suitable for stateless APIs/WebSockets), and sets session management to stateless.
+ * disables CSRF (suitable for stateless APIs/WebSockets), and sets session
+ * management to stateless.
  */
 @Configuration
 @EnableWebSecurity
@@ -62,15 +63,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "api/character-sets/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "api/rooms/code/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "api/character-sets/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "api/images/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "api/rooms/**").authenticated()
-                        .anyRequest().permitAll()
-                )
+                        .anyRequest().permitAll())
                 // Do not create HTTP sessions
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -85,7 +84,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         // Define allowed origins, methods, headers, and credential usage
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:63342", "http://127.0.0.1:5500", "https://guesswho.190304.xyz", "https://guess-who-web-nine.vercel.app"));
+        config.setAllowedOrigins(List.of("http://localhost:8080", "http://localhost:63342", "http://127.0.0.1:5500",
+                "https://guesswho.190304.xyz", "https://guess-who-web-nine.vercel.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
