@@ -24,7 +24,6 @@ class ApiService {
 
   static Future<List<CharacterSet>> getCharacterSets() async {
     try {
-      debugPrint("$baseUrl/character-sets");
       final headers = await _getHeaders();
       final response = await http.get(
         Uri.parse("$baseUrl/character-sets"),

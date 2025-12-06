@@ -355,25 +355,27 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
               fontSize: 16,
             ),
           ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: RetroButton(
-                text: "Share Code",
-                fontSize: 14,
-                iconSize: 20,
-                iconAtEnd: false,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 8,
-                ),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.tertiary,
-                icon: Icons.share_rounded,
-                onPressed: _shareRoomCode,
-              ),
-            ),
-          ],
+          actions: widget.room.host.id != widget.playerId
+              ? null
+              : [
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: RetroButton(
+                      text: "Share Code",
+                      fontSize: 14,
+                      iconSize: 20,
+                      iconAtEnd: false,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 8,
+                      ),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.tertiary,
+                      icon: Icons.share_rounded,
+                      onPressed: _shareRoomCode,
+                    ),
+                  ),
+                ],
         ),
         body: Column(
           children: [
