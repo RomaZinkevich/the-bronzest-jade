@@ -44,6 +44,7 @@ class DeepLinkService {
     if (uri.path == "/join" || uri.host == "join") {
       final roomCode = uri.queryParameters["code"];
       if (roomCode != null && roomCode.isNotEmpty) {
+        _pendingRoomCode = roomCode;
         debugPrint("Extracted room code: $_pendingRoomCode");
       }
     }

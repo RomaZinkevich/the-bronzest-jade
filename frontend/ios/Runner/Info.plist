@@ -9,13 +9,18 @@
 			<dict>
 					<key>CFBundleTypeRole</key>
 					<string>Editor</string>
+					<key>CFBundleURLName</key>
+					<string>guesswho</string>
 					<key>CFBundleURLSchemes</key>
 					<array>
 							<string>guesswho</string>
 					</array>
 			</dict>
 	</array>
-
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+			<string>applinks:guesswho.190304.xyz</string>
+	</array>
 	<key>FlutterDeepLinkingEnabled</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

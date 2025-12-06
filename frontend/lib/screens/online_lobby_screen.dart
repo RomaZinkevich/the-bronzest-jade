@@ -264,14 +264,12 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     try {
       await SharePlus.instance.share(
         ShareParams(
-          text:
-              "Join my Guess Who game with room code $roomCode!\n\nOr click: $deepLink",
+          text: "Join my Guess Who game with room code $roomCode!\n\n$deepLink",
           subject: "Join Guess Who Game - $roomCode",
         ),
       );
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Failed to share: $e"),
