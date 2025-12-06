@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:guess_who/providers/settings_provider.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
 import 'package:guess_who/widgets/common/retro_icon_button.dart';
+import 'package:guess_who/widgets/auth_popup.dart';
+import 'package:guess_who/services/auth_service.dart';
+import 'package:guess_who/services/api_service.dart';
 
-class AccountScreen extends StatelessWidget {
+class AccountScreen extends StatefulWidget {
   final String playerName;
   final String playerId;
   final String profilePicture;
@@ -17,6 +21,99 @@ class AccountScreen extends StatelessWidget {
   });
 
   @override
+  State<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends State<AccountScreen> {
+  String? _currentUsername;
+  final TextEditingController _usernameController = TextEditingController();
+  bool _isEditingUsername = false;
+  bool _isUpdatingUsername = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUsername();
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCurrentUsername() async {
+    final username = await AuthService.getUsername();
+    if (mounted) {
+      setState(() {
+        _currentUsername = username;
+        _usernameController.text = username ?? widget.playerName;
+      });
+    }
+  }
+
+  Future<void> _updateUsername(String newUsername) async {
+    if (newUsername.trim().isEmpty || newUsername.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Username must be at least 3 characters"),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isUpdatingUsername = true);
+
+    try {
+      final response = await ApiService.updateUsername(
+        newUsername: newUsername.trim(),
+      );
+
+      await AuthService.saveAuthData(
+        token: response["token"] ?? await AuthService.getToken() ?? "",
+        userId: response["userId"] ?? await AuthService.getUserId() ?? "",
+        username: response["username"],
+      );
+
+      if (mounted) {
+        setState(() {
+          _currentUsername = response["username"];
+          _usernameController.text = response["username"];
+          _isEditingUsername = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to update username: $e"),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        _usernameController.text = _currentUsername ?? widget.playerName;
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingUsername = false);
+      }
+    }
+  }
+
+  Future<void> _copyUsernameToClipboard() async {
+    final username = _currentUsername ?? widget.playerName;
+    await Clipboard.setData(ClipboardData(text: username));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Username '$username' copied to clipboard!"),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
@@ -87,7 +184,9 @@ class AccountScreen extends StatelessWidget {
                                 child: CircleAvatar(
                                   radius: 56,
                                   backgroundColor: Colors.transparent,
-                                  foregroundImage: AssetImage(profilePicture),
+                                  foregroundImage: AssetImage(
+                                    widget.profilePicture,
+                                  ),
                                 ),
                               ),
                               Positioned(
@@ -122,11 +221,11 @@ class AccountScreen extends StatelessWidget {
 
                           const SizedBox(height: 40),
 
-                          // Player info
+                          // Player info - editable username
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
+                              horizontal: 16,
+                              vertical: 8,
                             ),
                             decoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.tertiary,
@@ -139,24 +238,107 @@ class AccountScreen extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
-                                  playerName.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.secondary,
+                                if (_isEditingUsername) ...[
+                                  SizedBox(
+                                    width: 150,
+                                    child: TextField(
+                                      controller: _usernameController,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.secondary,
+                                      ),
+                                      decoration: const InputDecoration(
+                                        border: InputBorder.none,
+                                        contentPadding: EdgeInsets.symmetric(
+                                          vertical: 4,
+                                        ),
+                                      ),
+                                      onSubmitted: (value) {
+                                        if (!_isUpdatingUsername) {
+                                          _updateUsername(value);
+                                        }
+                                      },
+                                      autofocus: true,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  Icons.copy_rounded,
-                                  size: 16,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.secondary,
-                                ),
+                                  const SizedBox(width: 8),
+                                  if (_isUpdatingUsername)
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.secondary,
+                                      ),
+                                    )
+                                  else
+                                    GestureDetector(
+                                      onTap: () => _updateUsername(
+                                        _usernameController.text,
+                                      ),
+                                      child: Icon(
+                                        Icons.check_rounded,
+                                        size: 20,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.secondary,
+                                      ),
+                                    ),
+                                  const SizedBox(width: 4),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _isEditingUsername = false;
+                                        _usernameController.text =
+                                            _currentUsername ??
+                                            widget.playerName;
+                                      });
+                                    },
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      size: 20,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.secondary,
+                                    ),
+                                  ),
+                                ] else ...[
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _isEditingUsername = true;
+                                      });
+                                    },
+                                    child: Text(
+                                      (_currentUsername ?? widget.playerName)
+                                          .toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.secondary,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: _copyUsernameToClipboard,
+                                    child: Icon(
+                                      Icons.copy_rounded,
+                                      size: 16,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.secondary,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -166,37 +348,6 @@ class AccountScreen extends StatelessWidget {
                           // Action buttons
                           Column(
                             children: [
-                              GestureDetector(
-                                onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Change name feature coming soon!",
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Text(
-                                  "CHANGE NAME",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.tertiary,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withOpacity(0.3),
-                                        offset: const Offset(1, 1),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 20),
-
                               RetroButton(
                                 text: "SIGN UP",
                                 fontSize: 16,
@@ -206,16 +357,27 @@ class AccountScreen extends StatelessWidget {
                                 ),
                                 backgroundColor: Theme.of(
                                   context,
-                                ).colorScheme.error,
+                                ).colorScheme.secondary,
                                 foregroundColor: Colors.white,
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Sign up feature coming soon!",
-                                      ),
-                                    ),
+                                onPressed: () async {
+                                  final result = await AuthPopup.showSignUp(
+                                    context,
                                   );
+                                  if (result == true && mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text(
+                                          "Account created successfully!",
+                                        ),
+                                        backgroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.secondary,
+                                      ),
+                                    );
+                                    Navigator.pop(
+                                      context,
+                                    ); // Return to main menu
+                                  }
                                 },
                               ),
 
@@ -232,13 +394,92 @@ class AccountScreen extends StatelessWidget {
                                   context,
                                 ).colorScheme.secondary,
                                 foregroundColor: Colors.white,
-                                onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Log in feature coming soon!",
+                                onPressed: () async {
+                                  final result = await AuthPopup.showLogin(
+                                    context,
+                                  );
+                                  if (result == true && mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: const Text(
+                                          "Logged in successfully!",
+                                        ),
+                                        backgroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.secondary,
                                       ),
-                                    ),
+                                    );
+                                    Navigator.pop(
+                                      context,
+                                    ); // Return to main menu
+                                  }
+                                },
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              RetroButton(
+                                text: "LOGOUT",
+                                fontSize: 16,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 50,
+                                  vertical: 16,
+                                ),
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.error,
+                                foregroundColor: Colors.white,
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text("Logout"),
+                                        content: const Text(
+                                          "Are you sure you want to logout?",
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(),
+                                            child: const Text("Cancel"),
+                                          ),
+                                          TextButton(
+                                            onPressed: () async {
+                                              await AuthService.clearAuthData();
+                                              if (mounted) {
+                                                Navigator.of(
+                                                  context,
+                                                ).pop(); // Close dialog
+                                                Navigator.pop(
+                                                  context,
+                                                ); // Return to main menu
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: const Text(
+                                                      "Logged out successfully",
+                                                    ),
+                                                    backgroundColor: Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary,
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            child: Text(
+                                              "Logout",
+                                              style: TextStyle(
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.error,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   );
                                 },
                               ),

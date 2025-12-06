@@ -241,4 +241,75 @@ class ApiService {
       throw Exception("Error creating guest user: $e");
     }
   }
+
+  static Future<Map<String, dynamic>> signUp({
+    required String username,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/auth/signup"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({
+          "username": username,
+          "email": email,
+          "password": password,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      } else {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['message'] ?? "Failed to sign up");
+      }
+    } catch (e) {
+      throw Exception("Error during sign up: $e");
+    }
+  }
+
+  static Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/auth/login"),
+        headers: {"Content-Type": "application/json"},
+        body: json.encode({"email": email, "password": password}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['message'] ?? "Failed to log in");
+      }
+    } catch (e) {
+      throw Exception("Error during login: $e");
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateUsername({
+    required String newUsername,
+  }) async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.put(
+        Uri.parse("$baseUrl/auth/update-username"),
+        headers: headers,
+        body: json.encode({"username": newUsername}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['message'] ?? "Failed to update username");
+      }
+    } catch (e) {
+      throw Exception("Error updating username: $e");
+    }
+  }
 }
