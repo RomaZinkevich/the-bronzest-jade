@@ -88,6 +88,7 @@ class _AuthPopupState extends State<AuthPopup> {
         token: response["token"],
         userId: response["userId"],
         username: response["username"],
+        isGuest: false,
       );
 
       if (mounted) {
@@ -105,7 +106,7 @@ class _AuthPopupState extends State<AuthPopup> {
   }
 
   Future<void> _login() async {
-    if (_emailController.text.trim().isEmpty ||
+    if (_usernameController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
       _showError("Please fill in all fields");
       return;
@@ -115,7 +116,7 @@ class _AuthPopupState extends State<AuthPopup> {
 
     try {
       final response = await ApiService.login(
-        email: _emailController.text.trim(),
+        username: _usernameController.text.trim(),
         password: _passwordController.text,
       );
 
@@ -123,6 +124,7 @@ class _AuthPopupState extends State<AuthPopup> {
         token: response["token"],
         userId: response["userId"],
         username: response["username"],
+        isGuest: false,
       );
 
       if (mounted) {
@@ -246,15 +248,22 @@ class _AuthPopupState extends State<AuthPopup> {
                   showIcon: false,
                 ),
                 const SizedBox(height: 16),
+                InnerShadowInput(
+                  controller: _emailController,
+                  hintText: "Email",
+                  onSubmit: _submit,
+                  width: 0,
+                  showIcon: false,
+                ),
+              ] else ...[
+                InnerShadowInput(
+                  controller: _usernameController,
+                  hintText: "Username",
+                  onSubmit: _submit,
+                  width: 0,
+                  showIcon: false,
+                ),
               ],
-
-              InnerShadowInput(
-                controller: _emailController,
-                hintText: "Email",
-                onSubmit: _submit,
-                width: 0,
-                showIcon: false,
-              ),
 
               const SizedBox(height: 16),
 

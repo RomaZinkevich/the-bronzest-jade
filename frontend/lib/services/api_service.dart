@@ -249,7 +249,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse("$baseUrl/auth/signup"),
+        Uri.parse("$baseUrl/auth/register"),
         headers: {"Content-Type": "application/json"},
         body: json.encode({
           "username": username,
@@ -258,35 +258,72 @@ class ApiService {
         }),
       );
 
+      debugPrint(
+        "Register Response: ${response.statusCode} - ${response.body}",
+      );
+
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return json.decode(response.body);
+        final responseData = json.decode(response.body);
+        return {
+          "token": responseData["token"],
+          "userId": responseData["userId"],
+          "username": responseData["username"],
+        };
       } else {
-        final errorBody = json.decode(response.body);
-        throw Exception(errorBody['message'] ?? "Failed to sign up");
+        try {
+          final errorBody = json.decode(response.body);
+          throw Exception(errorBody['message'] ?? "Failed to create account");
+        } catch (parseError) {
+          throw Exception(
+            "Account creation failed with status ${response.statusCode}: ${response.body}",
+          );
+        }
       }
     } catch (e) {
-      throw Exception("Error during sign up: $e");
+      debugPrint("Register Error: $e");
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
+      throw Exception("Error during account creation: $e");
     }
   }
 
   static Future<Map<String, dynamic>> login({
-    required String email,
+    required String username,
     required String password,
   }) async {
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/auth/login"),
         headers: {"Content-Type": "application/json"},
-        body: json.encode({"email": email, "password": password}),
+        body: json.encode({"username": username, "password": password}),
       );
 
+      debugPrint("Login Request: username=$username");
+      debugPrint("Login Response: ${response.statusCode} - ${response.body}");
+
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final responseData = json.decode(response.body);
+        return {
+          "token": responseData["token"],
+          "userId": responseData["userId"],
+          "username": responseData["username"],
+        };
       } else {
-        final errorBody = json.decode(response.body);
-        throw Exception(errorBody['message'] ?? "Failed to log in");
+        try {
+          final errorBody = json.decode(response.body);
+          throw Exception(errorBody['message'] ?? "Failed to log in");
+        } catch (parseError) {
+          throw Exception(
+            "Login failed with status ${response.statusCode}: ${response.body}",
+          );
+        }
       }
     } catch (e) {
+      debugPrint("Login Error: $e");
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
       throw Exception("Error during login: $e");
     }
   }
@@ -302,13 +339,27 @@ class ApiService {
         body: json.encode({"username": newUsername}),
       );
 
+      debugPrint(
+        "UpdateUsername Response: ${response.statusCode} - ${response.body}",
+      );
+
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        final errorBody = json.decode(response.body);
-        throw Exception(errorBody['message'] ?? "Failed to update username");
+        try {
+          final errorBody = json.decode(response.body);
+          throw Exception(errorBody['message'] ?? "Failed to update username");
+        } catch (parseError) {
+          throw Exception(
+            "Update username failed with status ${response.statusCode}: ${response.body}",
+          );
+        }
       }
     } catch (e) {
+      debugPrint("UpdateUsername Error: $e");
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
       throw Exception("Error updating username: $e");
     }
   }

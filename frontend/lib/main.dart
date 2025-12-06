@@ -23,6 +23,7 @@ void main() async {
         token: response["token"],
         userId: response["userId"],
         username: response["username"],
+        isGuest: true,
       );
     } catch (e) {
       debugPrint("Failed to create guest user: $e");
