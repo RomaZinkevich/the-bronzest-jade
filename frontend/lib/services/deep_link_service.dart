@@ -41,7 +41,7 @@ class DeepLinkService {
 
   void _handleDeepLink(Uri uri) {
     debugPrint("Recieved deep link: $uri");
-    if (uri.path == "/join" || uri.host == "join") {
+    if (uri.path.startsWith("/join")) {
       final roomCode = uri.queryParameters["code"];
       if (roomCode != null && roomCode.isNotEmpty) {
         _pendingRoomCode = roomCode;
