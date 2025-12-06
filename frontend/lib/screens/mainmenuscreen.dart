@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:guess_who/constants/assets/audio_assets.dart';
 import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
@@ -47,8 +48,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
       if (roomCode != null) {
         deepLinkService.clearPendingRoomCode();
-        _roomCodeController.text = roomCode;
-        _joinWithCode();
+        // _roomCodeController.text = roomCode;
+        _joinWithCode(roomCode);
       }
     });
   }
@@ -108,66 +109,94 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     );
   }
 
-  Future<void> _joinWithCode() async {
-    String code = _roomCodeController.text.trim().toUpperCase();
-    if (code.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            "Please enter a room code",
-            textAlign: TextAlign.center,
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
+  Future<void> _joinWithCode(String? linkCode) async {
+    if (linkCode != null && linkCode.isNotEmpty) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      return;
-    }
+      try {
+        await ApiService.joinRoom(linkCode, _playerId);
+        if (mounted) {
+          Navigator.pop(context);
+          context.go('/game');
+        }
+      } catch (e) {
+        debugPrint("$e");
+        if (mounted) {
+          Navigator.pop(context);
 
-    //* LOADING
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(
-            Theme.of(context).colorScheme.primary,
-          ),
-          strokeCap: StrokeCap.round,
-          strokeWidth: 5,
-        ),
-      ),
-    );
-
-    try {
-      final room = await ApiService.joinRoom(code, _playerId);
-
-      if (mounted) {
-        Navigator.pop(context);
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OnlineLobbyScreen(
-              room: room,
-              playerId: _playerId,
-              playerName: _playerName,
-              isHost: false,
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Failed to join shared room: $e"),
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
-          ),
-        );
+          );
+        }
       }
-    } catch (e) {
-      debugPrint("$e");
-      if (mounted) {
-        Navigator.pop(context);
-
+    } else {
+      String code = _roomCodeController.text.trim().toUpperCase();
+      if (code.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Failed to join room: $e"),
+            content: const Text(
+              "Please enter a room code",
+              textAlign: TextAlign.center,
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
+
+        return;
+      }
+
+      //* LOADING
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.primary,
+            ),
+            strokeCap: StrokeCap.round,
+            strokeWidth: 5,
+          ),
+        ),
+      );
+
+      try {
+        final room = await ApiService.joinRoom(code, _playerId);
+
+        if (mounted) {
+          Navigator.pop(context);
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OnlineLobbyScreen(
+                room: room,
+                playerId: _playerId,
+                playerName: _playerName,
+                isHost: false,
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint("$e");
+        if (mounted) {
+          Navigator.pop(context);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Failed to join room: $e"),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
       }
     }
   }
@@ -587,7 +616,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
                         InnerShadowInput(
                           controller: _roomCodeController,
-                          onSubmit: _joinWithCode,
+                          onSubmit: () => _joinWithCode(null),
                           submitTooltip: "Join with code",
                           hintText: "Join with code...",
                         ),
