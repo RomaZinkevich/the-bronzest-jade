@@ -41,6 +41,8 @@ flutter:
     - assets/sounds/button_click1.mp3
     - assets/sounds/button_click2.mp3
     - assets/sounds/button_click3.mp3
+    - assets/sounds/pop_up_sfx.mp3
+    - assets/sounds/alert_sfx.mp3
     - assets/sounds/game_start.mp3
 
     - assets/icons/default_user.png

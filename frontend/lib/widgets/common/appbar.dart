@@ -54,7 +54,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: () {
                   onCreateCharacterSetPressed?.call();
                 },
-                icon: Icons.person_add_alt_1_rounded,
+                icon: Icons.library_add_rounded,
                 iconSize: 30,
                 padding: 10,
 

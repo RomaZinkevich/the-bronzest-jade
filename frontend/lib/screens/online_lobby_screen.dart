@@ -355,7 +355,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
               fontSize: 16,
             ),
           ),
-          actions: widget.room.host.id != widget.playerId
+          actions: !widget.isHost
               ? null
               : [
                   Padding(

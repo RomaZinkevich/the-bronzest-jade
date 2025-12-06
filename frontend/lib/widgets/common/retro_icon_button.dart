@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:guess_who/services/audio_manager.dart';
 
 class RetroIconButton extends StatelessWidget {
   final String? tooltip;
@@ -9,6 +10,7 @@ class RetroIconButton extends StatelessWidget {
   final IconData? icon;
   final String? imagePath;
   final EdgeInsets? margin;
+  final bool playOnClick;
   final double padding;
   final double iconSize;
   final double borderWidth;
@@ -26,6 +28,7 @@ class RetroIconButton extends StatelessWidget {
     this.padding = 8,
     this.iconSize = 40,
     this.borderWidth = 4,
+    this.playOnClick = true,
   }) : assert(
          icon != null || imagePath != null,
          'Either icon or imagePath must be provided',
@@ -69,7 +72,10 @@ class RetroIconButton extends StatelessWidget {
             padding: EdgeInsets.all(padding),
             elevation: 2,
           ),
-          onPressed: onPressed,
+          onPressed: () {
+            playOnClick ? AudioManager().playButtonClickVariation() : null;
+            onPressed.call();
+          },
           child: content,
         ),
       ),

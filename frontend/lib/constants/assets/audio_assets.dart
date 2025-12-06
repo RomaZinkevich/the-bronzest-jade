@@ -5,4 +5,9 @@ class AudioAssets {
 
   static const String buttonClick = "sounds/button_click1.mp3";
   static const String buttonClickVariation = "sounds/button_click.mp3";
+
+  static const String gameStartSfx = "sounds/game_start.mp3";
+
+  static const String popUpSfx = "sounds/pop_up_sfx.mp3";
+  static const String alertSfx = "sounds/alert_sfx.mp3";
 }

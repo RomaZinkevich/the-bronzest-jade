@@ -214,7 +214,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Future<void> _showCreateRoomMenu() async {
-    AudioManager().playButtonClickVariation();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -253,7 +252,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 (characterSet) => RetroPopupMenuItem(
                   text: characterSet.name,
                   onTap: () {
-                    AudioManager().playGameStart();
                     _createRoom(characterSet.id);
                   },
                 ),
@@ -551,6 +549,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 "#${_playerId.isNotEmpty ? _playerId.substring(0, 6) : ""}",
             onSettingsPressed: () {},
             onAccountPressed: () {
+              AudioManager().playButtonClickVariation();
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -577,9 +576,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 child: Image.asset(
                   "assets/main_menu.png",
                   fit: BoxFit.cover,
-                  color: settings.isDarkMode
-                      ? Colors.black.withOpacity(0.5)
-                      : null,
+                  color: settings.isDarkMode ? Colors.black54 : null,
                   colorBlendMode: settings.isDarkMode ? BlendMode.darken : null,
                 ),
               ),
@@ -613,8 +610,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           ),
 
                           onPressed: () {
-                            AudioManager().playGameStart();
-
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -650,7 +645,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               backgroundColor: Theme.of(
                                 context,
                               ).colorScheme.primary,
-                              onPressed: _showCreateRoomMenu,
+                              onPressed: () {
+                                _showCreateRoomMenu();
+                              },
                             ),
 
                             SizedBox(width: 4),
