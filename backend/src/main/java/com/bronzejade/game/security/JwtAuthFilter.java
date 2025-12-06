@@ -40,7 +40,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             var userId = jwtUtil.validateTokenAndGetUserId(token);
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(userId));
+            UserDetails userDetails = userDetailsService.loadUserById(String.valueOf(userId));
 
             var authToken = new UsernamePasswordAuthenticationToken(
                     userDetails,
