@@ -6,6 +6,7 @@ import 'package:guess_who/constants/assets/audio_assets.dart';
 import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/screens/online_lobby_screen.dart';
+import 'package:guess_who/screens/account_screen.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/services/auth_service.dart';
@@ -496,6 +497,17 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             playerId:
                 "#${_playerId.isNotEmpty ? _playerId.substring(0, 6) : ""}",
             onSettingsPressed: () {},
+            onAccountPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AccountScreen(
+                    playerName: _playerName,
+                    playerId: _playerId,
+                  ),
+                ),
+              );
+            },
             onCreateCharacterSetPressed: () {
               Navigator.push(
                 context,

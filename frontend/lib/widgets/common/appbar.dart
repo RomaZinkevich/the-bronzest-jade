@@ -8,6 +8,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String profilePicture;
   final VoidCallback onSettingsPressed;
   final VoidCallback? onCreateCharacterSetPressed;
+  final VoidCallback? onAccountPressed;
 
   const CustomAppBar({
     super.key,
@@ -16,6 +17,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.playerId,
     required this.onSettingsPressed,
     this.onCreateCharacterSetPressed,
+    this.onAccountPressed,
   });
 
   @override
@@ -64,59 +66,62 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ],
           ),
 
-          Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    playerName,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: Theme.of(context).colorScheme.tertiary,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withAlpha(50),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+          GestureDetector(
+            onTap: onAccountPressed,
+            child: Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      playerName,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Theme.of(context).colorScheme.tertiary,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withAlpha(50),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Text(
-                    playerId,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: const Color.fromARGB(125, 0, 0, 0),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(50),
-                      blurRadius: 2,
-                      offset: const Offset(0, 4),
+                    Text(
+                      playerId,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: const Color.fromARGB(125, 0, 0, 0),
+                      ),
                     ),
                   ],
                 ),
-                child: CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Theme.of(context).colorScheme.tertiary,
+                SizedBox(width: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(50),
+                        blurRadius: 2,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: CircleAvatar(
-                    radius: 25,
-                    foregroundImage: AssetImage(profilePicture),
-                    backgroundColor: Colors.transparent,
+                    radius: 30,
+                    backgroundColor: Theme.of(context).colorScheme.tertiary,
+                    child: CircleAvatar(
+                      radius: 25,
+                      foregroundImage: AssetImage(profilePicture),
+                      backgroundColor: Colors.transparent,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
