@@ -18,7 +18,7 @@ class SettingsDropdown extends StatelessWidget {
             color: Theme.of(context).colorScheme.tertiary,
             shadows: [
               Shadow(
-                color: Colors.black54,
+                color: Theme.of(context).colorScheme.shadow,
                 offset: Offset(0, 2),
                 blurRadius: 6,
               ),

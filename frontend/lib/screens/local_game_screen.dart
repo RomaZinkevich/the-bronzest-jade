@@ -219,8 +219,11 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                           ),
 
                           onPressed: () {
+                            AudioManager().playAlertSfx();
                             Navigator.of(context).pop();
                           },
+
+                          playOnClick: false,
                         ),
                       ),
                     ],
@@ -273,13 +276,18 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
     final isCorrect = _gameState.makeGuess(guessedCharacter);
 
     if (isCorrect) {
+      AudioManager().playGameWon();
       _showWinnerDialog();
     } else {
+      AudioManager().playGameLost();
+
       _showIncorrectGuessDialog();
     }
   }
 
   void _showWinnerDialog() {
+    AudioManager().playGameOver();
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -322,19 +330,14 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
             textAlign: TextAlign.center,
           ),
           actions: [
-            TextButton(
+            RetroButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 _resetGame();
               },
-              child: Text(
-                "Play Again",
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+              text: "Play again",
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 0),
             ),
             TextButton(
               onPressed: () {
@@ -430,7 +433,7 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
 
     AudioManager().playBackgroundMusic(
       AudioAssets.menuMusic,
-      fadeDuration: const Duration(seconds: 6),
+      fadeDuration: const Duration(seconds: 3),
     );
     super.dispose();
   }
@@ -455,12 +458,55 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
           break;
 
         case GamePhase.gameOver:
-          // Optionally play different music or stop music on game over
-          // AudioManager().stopBackgroundMusic();
+          AudioManager().stopBackgroundMusic();
           break;
 
         default:
           break;
+      }
+    }
+  }
+
+  Future<void> _handleManualBack() async {
+    if (!mounted) return;
+    final ctx = context;
+
+    final shouldLeave = await showDialog<bool>(
+      context: ctx,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).colorScheme.tertiary,
+        title: Text(
+          "Leave Game?",
+          style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
+        ),
+        content: Text(
+          "Are you sure you want to leave this game?",
+          style: TextStyle(color: Theme.of(ctx).colorScheme.secondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              AudioManager().playButtonClick();
+              Navigator.pop(ctx, false);
+            },
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
+            ),
+          ),
+          RetroButton(
+            text: "Leave",
+            onPressed: () => Navigator.pop(ctx, true),
+            backgroundColor: Theme.of(ctx).colorScheme.error,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLeave == true && mounted) {
+      if (ctx.mounted) {
+        Navigator.pop(ctx);
       }
     }
   }
@@ -503,9 +549,7 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                           ),
                           borderWidth: 2,
 
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
+                          onPressed: _handleManualBack,
 
                           tooltip: "Go back home",
                         )
@@ -753,6 +797,7 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
               Expanded(
                 child: GestureDetector(
                   onTap: () {
+                    AudioManager().playPopupSfx();
                     setState(() {
                       _isCharacterNameRevealed = !_isCharacterNameRevealed;
                     });
@@ -878,8 +923,12 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
     return GestureDetector(
       onTap: () {
         if (isSelectionMode) {
+          AudioManager().playPopupSfx();
           _selectCharacter(character);
         } else {
+          isFlipped
+              ? AudioManager().playAlertSfx()
+              : AudioManager().playPopupSfx();
           _toggleFlipCard(character.id);
         }
       },

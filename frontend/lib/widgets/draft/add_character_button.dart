@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:guess_who/services/audio_manager.dart";
 
 class AddCharacterButton extends StatelessWidget {
   final VoidCallback onTap;
@@ -10,7 +11,10 @@ class AddCharacterButton extends StatelessWidget {
     final theme = Theme.of(context).colorScheme;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        AudioManager().playPopupSfx();
+        onTap.call();
+      },
       child: Container(
         decoration: BoxDecoration(
           color: theme.primary.withAlpha(150),

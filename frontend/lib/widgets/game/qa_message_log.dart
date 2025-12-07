@@ -110,7 +110,9 @@ class QAMessageLog extends StatelessWidget {
       curve: Curves.easeInOut,
       child: isExpanded
           ? Container(
-              constraints: const BoxConstraints(maxHeight: 300),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.35,
+              ),
               child: ListView.builder(
                 controller: scrollController,
                 itemCount: qaHistory.length,
@@ -168,11 +170,18 @@ class QAMessageItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(width: 1, color: theme.tertiary),
-              ),
+              border: Border.all(width: 1, color: theme.tertiary),
+              borderRadius: BorderRadius.circular(10),
+              color: theme.secondary,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.shadow,
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,

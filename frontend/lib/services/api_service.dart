@@ -74,8 +74,6 @@ class ApiService {
         body: json.encode({"playerId": playerId, "characterId": characterId}),
       );
 
-      debugPrint(response.body);
-
       if (response.statusCode == 200) {
         return RoomPlayer.fromJson(json.decode(response.body));
       } else {
@@ -165,10 +163,11 @@ class ApiService {
   static Future<Room> createRoom(String hostId, String characterSetId) async {
     try {
       final headers = await _getHeaders();
+      debugPrint("$headers");
       final response = await http.post(
         Uri.parse("$baseUrl/rooms"),
         headers: headers,
-        body: json.encode({"hostId": hostId, "characterSetId": characterSetId}),
+        body: json.encode({"characterSetId": characterSetId}),
       );
 
       if (response.statusCode == 200) {

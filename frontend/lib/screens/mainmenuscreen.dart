@@ -292,6 +292,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Future<void> _logout() async {
+    AudioManager().playAlertSfx();
     await AuthService.clearAuthData();
 
     // Create new guest user
@@ -647,6 +648,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           ),
 
                           onPressed: () {
+                            AudioManager().playGameStart();
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -654,6 +656,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               ),
                             );
                           },
+
+                          playOnClick: false,
                         ),
 
                         const SizedBox(height: 60),

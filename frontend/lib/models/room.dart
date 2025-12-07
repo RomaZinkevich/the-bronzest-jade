@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:guess_who/models/character_set.dart';
 import 'package:guess_who/models/user.dart';
 
@@ -58,8 +57,6 @@ class Room {
   });
 
   factory Room.fromJson(Map<String, dynamic> json) {
-    debugPrint(json.toString());
-
     return Room(
       id: json["id"] as String,
       roomCode: json["roomCode"] as String,

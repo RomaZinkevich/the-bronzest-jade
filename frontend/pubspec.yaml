@@ -43,7 +43,10 @@ flutter:
     - assets/sounds/button_click3.mp3
     - assets/sounds/pop_up_sfx.mp3
     - assets/sounds/alert_sfx.mp3
+    - assets/sounds/game_won.mp3
+    - assets/sounds/wrong_answer_sfx.mp3
     - assets/sounds/game_start.mp3
+    - assets/sounds/game_over_sfx.mp3
 
     - assets/icons/default_user.png
     - assets/icons/find_room.png

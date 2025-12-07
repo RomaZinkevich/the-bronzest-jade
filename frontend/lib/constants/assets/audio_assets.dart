@@ -10,4 +10,8 @@ class AudioAssets {
 
   static const String popUpSfx = "sounds/pop_up_sfx.mp3";
   static const String alertSfx = "sounds/alert_sfx.mp3";
+
+  static const String gameWonSfx = "sounds/game_won.mp3";
+  static const String gameOverSfx = "sounds/game_over_sfx.mp3";
+  static const String wrongAnswerSfx = "sounds/wrong_answer_sfx.mp3";
 }

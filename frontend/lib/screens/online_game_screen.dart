@@ -2,11 +2,15 @@ import "dart:async";
 import "dart:convert";
 
 import "package:flutter/material.dart";
+import "package:guess_who/constants/assets/audio_assets.dart";
 import "package:guess_who/models/character.dart";
 import "package:guess_who/models/room.dart";
+import "package:guess_who/services/audio_manager.dart";
 import "package:guess_who/providers/settings_provider.dart";
 import "package:guess_who/services/game_state_manager.dart";
 import "package:guess_who/services/websocket_service.dart";
+import "package:guess_who/widgets/common/retro_button.dart";
+import "package:guess_who/widgets/common/retro_icon_button.dart";
 import "package:guess_who/widgets/game/answering_phase_ui.dart";
 import "package:guess_who/widgets/game/asking_phase_ui.dart";
 import "package:guess_who/widgets/game/game_board.dart";
@@ -234,6 +238,12 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     final String winnerId = response["winnerId"];
     final isWinner = winnerId == widget.playerId;
 
+    if (isWinner) {
+      AudioManager().playGameWon();
+    } else {
+      AudioManager().playGameLost();
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -324,6 +334,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
     debugPrint("Sending question: $question");
     widget.wsService.sendQuestion(question);
+    AudioManager().playButtonClickVariation();
     setState(() {
       _currentQuestion = question;
       _currentPhase = TurnPhase.answering;
@@ -386,6 +397,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   void _handleIncorrectGuess(Map<String, dynamic> response) {
+    AudioManager().wrongAnswerSfx();
     setState(() {
       _gameState.switchTurn();
       _currentPhase = TurnPhase.asking;
@@ -420,6 +432,67 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     super.dispose();
   }
 
+  Future<void> _handleManualBack() async {
+    if (!mounted) return;
+    final ctx = context;
+
+    final shouldLeave = await showDialog<bool>(
+      context: ctx,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).colorScheme.tertiary,
+        title: Text(
+          "Leave Game?",
+          style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
+        ),
+        content: Text(
+          "Are you sure you want to leave this game?",
+          style: TextStyle(color: Theme.of(ctx).colorScheme.secondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              AudioManager().playButtonClick();
+              Navigator.pop(ctx, false);
+            },
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
+            ),
+          ),
+          // FilledButton(
+          //   onPressed: ,
+          //   style: ButtonStyle(
+          //     backgroundColor: WidgetStatePropertyAll(
+          //       Theme.of(ctx).colorScheme.error,
+          //     ),
+          //   ),
+          //   child: Text(
+          //     "Leave",
+          //     style: TextStyle(color: Theme.of(ctx).colorScheme.tertiary),
+          //   ),
+          // ),
+          RetroButton(
+            text: "Leave",
+            onPressed: () => Navigator.pop(ctx, true),
+            backgroundColor: Theme.of(ctx).colorScheme.error,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLeave == true && mounted) {
+      widget.wsService.disconnect();
+      if (ctx.mounted) {
+        AudioManager().playBackgroundMusic(
+          AudioAssets.menuMusic,
+          fadeDuration: const Duration(seconds: 3),
+        );
+        Navigator.pop(ctx);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -427,60 +500,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       onPopInvokedWithResult: (didPop, dynamic) async {
         if (didPop) return;
 
-        final shouldLeave = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: Theme.of(context).colorScheme.tertiary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-                width: 2,
-              ),
-            ),
-            title: Text(
-              "Leave Room?",
-              style: TextStyle(color: Theme.of(context).colorScheme.primary),
-            ),
-            content: Text(
-              "Are you sure you want to leave this room?",
-              style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(
-                  "Cancel",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(
-                    Theme.of(context).colorScheme.error,
-                  ),
-                ),
-                child: Text(
-                  "Leave",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.tertiary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-
-        if (shouldLeave == true) {
-          widget.wsService.disconnect();
-
-          if (context.mounted) {
-            Navigator.pop(context);
-          }
-        }
+        _handleManualBack();
       },
       child: ChangeNotifierProvider.value(
         value: _gameState,
@@ -495,6 +515,28 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                     iconTheme: IconThemeData(
                       color: Theme.of(context).colorScheme.tertiary,
                     ),
+                    leading: Navigator.canPop(context)
+                        ? RetroIconButton(
+                            icon: Icons.arrow_back_rounded,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            iconColor: Theme.of(context).colorScheme.tertiary,
+                            iconSize: 26,
+
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 0,
+                            ),
+                            borderWidth: 2,
+
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+
+                            tooltip: "Go back home",
+                          )
+                        : null,
                     title: Column(
                       children: [
                         Text(

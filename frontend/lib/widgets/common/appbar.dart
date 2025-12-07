@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/widgets/common/retro_icon_button.dart';
 import 'package:guess_who/widgets/settings_dropdown.dart';
 import 'package:guess_who/widgets/common/popup_menu.dart';
@@ -31,6 +32,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(90);
 
   void _showAccountMenu(BuildContext context) {
+    AudioManager().playPopupSfx();
     final List<RetroPopupMenuItem> menuItems = [];
 
     if (!isAuthenticated) {

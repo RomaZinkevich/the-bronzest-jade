@@ -175,6 +175,7 @@ class RetroPopupMenuItem extends StatelessWidget {
 
     return InkWell(
       onTap: () {
+        AudioManager().playButtonClickVariation();
         Navigator.of(context).pop();
         onTap();
       },
