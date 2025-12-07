@@ -74,8 +74,6 @@ class ApiService {
         body: json.encode({"playerId": playerId, "characterId": characterId}),
       );
 
-      debugPrint(response.body);
-
       if (response.statusCode == 200) {
         return RoomPlayer.fromJson(json.decode(response.body));
       } else {

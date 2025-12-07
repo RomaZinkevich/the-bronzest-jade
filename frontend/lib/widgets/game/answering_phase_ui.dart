@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:guess_who/services/audio_manager.dart";
 import "package:guess_who/widgets/common/retro_button.dart";
 
 class AnsweringPhaseUI extends StatelessWidget {
@@ -104,7 +105,11 @@ class AnsweringPhaseUI extends StatelessWidget {
             iconSize: 27,
             iconSpacing: 14,
             iconAtEnd: false,
-            onPressed: () => onSendAnswer("No"),
+            onPressed: () => {
+              AudioManager().playAlertSfx(),
+              onSendAnswer("No"),
+            },
+            playOnClick: false,
           ),
         ),
       ],

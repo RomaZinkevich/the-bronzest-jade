@@ -292,6 +292,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Future<void> _logout() async {
+    AudioManager().playAlertSfx();
     await AuthService.clearAuthData();
 
     // Create new guest user

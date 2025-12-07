@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:guess_who/models/character.dart';
+import 'package:guess_who/services/audio_manager.dart';
 
 enum GameMode { local, online }
 
@@ -163,8 +164,10 @@ class GameStateManager extends ChangeNotifier {
   void toggleFlipCard(String characterId) {
     if (_gameMode == GameMode.online) {
       if (_myFlippedCards.contains(characterId)) {
+        AudioManager().playAlertSfx();
         _myFlippedCards.remove(characterId);
       } else {
+        AudioManager().playPopupSfx();
         _myFlippedCards.add(characterId);
       }
 

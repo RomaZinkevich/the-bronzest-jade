@@ -126,11 +126,16 @@ class AudioManager {
 
   Future<void> playAlertSfx() => playSfx(AudioAssets.alertSfx);
 
+  Future<void> wrongAnswerSfx() => playSfx(AudioAssets.wrongAnswerSfx);
+
+  Future<void> playGameWon() => playSfx(AudioAssets.gameWonSfx);
+  Future<void> playGameOver() => playSfx(AudioAssets.gameOverSfx);
+
+  Future<void> playGameLost() => playSfx(AudioAssets.wrongAnswerSfx);
+
   Future<void> playCardFlip() => playSfx("sounds/card_flip.mp3");
   Future<void> playCorrectGuess() => playSfx("sounds/correct.mp3");
   Future<void> playWrongGuess() => playSfx("sounds/wrong.mp3");
-  Future<void> playGameWon() => playSfx("sounds/game_won.mp3");
-  Future<void> playGameLost() => playSfx("sounds/game_lost.mp3");
   Future<void> playQuestionAsked() => playSfx("sounds/question.mp3");
 
   Future<void> toggleMusic() async {

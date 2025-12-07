@@ -11,6 +11,7 @@ import 'package:guess_who/models/character.dart';
 import 'package:guess_who/screens/online_game_screen.dart';
 import 'package:guess_who/widgets/character/character_card.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
+import 'package:guess_who/widgets/common/retro_icon_button.dart';
 import 'package:share_plus/share_plus.dart';
 
 class OnlineLobbyScreen extends StatefulWidget {
@@ -32,7 +33,6 @@ class OnlineLobbyScreen extends StatefulWidget {
 }
 
 class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
-  final AudioManager _audioManager = AudioManager();
   late WebsocketService _wsService;
   Character? _selectedCharacter;
   bool _isReady = false;
@@ -49,7 +49,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
   @override
   void initState() {
     super.initState();
-    _audioManager.playBackgroundMusic(AudioAssets.lobbyMusic);
+    AudioManager().playBackgroundMusic(AudioAssets.lobbyMusic);
     _initializeWebSocket();
   }
 
@@ -130,6 +130,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
 
   Future<void> _selectCharacter(Character character) async {
     try {
+      AudioManager().playPopupSfx();
       await ApiService.selectCharacter(
         widget.room.id,
         widget.playerId,
@@ -202,6 +203,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
 
     try {
       _wsService.sendStart();
+      AudioManager().playAlertSfx();
     } catch (e) {
       if (!mounted) return;
 
@@ -228,8 +230,10 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
       isMyTurnInitially = turnPlayerId == widget.playerId;
     }
 
-    debugPrint(
-      "\nMy turn? $isMyTurnInitially, Start response: ${startGameResponse != null ? startGameResponse["turnPlayer"] : "No start game response"}\n",
+    AudioManager().playGameStart();
+    AudioManager().playBackgroundMusic(
+      AudioAssets.gameMusic,
+      fadeDuration: const Duration(seconds: 3),
     );
 
     Navigator.pushReplacement(
@@ -289,6 +293,67 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
     super.dispose();
   }
 
+  Future<void> _handleManualBack() async {
+    if (!mounted) return;
+    final ctx = context;
+
+    final shouldLeave = await showDialog<bool>(
+      context: ctx,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).colorScheme.tertiary,
+        title: Text(
+          "Leave Room?",
+          style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
+        ),
+        content: Text(
+          "Are you sure you want to leave this room?",
+          style: TextStyle(color: Theme.of(ctx).colorScheme.secondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              AudioManager().playButtonClick();
+              Navigator.pop(ctx, false);
+            },
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
+            ),
+          ),
+          // FilledButton(
+          //   onPressed: ,
+          //   style: ButtonStyle(
+          //     backgroundColor: WidgetStatePropertyAll(
+          //       Theme.of(ctx).colorScheme.error,
+          //     ),
+          //   ),
+          //   child: Text(
+          //     "Leave",
+          //     style: TextStyle(color: Theme.of(ctx).colorScheme.tertiary),
+          //   ),
+          // ),
+          RetroButton(
+            text: "Leave",
+            onPressed: () => Navigator.pop(ctx, true),
+            backgroundColor: Theme.of(ctx).colorScheme.error,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLeave == true && mounted) {
+      await _leaveRoom();
+      if (ctx.mounted) {
+        AudioManager().playBackgroundMusic(
+          AudioAssets.menuMusic,
+          fadeDuration: const Duration(seconds: 3),
+        );
+        Navigator.pop(ctx);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final characters = widget.room.characterSet?.characters ?? [];
@@ -298,49 +363,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
       onPopInvokedWithResult: (didPop, dynamic) async {
         if (didPop) return;
 
-        final shouldLeave = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(
-              "Leave Room?",
-              style: TextStyle(color: Theme.of(context).colorScheme.primary),
-            ),
-            content: Text(
-              "Are you sure you want to leave this room?",
-              style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(
-                  "Cancel",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(
-                    Theme.of(context).colorScheme.error,
-                  ),
-                ),
-                child: Text(
-                  "Leave",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.tertiary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-
-        if (shouldLeave == true && mounted) {
-          await _leaveRoom();
-          if (context.mounted) Navigator.pop(context);
-        }
+        _handleManualBack();
       },
       child: Scaffold(
         appBar: AppBar(
@@ -349,12 +372,29 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
             color: Theme.of(context).colorScheme.tertiary,
           ),
           title: Text(
-            "code: ${widget.room.roomCode}",
+            widget.room.roomCode,
             style: TextStyle(
               color: Theme.of(context).colorScheme.tertiary,
               fontSize: 16,
             ),
           ),
+          leading: Navigator.canPop(context)
+              ? RetroIconButton(
+                  icon: Icons.arrow_back_rounded,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  iconColor: Theme.of(context).colorScheme.tertiary,
+                  iconSize: 26,
+
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 0,
+                  ),
+                  borderWidth: 2,
+                  onPressed: _handleManualBack,
+
+                  tooltip: "Go back home",
+                )
+              : null,
           actions: !widget.isHost
               ? null
               : [
@@ -373,6 +413,7 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
                       foregroundColor: Theme.of(context).colorScheme.tertiary,
                       icon: Icons.share_rounded,
                       onPressed: _shareRoomCode,
+                      borderWidth: 2,
                     ),
                   ),
                 ],
@@ -653,10 +694,14 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      onPressed: _startGame,
+                      onPressed: () {
+                        _startGame();
+                      },
+
                       backgroundColor: Theme.of(context).colorScheme.error,
                       foregroundColor: Theme.of(context).colorScheme.tertiary,
                       icon: Icons.play_arrow_rounded,
+                      playOnClick: false,
                     ),
                 ],
               ),
