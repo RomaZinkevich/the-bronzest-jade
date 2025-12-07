@@ -59,10 +59,10 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
-    public UserDto getUserFromPrincipal(UserDetails userDetails) {
+    public UserDto getUserFromPrincipal(ApiUserDetails userDetails) {
         //For some reason I cant pass userDetails.getUser() directly due to LazyLoading issues
         //So I have to reinitialize user object from ID
-        UUID userId = UUID.fromString(userDetails.getUsername());
+        UUID userId = userDetails.getId();
         User user = userRepository.findById(userId).orElseThrow(EntityNotFoundException::new);
 
         return userMapper.toDto(user);
