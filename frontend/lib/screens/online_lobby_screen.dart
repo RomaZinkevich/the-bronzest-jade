@@ -301,6 +301,14 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
         final shouldLeave = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
+            backgroundColor: Theme.of(context).colorScheme.tertiary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
+            ),
             title: Text(
               "Leave Room?",
               style: TextStyle(color: Theme.of(context).colorScheme.primary),
