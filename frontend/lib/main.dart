@@ -47,19 +47,15 @@ class MyApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: settings.themeMode,
-            home: const ResponsiveWrapper(child: MainMenuScreen()),
-            onGenerateRoute: (settings) {
-              return MaterialPageRoute(
-                builder: (_) =>
-                    const ResponsiveWrapper(child: MainMenuScreen()),
-              );
+            builder: (context, child) {
+              return ResponsiveWrapper(child: child ?? const SizedBox.shrink());
             },
-
+            home: const MainMenuScreen(),
+            onGenerateRoute: (settings) {
+              return MaterialPageRoute(builder: (_) => const MainMenuScreen());
+            },
             onUnknownRoute: (settings) {
-              return MaterialPageRoute(
-                builder: (_) =>
-                    const ResponsiveWrapper(child: MainMenuScreen()),
-              );
+              return MaterialPageRoute(builder: (_) => const MainMenuScreen());
             },
           );
         },
