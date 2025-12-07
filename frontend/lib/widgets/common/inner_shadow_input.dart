@@ -9,6 +9,7 @@ class InnerShadowInput extends StatelessWidget {
   final String hintText;
   final String submitTooltip;
   final bool showIcon;
+  final bool disableShadows;
 
   final double? width;
 
@@ -20,6 +21,7 @@ class InnerShadowInput extends StatelessWidget {
     this.submitTooltip = "Submit",
     this.iconPath = "assets/icons/join_submit.png",
     this.showIcon = true,
+    this.disableShadows = false,
     this.width,
   });
 
@@ -32,10 +34,6 @@ class InnerShadowInput extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary,
-          width: 4,
-        ),
         borderRadius: BorderRadius.circular(100),
         color: Theme.of(context).colorScheme.tertiary,
       ),
@@ -48,14 +46,19 @@ class InnerShadowInput extends StatelessWidget {
               margin: EdgeInsets.only(left: 6, right: showIcon ? 0 : 6),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(100),
-                boxShadow: [
-                  const BoxShadow(color: Color(0xFF5B7B76)),
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.secondary,
-                    blurRadius: 4,
-                    spreadRadius: -2,
-                  ),
-                ],
+                color: disableShadows
+                    ? Theme.of(context).colorScheme.secondary
+                    : null,
+                boxShadow: disableShadows
+                    ? null
+                    : [
+                        const BoxShadow(color: Color(0xFF5B7B76)),
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.secondary,
+                          blurRadius: 4,
+                          spreadRadius: -2,
+                        ),
+                      ],
               ),
               child: TextField(
                 controller: controller,

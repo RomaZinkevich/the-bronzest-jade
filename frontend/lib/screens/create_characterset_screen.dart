@@ -9,6 +9,8 @@ import 'package:guess_who/widgets/common/retro_icon_button.dart';
 import 'package:guess_who/widgets/draft/character_draft_dialogue.dart';
 import 'package:guess_who/widgets/draft/draft_section.dart';
 import 'package:uuid/uuid.dart';
+import 'package:guess_who/providers/settings_provider.dart';
+import 'package:provider/provider.dart';
 
 class CreateCharactersetScreen extends StatefulWidget {
   final String playerId;
@@ -577,230 +579,249 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          "Create your set",
-          style: TextStyle(
-            fontSize: 20,
-            color: theme.tertiary,
-            shadows: [
-              Shadow(
-                color: Colors.black26,
-                offset: Offset(0, 2),
-                blurRadius: 6,
-              ),
-            ],
-          ),
-        ),
-        toolbarHeight: 80,
-        backgroundColor: theme.primary,
-        foregroundColor: theme.tertiary,
-        leading: Navigator.canPop(context)
-            ? RetroIconButton(
-                icon: Icons.arrow_back_rounded,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                iconColor: Theme.of(context).colorScheme.tertiary,
-                iconSize: 26,
-
-                margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 0),
-                borderWidth: 2,
-
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-
-                tooltip: "Go back home",
-              )
-            : null,
-        actions: [
-          RetroIconButton(
-            onPressed: _createNewDraft,
-            backgroundColor: theme.secondary,
-            borderWidth: 2,
-            borderColor: theme.tertiary,
-
-            icon: Icons.add,
-            iconSize: 30,
-            iconColor: theme.tertiary,
-
-            padding: 8,
-
-            tooltip: "Create draft",
-            playOnClick: false,
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          //* Background Image
-          SizedBox.expand(
-            child: Image(
-              image: AssetImage("assets/main_menu.png"),
-              fit: BoxFit.cover,
-            ),
-          ),
-
-          if (_isLoading)
-            Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(theme.primary),
-                strokeWidth: 5,
-                strokeCap: StrokeCap.round,
-              ),
-            )
-          else if (_drafts.isEmpty)
-            Center(
-              child: InkWell(
-                onTap: _createNewDraft,
-                highlightColor: theme.tertiary,
-                child: Container(
-                  padding: const EdgeInsets.all(40),
-                  margin: const EdgeInsets.symmetric(horizontal: 50),
-                  decoration: BoxDecoration(
-                    color: theme.secondary.withAlpha(230),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: theme.tertiary, width: 3),
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              "Create your set",
+              style: TextStyle(
+                fontSize: 20,
+                color: theme.tertiary,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    offset: Offset(0, 2),
+                    blurRadius: 6,
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.add_circle_rounded,
-                        size: 80,
-                        color: theme.tertiary,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        "No drafts yet",
-                        style: TextStyle(
-                          color: theme.tertiary,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-
-                      Text(
-                        "Click here to add a new character set draft",
-                        style: TextStyle(color: theme.tertiary, fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          else
-            SingleChildScrollView(
-              child: Column(
-                children: [
-                  ..._drafts.map((draft) {
-                    final isExpanded = _expandedDraftId == draft.id;
-                    final isAddingChar = _isAddingCharacter[draft.id] ?? false;
-                    final editingChar = _editingCharacter[draft.id];
-
-                    return DraftSection(
-                      draft: draft,
-                      isExpanded: isExpanded,
-                      isAddingCharacter: isAddingChar,
-                      editingCharacter: editingChar,
-                      isSubmitting: _isSubmitting,
-                      onToggle: () => _toggleDraft(draft.id),
-                      onDelete: () => _deleteDraft(draft),
-                      onToggleVisibility: () => _toggleDraftVisibility(draft),
-                      onSaveCharacter: (character, shouldUpload) =>
-                          _saveCharacter(draft.id, character, shouldUpload),
-                      onEditCharacter: (character) {
-                        if (editingChar != null) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  "Finish editing character first",
-                                  textAlign: TextAlign.center,
-                                ),
-                                backgroundColor: theme.error,
-                              ),
-                            );
-                          }
-
-                          return;
-                        }
-                        _editCharacter(draft.id, character);
-                      },
-                      onDeleteCharacter: (character) =>
-                          _showDeleteCharacterConfirmation(draft.id, character),
-                      onAddNew: () => setState(() {
-                        if (_isAddingCharacter[draft.id] == true ||
-                            editingChar != null) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  "Finish adding or editing your character",
-                                  textAlign: TextAlign.center,
-                                ),
-                                backgroundColor: theme.error,
-                              ),
-                            );
-                          }
-
-                          return;
-                        }
-                        _isAddingCharacter[draft.id] = true;
-                        _editingCharacter[draft.id] = null;
-                      }),
-                      onCancelAdd: () => setState(() {
-                        _isAddingCharacter[draft.id] = false;
-                        _editingCharacter[draft.id] = null;
-                      }),
-                      onUploadAll: () => _uploadAllImages(draft),
-                      onSubmit: () => _submitCharacterSet(draft),
-                    );
-                  }),
-                  const SizedBox(height: 100),
                 ],
               ),
             ),
+            toolbarHeight: 80,
+            backgroundColor: theme.primary,
+            foregroundColor: theme.tertiary,
+            leading: Navigator.canPop(context)
+                ? RetroIconButton(
+                    icon: Icons.arrow_back_rounded,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    iconColor: Theme.of(context).colorScheme.tertiary,
+                    iconSize: 26,
 
-          if (_isUploading)
-            Container(
-              color: Colors.black54,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: theme.tertiary,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: theme.primary, width: 3),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 0,
+                    ),
+                    borderWidth: 2,
+
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+
+                    tooltip: "Go back home",
+                  )
+                : null,
+            actions: [
+              RetroIconButton(
+                onPressed: _createNewDraft,
+                backgroundColor: theme.secondary,
+                borderWidth: 2,
+                borderColor: theme.tertiary,
+
+                icon: Icons.add,
+                iconSize: 30,
+                iconColor: theme.tertiary,
+
+                padding: 8,
+
+                tooltip: "Create draft",
+                playOnClick: false,
+              ),
+            ],
+          ),
+          body: Stack(
+            children: [
+              //* Background Image
+              SizedBox.expand(
+                child: Image(
+                  image: AssetImage("assets/main_menu.png"),
+                  fit: BoxFit.cover,
+                  color: settings.isDarkMode
+                      ? Colors.black.withOpacity(0.5)
+                      : null,
+                  colorBlendMode: settings.isDarkMode ? BlendMode.darken : null,
+                ),
+              ),
+
+              if (_isLoading)
+                Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(theme.primary),
+                    strokeWidth: 5,
+                    strokeCap: StrokeCap.round,
                   ),
+                )
+              else if (_drafts.isEmpty)
+                Center(
+                  child: InkWell(
+                    onTap: _createNewDraft,
+                    highlightColor: theme.tertiary,
+                    child: Container(
+                      padding: const EdgeInsets.all(40),
+                      margin: const EdgeInsets.symmetric(horizontal: 50),
+                      decoration: BoxDecoration(
+                        color: theme.secondary.withAlpha(230),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: theme.tertiary, width: 3),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.add_circle_rounded,
+                            size: 80,
+                            color: theme.tertiary,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            "No drafts yet",
+                            style: TextStyle(
+                              color: theme.tertiary,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          Text(
+                            "Click here to add a new character set draft",
+                            style: TextStyle(
+                              color: theme.tertiary,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                SingleChildScrollView(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          theme.secondary,
-                        ),
-                        strokeWidth: 5,
-                        strokeCap: StrokeCap.round,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        "Uploading images...",
-                        style: TextStyle(
-                          color: theme.primary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      ..._drafts.map((draft) {
+                        final isExpanded = _expandedDraftId == draft.id;
+                        final isAddingChar =
+                            _isAddingCharacter[draft.id] ?? false;
+                        final editingChar = _editingCharacter[draft.id];
+
+                        return DraftSection(
+                          draft: draft,
+                          isExpanded: isExpanded,
+                          isAddingCharacter: isAddingChar,
+                          editingCharacter: editingChar,
+                          isSubmitting: _isSubmitting,
+                          onToggle: () => _toggleDraft(draft.id),
+                          onDelete: () => _deleteDraft(draft),
+                          onToggleVisibility: () =>
+                              _toggleDraftVisibility(draft),
+                          onSaveCharacter: (character, shouldUpload) =>
+                              _saveCharacter(draft.id, character, shouldUpload),
+                          onEditCharacter: (character) {
+                            if (editingChar != null) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "Finish editing character first",
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    backgroundColor: theme.error,
+                                  ),
+                                );
+                              }
+
+                              return;
+                            }
+                            _editCharacter(draft.id, character);
+                          },
+                          onDeleteCharacter: (character) =>
+                              _showDeleteCharacterConfirmation(
+                                draft.id,
+                                character,
+                              ),
+                          onAddNew: () => setState(() {
+                            if (_isAddingCharacter[draft.id] == true ||
+                                editingChar != null) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "Finish adding or editing your character",
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    backgroundColor: theme.error,
+                                  ),
+                                );
+                              }
+
+                              return;
+                            }
+                            _isAddingCharacter[draft.id] = true;
+                            _editingCharacter[draft.id] = null;
+                          }),
+                          onCancelAdd: () => setState(() {
+                            _isAddingCharacter[draft.id] = false;
+                            _editingCharacter[draft.id] = null;
+                          }),
+                          onUploadAll: () => _uploadAllImages(draft),
+                          onSubmit: () => _submitCharacterSet(draft),
+                        );
+                      }),
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),
-              ),
-            ),
-        ],
-      ),
+
+              if (_isUploading)
+                Container(
+                  color: Colors.black54,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: theme.tertiary,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: theme.primary, width: 3),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.secondary,
+                            ),
+                            strokeWidth: 5,
+                            strokeCap: StrokeCap.round,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            "Uploading images...",
+                            style: TextStyle(
+                              color: theme.primary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
