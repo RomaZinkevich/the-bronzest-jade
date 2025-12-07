@@ -429,7 +429,7 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
 
     AudioManager().playBackgroundMusic(
       AudioAssets.menuMusic,
-      fadeDuration: const Duration(seconds: 6),
+      fadeDuration: const Duration(seconds: 3),
     );
     super.dispose();
   }

@@ -177,15 +177,11 @@ class _AccountScreenState extends State<AccountScreen> {
                               Container(
                                 width: 120,
                                 height: 120,
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: Theme.of(context).colorScheme.tertiary,
-                                  border: Border.all(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.secondary,
-                                    width: 4,
-                                  ),
+
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black.withAlpha(50),

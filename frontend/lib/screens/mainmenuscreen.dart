@@ -612,6 +612,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           ),
 
                           onPressed: () {
+                            AudioManager().playGameStart();
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -619,6 +620,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               ),
                             );
                           },
+
+                          playOnClick: false,
                         ),
 
                         const SizedBox(height: 60),
