@@ -1,6 +1,8 @@
-package com.bronzejade.game.domain.dtos;
+package com.bronzejade.game.domain.dtos.Room;
 
 import com.bronzejade.game.domain.RoomStatus;
+import com.bronzejade.game.domain.dtos.Character.CharacterSetDto;
+import com.bronzejade.game.domain.dtos.User.UserDto;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -14,7 +16,7 @@ import java.util.UUID;
 public class RoomDto {
     private UUID id;
     private String roomCode;
-    private UUID hostId;
+    private UserDto host;
     private RoomStatus status;
     private int maxPlayers;
     private CharacterSetDto characterSet;

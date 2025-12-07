@@ -1,12 +1,20 @@
 package com.bronzejade.game.controllers;
 
-import com.bronzejade.game.domain.dtos.*;
+import com.bronzejade.game.domain.dtos.Character.GuessCharacterResponse;
+import com.bronzejade.game.domain.dtos.Room.MessageDto;
+import com.bronzejade.game.domain.dtos.Room.StartGameResponse;
+import com.bronzejade.game.domain.dtos.User.ConnectionInfoDto;
+import com.bronzejade.game.domain.dtos.User.RoomPlayerDto;
 import com.bronzejade.game.domain.entities.RoomPlayer;
+import com.bronzejade.game.domain.entities.User;
+import com.bronzejade.game.repositories.UserRepository;
 import com.bronzejade.game.service.GameStateService;
 import com.bronzejade.game.service.RoomPlayerService;
 import com.bronzejade.game.service.RoomService;
 import com.bronzejade.game.service.GuessCharacterService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -19,9 +27,11 @@ import java.util.UUID;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class RoomWsController {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepo;
     private final RoomPlayerService roomPlayerService;
     private final RoomService roomService;
     private final GameStateService gameStateService;
@@ -30,22 +40,34 @@ public class RoomWsController {
     @MessageMapping("/join")
     public void handleJoin(SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
-        MessageDto message = messageCrafter(" has joined room", connectionInfoDto.getPlayerId());
+        MessageDto message = messageCrafter(
+                " has joined room",
+                connectionInfoDto.getDisplayName()
+        );
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
     }
 
     @MessageMapping("/ready")
     public void toggleReady(SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
-        RoomPlayer roomPlayer = roomService.togglePlayerReady(UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
-        MessageDto message = messageCrafter(" is " + (!roomPlayer.isReady() ? "not " : "") + "ready", connectionInfoDto.getPlayerId());
+        RoomPlayer roomPlayer = roomService.togglePlayerReady(
+                UUID.fromString(connectionInfoDto.getRoomId()),
+                connectionInfoDto.getUserId()
+        );
+        MessageDto message = messageCrafter(
+                " is " + (!roomPlayer.isReady() ? "not " : "") + "ready",
+                connectionInfoDto.getDisplayName()
+        );
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), message);
     }
 
     @MessageMapping("/start")
     public void start(SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
-        RoomPlayerDto roomPlayerDto = roomService.startGame(UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
+        RoomPlayerDto roomPlayerDto = roomService.startGame(
+                UUID.fromString(connectionInfoDto.getRoomId()),
+                connectionInfoDto.getUserId()
+        );
         String message = "The game has been started";
         StartGameResponse startGameResponse = new StartGameResponse();
         startGameResponse.setMessage(message);
@@ -56,16 +78,30 @@ public class RoomWsController {
     @MessageMapping("/question")
     public void question(String payload, SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
-        gameStateService.submitQuestion(payload, UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
-        MessageDto msg = messageCrafter(": " + payload,  connectionInfoDto.getPlayerId());
+        gameStateService.submitQuestion(
+                payload,
+                UUID.fromString(connectionInfoDto.getRoomId()),
+                connectionInfoDto.getUserId()
+        );
+        MessageDto msg = messageCrafter(
+                ": " + payload,
+                connectionInfoDto.getDisplayName()
+        );
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), msg);
     }
 
     @MessageMapping("/answer")
     public void answer(String payload, SimpMessageHeaderAccessor accessor) {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
-        gameStateService.submitAnswer(payload, UUID.fromString(connectionInfoDto.getRoomId()), UUID.fromString(connectionInfoDto.getPlayerId()));
-        MessageDto msg = messageCrafter(": " + payload,  connectionInfoDto.getPlayerId());
+        gameStateService.submitAnswer(
+                payload,
+                UUID.fromString(connectionInfoDto.getRoomId()),
+                connectionInfoDto.getUserId()
+        );
+        MessageDto msg = messageCrafter(
+                ": " + payload,
+                connectionInfoDto.getDisplayName()
+        );
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), msg);
     }
 
@@ -74,7 +110,7 @@ public class RoomWsController {
         ConnectionInfoDto connectionInfoDto = retrieveConnectionInfo(accessor);
         GuessCharacterResponse response = guessCharacterService.guessCharacter(
                 UUID.fromString(connectionInfoDto.getRoomId()),
-                UUID.fromString(connectionInfoDto.getPlayerId()),
+                connectionInfoDto.getUserId(),
                 UUID.fromString(characterId)
         );
         messagingTemplate.convertAndSend("/topic/room." + connectionInfoDto.getRoomId(), response);
@@ -83,25 +119,46 @@ public class RoomWsController {
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
     public String handleException(Exception ex) {
-        System.out.println("Error " +  ex.getMessage());
         return ex.getMessage();
     }
 
-    //Retrieves roomId and playerId from session and checks if playerId is the room (from roomId)
+    // Checks if the player is in the room
     private ConnectionInfoDto retrieveConnectionInfo(SimpMessageHeaderAccessor accessor) {
-        if (accessor.getSessionAttributes() == null) throw new IllegalArgumentException("Session attributes cannot be null");
-        String roomId =  (String) accessor.getSessionAttributes().get("roomId");
-        String playerId =  (String) accessor.getSessionAttributes().get("playerId");
-        if (roomId == null || playerId == null) throw new MessagingException("Room or Player ID is null");
-        if (!roomPlayerService.isInRoom(UUID.fromString(roomId), UUID.fromString(playerId))) throw new MessagingException("Player is not in the room");
+        if (accessor.getSessionAttributes() == null) {
+            throw new IllegalArgumentException("Session attributes cannot be null");
+        }
+
+        String roomId = (String) accessor.getSessionAttributes().get("roomId");
+        String userIdStr = (String) accessor.getSessionAttributes().get("userId");
+
+        if (roomId == null) {
+            throw new MessagingException("Room ID is null");
+        }
+
+        UUID roomUuid = UUID.fromString(roomId);
+        UUID userId = userIdStr != null ? UUID.fromString(userIdStr) : null;
+
+        if (userId == null) {
+            throw new MessagingException("Both User ID and Guest Session ID are null");
+        }
+
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        // Check if player is in room
+        if (!roomPlayerService.isInRoom(roomUuid, userId)) {
+            throw new MessagingException("Player is not in the room");
+        }
+
         ConnectionInfoDto connectionInfoDto = new ConnectionInfoDto();
         connectionInfoDto.setRoomId(roomId);
-        connectionInfoDto.setPlayerId(playerId);
+        connectionInfoDto.setUserId(userId);
+        connectionInfoDto.setDisplayName(user.getUsername());
         return connectionInfoDto;
     }
 
-    private MessageDto messageCrafter(String text, String playerId) {
-        String message = "guest-player-" + playerId.substring(0, 6) + text;
+    private MessageDto messageCrafter(String text, String username) {
+        String message = username + text;
         return MessageDto.builder()
                 .message(message)
                 .build();

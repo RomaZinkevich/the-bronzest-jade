@@ -1,5 +1,6 @@
-package com.bronzejade.game.domain.dtos;
+package com.bronzejade.game.domain.dtos.Room;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.UUID;
@@ -9,7 +10,8 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class CreateRoomRequest {
-    private UUID hostId;
+    @NotNull(message = "CharacterSet ID is required")
     private UUID characterSetId;
 }

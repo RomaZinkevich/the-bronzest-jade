@@ -1,6 +1,5 @@
-package com.bronzejade.game.domain.dtos;
+package com.bronzejade.game.domain.dtos.Character;
 
-import jakarta.persistence.PrePersist;
 import lombok.*;
 import java.util.List;
 
@@ -11,7 +10,6 @@ import java.util.List;
 @AllArgsConstructor
 public class CreateCharacterSetRequest {
     private String name;
-    private String createdBy;
     private Boolean isPublic;
     private List<CreateCharacterRequest> characters;
 }

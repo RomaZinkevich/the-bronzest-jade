@@ -315,6 +315,14 @@ public class CharacterDto {
     String uniqueFilename;
 ```
 
+#### 8. Delete image
+
+**DELETE** `/api/images?filename={filename}`
+
+**Request:** None
+
+**Response:** `204 No Content`
+
 ### WebSocket
 
 **Connection Requirements:**

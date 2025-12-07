@@ -28,8 +28,10 @@ public class Room {
     @Column(nullable = false, unique = true, length = 6)
     private String roomCode;
 
-    @Column(nullable = false)
-    private UUID hostId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "host_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private User host;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

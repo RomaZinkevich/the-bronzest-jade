@@ -1,5 +1,6 @@
-package com.bronzejade.game.domain.dtos;
+package com.bronzejade.game.domain.dtos.User;
 
+import com.bronzejade.game.domain.dtos.Character.CharacterDto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
@@ -21,6 +22,9 @@ public class RoomPlayerDto {
 
     @JsonProperty("isReady")
     private boolean ready;
+
+    @JsonProperty("isGuest")
+    private boolean guest;
 
     private CharacterDto characterToGuess;
     private LocalDateTime joinedAt;
