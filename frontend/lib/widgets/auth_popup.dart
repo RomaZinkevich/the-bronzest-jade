@@ -191,6 +191,7 @@ class _AuthPopupState extends State<AuthPopup> {
             hintStyle: TextStyle(
               color: Theme.of(context).colorScheme.tertiary.withAlpha(150),
               fontWeight: FontWeight.bold,
+              fontSize: 14,
             ),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 16),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:guess_who/services/audio_manager.dart';
+import 'package:guess_who/widgets/common/auto_scroll_text.dart';
 import 'package:guess_who/widgets/common/retro_icon_button.dart';
 import 'package:guess_who/widgets/settings_dropdown.dart';
 import 'package:guess_who/widgets/common/popup_menu.dart';
@@ -116,11 +117,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: 150),
-                      child: Text(
-                        playerName,
+                      child: AutoScrollText(
+                        text: playerName,
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.tertiary,
                           shadows: [
                             Shadow(
@@ -130,7 +131,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                             ),
                           ],
                         ),
-                        overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.end,
                       ),
                     ),
@@ -140,7 +140,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                         fontSize: 14,
                         color: Theme.of(
                           context,
-                        ).colorScheme.tertiary.withOpacity(0.7),
+                        ).colorScheme.tertiary.withAlpha(200),
                       ),
                     ),
                   ],
@@ -151,9 +151,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withAlpha(50),
+                        color: Theme.of(context).colorScheme.shadow,
                         blurRadius: 2,
-                        offset: const Offset(0, 4),
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),

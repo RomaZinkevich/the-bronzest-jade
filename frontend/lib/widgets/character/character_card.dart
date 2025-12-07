@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:guess_who/models/character.dart';
 
-class CharacterCard extends StatelessWidget {
+class CharacterCard extends StatefulWidget {
   final Character character;
   final bool isFlipped;
   final bool isSelectionMode;
@@ -18,22 +18,60 @@ class CharacterCard extends StatelessWidget {
   });
 
   @override
+  State<CharacterCard> createState() => _CharacterCardState();
+}
+
+class _CharacterCardState extends State<CharacterCard> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoScroll();
+    });
+  }
+
+  void _startAutoScroll() async {
+    if (!_controller.hasClients) return;
+
+    while (mounted) {
+      await _controller.animateTo(
+        _controller.position.maxScrollExtent,
+        duration: const Duration(seconds: 2),
+        curve: Curves.easeInOut,
+      );
+
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      await _controller.animateTo(
+        0,
+        duration: const Duration(seconds: 2),
+        curve: Curves.easeInOut,
+      );
+
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: () {
-        if (isSelectionMode) {
-          onSelect?.call();
+        if (widget.isSelectionMode) {
+          widget.onSelect?.call();
         } else {
-          onFlip?.call();
+          widget.onFlip?.call();
         }
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
-          color: isFlipped ? colorScheme.secondary : colorScheme.primary,
-          borderRadius: BorderRadius.circular(12),
+          color: widget.isFlipped ? colorScheme.secondary : colorScheme.primary,
+          borderRadius: BorderRadius.circular(4),
           border: Border.all(color: colorScheme.secondary, width: 3),
           boxShadow: const [
             BoxShadow(
@@ -44,21 +82,24 @@ class CharacterCard extends StatelessWidget {
           ],
         ),
         child: AnimatedOpacity(
-          opacity: isSelectionMode
-              ? (isFlipped ? 1.0 : 0.3)
-              : (isFlipped ? 0.3 : 1.0),
+          opacity: widget.isSelectionMode
+              ? (widget.isFlipped ? 1.0 : 0.3)
+              : (widget.isFlipped ? 0.3 : 1.0),
           duration: const Duration(milliseconds: 150),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               //* CHARACTER IMAGE
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(1),
+              AspectRatio(
+                aspectRatio: 0.85,
+                child: Container(
+                  color: colorScheme.secondary,
+                  padding: EdgeInsets.symmetric(horizontal: 10),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(2),
+                    clipBehavior: Clip.hardEdge,
                     child: Image.network(
-                      character.imageUrl,
+                      widget.character.imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         debugPrint(error.toString());
@@ -97,13 +138,16 @@ class CharacterCard extends StatelessWidget {
 
               //* CHARACTER NAME
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                child: Text(
-                  character.name,
-                  style: TextStyle(fontSize: 12, color: colorScheme.tertiary),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
+                child: SingleChildScrollView(
+                  controller: _controller,
+                  scrollDirection: Axis.horizontal,
+                  child: Text(
+                    widget.character.name,
+                    style: TextStyle(fontSize: 14, color: colorScheme.tertiary),
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                  ),
                 ),
               ),
             ],
