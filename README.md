@@ -1,5 +1,64 @@
 # Guess who?
 
+## Description
+
+#### "Guess Who?" is a full-stack, cross-platform game implementation that delivers both local and online multiplayer experiences of the classic deductive guessing game.
+
+## Team Members
+
+#### Roman Zinkevich - Backend Developer
+#### Vasu Swarup Bhatnagar - Backend Developer
+#### Nguyen Cong Dang - Mobile App Developer
+#### Prabesh Sharma - Mobile App Developer
+
+## Setup Instructions
+### Backend Setup
+
+#### Requirements
+
+Git installed</br>
+Docker installed</br>
+
+#### Run
+
+```bash
+git clone git@github.com:RomaZinkevich/the-bronzest-jade.git
+cd the-bronzest-jade
+```
+Create .env file and populate it with required variables: </br>
+POSTGRES_DB, POSTGRES_PASSWORD, POSTGRES_USER, DB_PORT, JWT_SECRET, JWT_EXPIRATION </br>
+FLYWAY_URL=jdbc:postgresql://postgres:${DB_PORT}/${POSTGRES_DB} </br>
+FLYWAY_USER=${POSTGRES_USER} </br>
+FLYWAY_PASSWORD=${POSTGRES_PASSWORD} </br>
+
+Continue in bash:
+```bash
+cd backend
+./dev.sh
+```
+
+### Frontend Setup
+
+#### Requirements
+
+Flutter SDK installed
+Backend server running
+
+#### Run
+
+```bash
+flutter pub get
+flutter run
+```
+
+## Technology Stack
+#### Spring Boot, PostgreSQL, Flutter, Docker
+
+## Links
+#### [Base backend URL](https://guesswho.190304.xyz)
+#### [Project Board](https://id.atlassian.com/invite/p/jira-software?id=_z3N2uJfQjmVa_xaLobJKA)
+#### [Wiki Documentation](https://github.com/RomaZinkevich/the-bronzest-jade/wiki/Guess-Who%3F-Wiki)
+
 ## Backend Endpoints
 
 ### REST API
@@ -437,19 +496,6 @@ Start game /start
 Send question /question
 Send answer /answer
 Send guess /guess
-
-### Frontend Setup
-
-#### Requirements
-
-Flutter SDK installed
-Backend server running
-
-#### Run
-
-(bash)
-flutter pub get
-flutter run
 
 #### UI Elements
 
