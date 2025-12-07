@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:guess_who/widgets/common/retro_icon_button.dart';
 import 'package:guess_who/widgets/settings_dropdown.dart';
+import 'package:guess_who/widgets/common/popup_menu.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String playerName;
@@ -8,7 +9,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String profilePicture;
   final VoidCallback onSettingsPressed;
   final VoidCallback? onCreateCharacterSetPressed;
-  final VoidCallback? onAccountPressed;
+  final VoidCallback? onSignUpPressed;
+  final VoidCallback? onLoginPressed;
+  final VoidCallback? onLogoutPressed;
+  final bool isAuthenticated;
 
   const CustomAppBar({
     super.key,
@@ -17,11 +21,43 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.playerId,
     required this.onSettingsPressed,
     this.onCreateCharacterSetPressed,
-    this.onAccountPressed,
+    this.onSignUpPressed,
+    this.onLoginPressed,
+    this.onLogoutPressed,
+    this.isAuthenticated = false,
   });
 
   @override
   Size get preferredSize => const Size.fromHeight(90);
+
+  void _showAccountMenu(BuildContext context) {
+    final List<RetroPopupMenuItem> menuItems = [];
+
+    if (!isAuthenticated) {
+      menuItems.addAll([
+        RetroPopupMenuItem(
+          text: "Sign Up",
+          icon: Icons.person_add_rounded,
+          onTap: () => onSignUpPressed?.call(),
+        ),
+        RetroPopupMenuItem(
+          text: "Log In",
+          icon: Icons.login_rounded,
+          onTap: () => onLoginPressed?.call(),
+        ),
+      ]);
+    } else {
+      menuItems.add(
+        RetroPopupMenuItem(
+          text: "Logout",
+          icon: Icons.logout_rounded,
+          onTap: () => onLogoutPressed?.call(),
+        ),
+      );
+    }
+
+    PopupMenu.show(context: context, title: "Account", items: menuItems);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +103,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
 
           GestureDetector(
-            onTap: onAccountPressed,
+            onTap: () {
+              _showAccountMenu(context);
+            },
             child: Row(
               children: [
                 Column(

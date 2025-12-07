@@ -156,10 +156,11 @@ class _AuthPopupState extends State<AuthPopup> {
   ) {
     return Container(
       margin: EdgeInsets.symmetric(
-        horizontal: MediaQuery.sizeOf(context).width * 0.05,
+        horizontal: MediaQuery.sizeOf(context).width * 0.1,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
+        shape: BoxShape.rectangle,
         border: Border.all(
           color: Theme.of(context).colorScheme.primary,
           width: 4,
@@ -167,22 +168,37 @@ class _AuthPopupState extends State<AuthPopup> {
         borderRadius: BorderRadius.circular(100),
         color: Theme.of(context).colorScheme.tertiary,
       ),
-      child: TextField(
-        controller: controller,
-        obscureText: true,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.secondary,
+      child: Container(
+        margin: const EdgeInsets.only(left: 6, right: 6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(100),
+          boxShadow: [
+            const BoxShadow(color: Color(0xFF5B7B76)),
+            BoxShadow(
+              color: Theme.of(context).colorScheme.secondary,
+              blurRadius: 4,
+              spreadRadius: -2,
+            ),
+          ],
         ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(
-            color: Theme.of(context).colorScheme.secondary.withAlpha(150),
+        child: TextField(
+          controller: controller,
+          obscureText: true,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 18,
             fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.tertiary,
           ),
-          border: InputBorder.none,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: TextStyle(
+              color: Theme.of(context).colorScheme.tertiary.withAlpha(150),
+              fontWeight: FontWeight.bold,
+            ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          ),
         ),
       ),
     );
@@ -209,93 +225,102 @@ class _AuthPopupState extends State<AuthPopup> {
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.isSignUp ? "SIGN UP" : "LOG IN",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.secondary,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: 24 + MediaQuery.of(context).viewInsets.bottom * 0.5,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      widget.isSignUp ? "SIGN UP" : "LOG IN",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
                     ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // Form fields
+                if (widget.isSignUp) ...[
+                  InnerShadowInput(
+                    controller: _usernameController,
+                    hintText: "Username",
+                    onSubmit: _submit,
+                    width: MediaQuery.sizeOf(context).width * 0.1,
+                    showIcon: false,
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(
-                      Icons.close_rounded,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
+                  const SizedBox(height: 16),
+                  InnerShadowInput(
+                    controller: _emailController,
+                    hintText: "Email",
+                    onSubmit: _submit,
+                    width: MediaQuery.sizeOf(context).width * 0.1,
+                    showIcon: false,
+                  ),
+                ] else ...[
+                  InnerShadowInput(
+                    controller: _usernameController,
+                    hintText: "Username",
+                    onSubmit: _submit,
+                    width: MediaQuery.sizeOf(context).width * 0.1,
+                    showIcon: false,
                   ),
                 ],
-              ),
 
-              const SizedBox(height: 20),
-
-              // Form fields
-              if (widget.isSignUp) ...[
-                InnerShadowInput(
-                  controller: _usernameController,
-                  hintText: "Username",
-                  onSubmit: _submit,
-                  width: 0,
-                  showIcon: false,
-                ),
                 const SizedBox(height: 16),
-                InnerShadowInput(
-                  controller: _emailController,
-                  hintText: "Email",
-                  onSubmit: _submit,
-                  width: 0,
-                  showIcon: false,
-                ),
-              ] else ...[
-                InnerShadowInput(
-                  controller: _usernameController,
-                  hintText: "Username",
-                  onSubmit: _submit,
-                  width: 0,
-                  showIcon: false,
-                ),
-              ],
 
-              const SizedBox(height: 16),
+                _buildPasswordField(_passwordController, "Password"),
 
-              _buildPasswordField(_passwordController, "Password"),
+                if (widget.isSignUp) ...[
+                  const SizedBox(height: 16),
+                  _buildPasswordField(
+                    _confirmPasswordController,
+                    "Confirm Password",
+                  ),
+                ],
 
-              if (widget.isSignUp) ...[
-                const SizedBox(height: 16),
-                _buildPasswordField(
-                  _confirmPasswordController,
-                  "Confirm Password",
-                ),
-              ],
+                const SizedBox(height: 24),
 
-              const SizedBox(height: 24),
-
-              // Submit button
-              _isLoading
-                  ? CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.secondary,
-                    )
-                  : RetroButton(
-                      text: widget.isSignUp ? "CREATE ACCOUNT" : "LOG IN",
-                      fontSize: 16,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 16,
+                // Submit button
+                _isLoading
+                    ? CircularProgressIndicator(
+                        color: Theme.of(context).colorScheme.secondary,
+                      )
+                    : RetroButton(
+                        text: widget.isSignUp ? "CREATE ACCOUNT" : "LOG IN",
+                        fontSize: 16,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 16,
+                        ),
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.secondary,
+                        foregroundColor: Colors.white,
+                        onPressed: _submit,
                       ),
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                      foregroundColor: Colors.white,
-                      onPressed: _submit,
-                    ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
