@@ -4,6 +4,10 @@
 
 #### "Guess Who?" is a full-stack, cross-platform game implementation that delivers both local and online multiplayer experiences of the classic deductive guessing game.
 
+![c856c1d6-4c42-49ab-b16a-b9a21d704e23](https://github.com/user-attachments/assets/9485c3dc-e743-414a-874a-303cc9193e62)
+![3d54a20d-297f-481d-8813-5d250618a498](https://github.com/user-attachments/assets/77f03a03-844f-4a62-8a5d-4ae41b6fe01c)
+
+
 ## Team Members
 
 #### Roman Zinkevich - Backend Developer
