@@ -6,7 +6,7 @@ import 'package:guess_who/constants/assets/audio_assets.dart';
 import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/screens/online_lobby_screen.dart';
-import 'package:guess_who/screens/account_screen.dart';
+import 'package:guess_who/widgets/auth_popup.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/services/auth_service.dart';
@@ -31,6 +31,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   String _playerId = "";
   String _playerName = "";
+  bool _isAuthenticated = false;
 
   bool _isJoining = false;
   bool _dialogOpen = false;
@@ -68,10 +69,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   Future<void> _loadUserData() async {
     final userId = await AuthService.getUserId();
     final username = await AuthService.getUsername();
+    final isAuth = await AuthService.isAuthenticated();
 
     setState(() {
       _playerId = userId ?? "";
       _playerName = username ?? "Guest";
+      _isAuthenticated = isAuth;
     });
 
     _checkPendingDeepLink();
@@ -271,6 +274,48 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _showSignUpDialog() async {
+    final result = await AuthPopup.showSignUp(context);
+    if (result == true) {
+      await _loadUserData();
+    }
+  }
+
+  Future<void> _showLoginDialog() async {
+    final result = await AuthPopup.showLogin(context);
+    if (result == true) {
+      await _loadUserData();
+    }
+  }
+
+  Future<void> _logout() async {
+    await AuthService.clearAuthData();
+
+    // Create new guest user
+    try {
+      final guestResponse = await ApiService.createGuestUser();
+      await AuthService.saveAuthData(
+        token: guestResponse["token"],
+        userId: guestResponse["userId"],
+        username: guestResponse["username"],
+        isGuest: true,
+      );
+    } catch (e) {
+      debugPrint("Failed to create guest user: $e");
+    }
+
+    await _loadUserData();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Logged out successfully"),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+        ),
+      );
     }
   }
 
@@ -548,20 +593,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             playerId:
                 "#${_playerId.isNotEmpty ? _playerId.substring(0, 6) : ""}",
             onSettingsPressed: () {},
-            onAccountPressed: () async {
-              AudioManager().playButtonClickVariation();
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AccountScreen(
-                    playerName: _playerName,
-                    playerId: _playerId,
-                  ),
-                ),
-              );
-              // Refresh username when returning from account screen
-              await _loadUserData();
-            },
+            onSignUpPressed: _showSignUpDialog,
+            onLoginPressed: _showLoginDialog,
+            onLogoutPressed: _logout,
+            isAuthenticated: _isAuthenticated,
             onCreateCharacterSetPressed: () {
               Navigator.push(
                 context,
