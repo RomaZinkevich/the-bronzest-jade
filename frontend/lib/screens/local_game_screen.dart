@@ -220,7 +220,7 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                           ),
 
                           onPressed: () {
-                            AudioManager().playAlertSfx();
+                            AudioManager().playGameStart();
                             Navigator.of(context).pop();
                           },
 
@@ -560,15 +560,18 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                   children: [
                     _buildBody(gameState),
                     if (settingsProvider.isDarkMode)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withAlpha(25),
-                        ),
+                      IgnorePointer(
+                        ignoring: true,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withAlpha(15),
+                            color: Colors.black.withAlpha(25),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withAlpha(15),
+                            ),
                           ),
                         ),
                       ),
@@ -735,26 +738,71 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
                           childAspectRatio: 0.7,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
                         ),
                     itemCount: gameState.allCharacters.length,
                     itemBuilder: (context, index) {
                       final character = gameState.allCharacters[index];
                       return CharacterCard(
                         character: character,
-                        isFlipped: false,
+                        isFlipped: true,
                         isSelectionMode: true,
                         onSelect: () {
                           AudioManager().playPopupSfx();
-                          _selectCharacter(character);
-                          // if (isSelectionMode) {
-                          // } else {
-                          //   isFlipped
-                          //       ? AudioManager().playAlertSfx()
-                          //       : AudioManager().playPopupSfx();
-                          //   _toggleFlipCard(character.id);
-                          // }
+                          showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.tertiary,
+                              title: Text(
+                                "Confirm ${character.name}?",
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              content: Text(
+                                "Are you sure you want to select ${character.name}?",
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.secondary,
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    AudioManager().playButtonClick();
+                                    Navigator.pop(context, false);
+                                  },
+                                  child: Text(
+                                    "Cancel",
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                                RetroButton(
+                                  text: "Confirm",
+                                  onPressed: () {
+                                    AudioManager().playGameStart();
+                                    _selectCharacter(character);
+                                    Navigator.pop(context, true);
+                                  },
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.secondary,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
                         },
                       );
                     },
@@ -918,10 +966,10 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                   character: character,
                   isSelectionMode: false,
                   isFlipped: isFlipped,
+                  doesFlipAnimation: true,
                   onFlip: () {
-                    isFlipped
-                        ? AudioManager().playAlertSfx()
-                        : AudioManager().playPopupSfx();
+                    AudioManager().playPopupSfx();
+
                     _toggleFlipCard(character.id);
                   },
                 );

@@ -131,8 +131,8 @@ class GameBoard extends StatelessWidget {
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 4,
                 childAspectRatio: 0.7,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
               ),
               itemCount: gameState.allCharacters.length,
               itemBuilder: (context, index) {
@@ -143,6 +143,7 @@ class GameBoard extends StatelessWidget {
                   character: character,
                   isFlipped: isFlipped,
                   isSelectionMode: isSelectionMode,
+                  doesFlipAnimation: true,
                   onFlip: () => onFlip?.call(character),
                   onSelect: () => onSelect?.call(character),
                 );

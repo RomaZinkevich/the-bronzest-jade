@@ -17,6 +17,7 @@ class AnsweringPhaseUI extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!isMyTurn && currentQuestion != null) {
+      AudioManager().playPopupSfx();
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:guess_who/models/character.dart';
+import 'package:guess_who/services/audio_manager.dart';
 
 Future<void> makeGuessDialogue(
   BuildContext context, {
@@ -96,7 +97,10 @@ Future<void> makeGuessDialogue(
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => {
+              AudioManager().playAlertSfx(),
+              Navigator.of(context).pop(),
+            },
             child: Text(
               "Cancel",
               style: TextStyle(
