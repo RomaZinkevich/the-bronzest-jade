@@ -63,6 +63,9 @@ class InnerShadowInput extends StatelessWidget {
               child: TextField(
                 controller: controller,
                 textAlign: TextAlign.center,
+                cursorColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : null,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -73,7 +76,7 @@ class InnerShadowInput extends StatelessWidget {
                   hintStyle: TextStyle(
                     color: Theme.of(
                       context,
-                    ).colorScheme.tertiary.withAlpha(150),
+                    ).colorScheme.tertiary.withAlpha(200),
                     fontWeight: FontWeight.bold,
                   ),
                   border: InputBorder.none,

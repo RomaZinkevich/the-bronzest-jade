@@ -628,9 +628,17 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Image(
-                          image: AssetImage("assets/main_logo.png"),
-                          width: 300,
+                        Consumer<SettingsProvider>(
+                          builder: (context, settingsProvider, _) {
+                            return Image(
+                              image: AssetImage(
+                                settingsProvider.isDarkMode
+                                    ? "assets/dark_main_logo.png"
+                                    : "assets/main_logo.png",
+                              ),
+                              width: 300,
+                            );
+                          },
                         ),
 
                         const SizedBox(height: 100),
