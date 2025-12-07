@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:guess_who/providers/settings_provider.dart';
+import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
 import 'package:guess_who/widgets/common/inner_shadow_input.dart';
 import 'package:guess_who/services/api_service.dart';
 import 'package:guess_who/services/auth_service.dart';
+import 'package:guess_who/widgets/common/retro_icon_button.dart';
 import 'package:provider/provider.dart';
 
 class AuthPopup extends StatefulWidget {
@@ -194,7 +196,7 @@ class _AuthPopupState extends State<AuthPopup> {
                   ? Colors.white
                   : null,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.tertiary,
               ),
@@ -231,7 +233,7 @@ class _AuthPopupState extends State<AuthPopup> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black38,
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),
@@ -251,6 +253,7 @@ class _AuthPopupState extends State<AuthPopup> {
                     // Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           widget.isSignUp ? "SIGN UP" : "LOG IN",
@@ -260,12 +263,22 @@ class _AuthPopupState extends State<AuthPopup> {
                             color: Theme.of(context).colorScheme.secondary,
                           ),
                         ),
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: Icon(
-                            Icons.close_rounded,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
+
+                        RetroIconButton(
+                          onPressed: () {
+                            AudioManager().playAlertSfx();
+                            Navigator.of(context).pop();
+                          },
+                          tooltip: "Close popup",
+                          borderWidth: 1,
+                          borderColor: Theme.of(context).colorScheme.secondary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary,
+                          icon: Icons.close_rounded,
+                          iconSize: 20,
+                          playOnClick: false,
+                          padding: 0,
                         ),
                       ],
                     ),
@@ -331,7 +344,9 @@ class _AuthPopupState extends State<AuthPopup> {
                             backgroundColor: Theme.of(
                               context,
                             ).colorScheme.secondary,
-                            foregroundColor: Colors.white,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.tertiary,
                             onPressed: _submit,
                           ),
                   ],

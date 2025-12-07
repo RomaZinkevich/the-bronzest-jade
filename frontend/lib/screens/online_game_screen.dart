@@ -429,6 +429,11 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     _gameState.dispose();
     _scrollController.dispose();
     _questionController.dispose();
+
+    AudioManager().playBackgroundMusic(
+      AudioAssets.menuMusic,
+      fadeDuration: const Duration(seconds: 3),
+    );
     super.dispose();
   }
 
@@ -530,9 +535,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                             ),
                             borderWidth: 2,
 
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
+                            onPressed: _handleManualBack,
 
                             tooltip: "Go back home",
                           )
@@ -569,6 +572,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                               gameState: gameState,
                               isCharacterNameRevealed: _isCharacterNameRevealed,
                               onToggleCharacterNameReveal: () {
+                                AudioManager().playPopupSfx();
                                 setState(() {
                                   _isCharacterNameRevealed =
                                       !_isCharacterNameRevealed;
@@ -603,6 +607,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
                         qaHistory: _qaHistory,
                         isExpanded: _isMessageLogExpanded,
                         onToggleExpanded: () => {
+                          AudioManager().playPopupSfx(),
                           setState(() {
                             _isMessageLogExpanded = !_isMessageLogExpanded;
                           }),

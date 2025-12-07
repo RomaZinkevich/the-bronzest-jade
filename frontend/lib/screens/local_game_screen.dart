@@ -7,6 +7,7 @@ import 'package:guess_who/models/character.dart';
 import 'package:guess_who/providers/settings_provider.dart';
 import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/services/game_state_manager.dart';
+import 'package:guess_who/widgets/character/character_card.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
 import 'package:guess_who/widgets/common/retro_icon_button.dart';
 import 'package:guess_who/widgets/game/make_guess_dialogue.dart';
@@ -740,10 +741,21 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                     itemCount: gameState.allCharacters.length,
                     itemBuilder: (context, index) {
                       final character = gameState.allCharacters[index];
-                      return _buildCharacterCard(
-                        character,
+                      return CharacterCard(
+                        character: character,
                         isFlipped: false,
                         isSelectionMode: true,
+                        onSelect: () {
+                          AudioManager().playPopupSfx();
+                          _selectCharacter(character);
+                          // if (isSelectionMode) {
+                          // } else {
+                          //   isFlipped
+                          //       ? AudioManager().playAlertSfx()
+                          //       : AudioManager().playPopupSfx();
+                          //   _toggleFlipCard(character.id);
+                          // }
+                        },
                       );
                     },
                   )
@@ -902,126 +914,22 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                 final character = gameState.allCharacters[index];
                 final isFlipped = currentFlippedCards.contains(character.id);
 
-                return _buildCharacterCard(
-                  character,
+                return CharacterCard(
+                  character: character,
                   isSelectionMode: false,
                   isFlipped: isFlipped,
+                  onFlip: () {
+                    isFlipped
+                        ? AudioManager().playAlertSfx()
+                        : AudioManager().playPopupSfx();
+                    _toggleFlipCard(character.id);
+                  },
                 );
               },
             ),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildCharacterCard(
-    Character character, {
-    required bool isFlipped,
-    required bool isSelectionMode,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        if (isSelectionMode) {
-          AudioManager().playPopupSfx();
-          _selectCharacter(character);
-        } else {
-          isFlipped
-              ? AudioManager().playAlertSfx()
-              : AudioManager().playPopupSfx();
-          _toggleFlipCard(character.id);
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        decoration: BoxDecoration(
-          color: isFlipped
-              ? Colors.grey.shade800
-              : Theme.of(context).colorScheme.primary,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.secondary,
-            width: 3,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: AnimatedOpacity(
-          opacity: isFlipped ? 0.3 : 1.0,
-          duration: const Duration(milliseconds: 300),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(1),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      character.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTree) {
-                        debugPrint(error.toString());
-                        return Container(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.secondary.withAlpha(100),
-                          child: Icon(
-                            Icons.person,
-                            size: 40,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.secondary.withAlpha(100),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                  : null,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Theme.of(context).colorScheme.tertiary,
-                              ),
-                              strokeCap: StrokeCap.round,
-                              strokeWidth: 5,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-
-              //* CHARACTER NAME
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                child: Text(
-                  character.name,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.tertiary,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
