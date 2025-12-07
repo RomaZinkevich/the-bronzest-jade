@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:guess_who/models/character.dart';
 import 'package:guess_who/models/character_set_draft.dart';
 import 'package:guess_who/services/api_service.dart';
+import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/services/draft_storage_service.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
 import 'package:guess_who/widgets/common/retro_icon_button.dart';
@@ -61,6 +62,8 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
   }
 
   void _createNewDraft() {
+    AudioManager().playPopupSfx();
+
     showDialog(
       context: context,
       builder: (context) => CharacterDraftDialogue(
@@ -122,7 +125,10 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
 
           RetroButton(
             text: "Delete",
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () {
+              AudioManager().playAlertSfx();
+              Navigator.pop(context, true);
+            },
             fontSize: 14,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           ),
@@ -574,26 +580,54 @@ class _CreateCharactersetScreenState extends State<CreateCharactersetScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Create character set",
-          style: TextStyle(fontSize: 16, color: theme.tertiary),
+          "Create your set",
+          style: TextStyle(
+            fontSize: 20,
+            color: theme.tertiary,
+            shadows: [
+              Shadow(
+                color: Colors.black26,
+                offset: Offset(0, 2),
+                blurRadius: 6,
+              ),
+            ],
+          ),
         ),
+        toolbarHeight: 80,
         backgroundColor: theme.primary,
         foregroundColor: theme.tertiary,
+        leading: Navigator.canPop(context)
+            ? RetroIconButton(
+                icon: Icons.arrow_back_rounded,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                iconColor: Theme.of(context).colorScheme.tertiary,
+                iconSize: 26,
+
+                margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 0),
+                borderWidth: 2,
+
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+
+                tooltip: "Go back home",
+              )
+            : null,
         actions: [
           RetroIconButton(
             onPressed: _createNewDraft,
-            margin: EdgeInsets.only(right: 6),
             backgroundColor: theme.secondary,
-            borderWidth: 3,
+            borderWidth: 2,
             borderColor: theme.tertiary,
 
             icon: Icons.add,
             iconSize: 30,
             iconColor: theme.tertiary,
 
-            padding: 0,
+            padding: 8,
 
             tooltip: "Create draft",
+            playOnClick: false,
           ),
         ],
       ),

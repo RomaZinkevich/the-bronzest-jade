@@ -7,6 +7,7 @@ import 'package:guess_who/models/character.dart';
 import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/services/game_state_manager.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
+import 'package:guess_who/widgets/common/retro_icon_button.dart';
 import 'package:guess_who/widgets/game/make_guess_dialogue.dart';
 import 'package:particles_flutter/component/particle/particle.dart';
 import 'package:particles_flutter/particles_engine.dart';
@@ -425,6 +426,7 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
   @override
   void dispose() {
     _gameState.removeListener(_onGameStateChanged);
+
     AudioManager().playBackgroundMusic(
       AudioAssets.menuMusic,
       fadeDuration: const Duration(seconds: 6),
@@ -483,6 +485,26 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
                   fontSize: 20,
                 ),
               ),
+              leading: Navigator.canPop(context)
+                  ? RetroIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      iconColor: Theme.of(context).colorScheme.tertiary,
+                      iconSize: 26,
+
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 0,
+                      ),
+                      borderWidth: 2,
+
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+
+                      tooltip: "Go back home",
+                    )
+                  : null,
             ),
             body: _buildBody(gameState),
             bottomNavigationBar: gameState.gamePhase == GamePhase.playing

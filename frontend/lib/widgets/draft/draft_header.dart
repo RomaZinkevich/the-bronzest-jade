@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:guess_who/models/character_set_draft.dart";
+import "package:guess_who/services/audio_manager.dart";
 
 class DraftHeader extends StatelessWidget {
   final CharacterSetDraft draft;
@@ -114,12 +115,17 @@ class DraftHeader extends StatelessWidget {
             ),
 
             PopupMenuButton<String>(
+              onOpened: () {
+                AudioManager().playButtonClick();
+              },
               color: theme.tertiary,
               icon: Icon(Icons.more_vert, color: theme.tertiary),
               onSelected: (value) {
                 if (value == "delete") {
+                  AudioManager().playPopupSfx();
                   onDelete();
                 } else if (value == "visibility") {
+                  AudioManager().playButtonClick();
                   onToggleVisibility();
                 }
               },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:guess_who/services/audio_manager.dart';
 import 'package:provider/provider.dart';
 import '../providers/settings_provider.dart';
 
@@ -34,10 +35,12 @@ class SettingsDropdown extends StatelessWidget {
           ),
           offset: const Offset(0, 50),
           itemBuilder: (BuildContext context) {
+            AudioManager().playPopupSfx();
             return [
               PopupMenuItem<String>(
                 value: 'theme',
                 onTap: () {
+                  AudioManager().playPopupSfx();
                   settings.toggleTheme();
                 },
                 child: Container(
@@ -57,6 +60,8 @@ class SettingsDropdown extends StatelessWidget {
               PopupMenuItem<String>(
                 value: 'sound',
                 onTap: () {
+                  AudioManager().playPopupSfx();
+
                   settings.toggleSound();
                 },
                 child: Container(
@@ -78,6 +83,7 @@ class SettingsDropdown extends StatelessWidget {
               PopupMenuItem<String>(
                 value: 'music',
                 onTap: () {
+                  AudioManager().playPopupSfx();
                   settings.toggleMusic();
                 },
                 child: Container(

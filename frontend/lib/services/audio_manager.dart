@@ -98,7 +98,6 @@ class AudioManager {
 
       if (randomizedPitch) {
         final pitch = 0.8 + (_random.nextDouble() * 0.3);
-        debugPrint("Pitch: $pitch");
         _sfxPlayer.setPlaybackRate(pitch);
       } else {
         _sfxPlayer.setPlaybackRate(1.0);
@@ -121,7 +120,12 @@ class AudioManager {
   Future<void> playButtonClickVariation() =>
       playSfxVariation(AudioAssets.buttonClickVariation, 3);
 
-  Future<void> playGameStart() => playSfx("sounds/game_start.mp3");
+  Future<void> playGameStart() => playSfx(AudioAssets.gameStartSfx);
+
+  Future<void> playPopupSfx() => playSfx(AudioAssets.popUpSfx);
+
+  Future<void> playAlertSfx() => playSfx(AudioAssets.alertSfx);
+
   Future<void> playCardFlip() => playSfx("sounds/card_flip.mp3");
   Future<void> playCorrectGuess() => playSfx("sounds/correct.mp3");
   Future<void> playWrongGuess() => playSfx("sounds/wrong.mp3");
