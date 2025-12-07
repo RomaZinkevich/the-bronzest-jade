@@ -1,6 +1,6 @@
 name: guess_who
 description: "Guess who? game"
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -9,34 +9,50 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.5.0
+  http: ^1.6.0
   particles_flutter: ^1.0.0
   provider: ^6.1.5
   stomp_dart_client: ^3.0.1
   uuid: ^4.5.2
+  shared_preferences: 2.5.3
+  image_picker: 1.2.1
+  path_provider: ^2.1.1
+  path: ^1.8.3
+  audioplayers: ^6.5.1
+  share_plus: ^12.0.1
+  app_links: ^6.4.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
-
 flutter:
   uses-material-design: true
   assets:
     - assets/main_menu.png
     - assets/main_logo.png
+    - assets/dark_main_logo.png
+    - assets/guesswhoiconbg.png
+
+    - assets/music/background_loop.mp3
+    - assets/music/lobby_loop.mp3
+    - assets/music/game_loop.mp3
+
+    - assets/sounds/button_click1.mp3
+    - assets/sounds/button_click2.mp3
+    - assets/sounds/button_click3.mp3
+    - assets/sounds/pop_up_sfx.mp3
+    - assets/sounds/alert_sfx.mp3
+    - assets/sounds/game_won.mp3
+    - assets/sounds/wrong_answer_sfx.mp3
+    - assets/sounds/game_start.mp3
+    - assets/sounds/game_over_sfx.mp3
 
     - assets/icons/default_user.png
     - assets/icons/find_room.png
     - assets/icons/join_submit.png
   fonts:
-  - family: BowlbyOneSC
-    fonts:
-      - asset: fonts/BowlbyOneSC-Regular.ttf
-
-
-
-
-
-
+    - family: BowlbyOneSC
+      fonts:
+        - asset: fonts/BowlbyOneSC-Regular.ttf

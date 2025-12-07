@@ -1,23 +1,29 @@
-import 'dart:async';
-import 'dart:convert';
+import "dart:async";
+import "dart:convert";
 
-import 'package:flutter/material.dart';
-import 'package:guess_who/models/character.dart';
-import 'package:guess_who/models/room.dart';
-import 'package:guess_who/services/game_state_manager.dart';
-import 'package:guess_who/services/websocket_service.dart';
-import 'package:guess_who/widgets/answering_phase_ui.dart';
-import 'package:guess_who/widgets/asking_phase_ui.dart';
-import 'package:guess_who/widgets/game_board.dart';
-import 'package:guess_who/widgets/make_guess_dialogue.dart';
-import 'package:guess_who/widgets/qa_message_log.dart';
-import 'package:provider/provider.dart';
+import "package:flutter/material.dart";
+import "package:guess_who/constants/assets/audio_assets.dart";
+import "package:guess_who/models/character.dart";
+import "package:guess_who/models/room.dart";
+import "package:guess_who/services/audio_manager.dart";
+import "package:guess_who/providers/settings_provider.dart";
+import "package:guess_who/services/game_state_manager.dart";
+import "package:guess_who/services/websocket_service.dart";
+import "package:guess_who/widgets/common/retro_button.dart";
+import "package:guess_who/widgets/common/retro_icon_button.dart";
+import "package:guess_who/widgets/game/answering_phase_ui.dart";
+import "package:guess_who/widgets/game/asking_phase_ui.dart";
+import "package:guess_who/widgets/game/game_board.dart";
+import "package:guess_who/widgets/game/make_guess_dialogue.dart";
+import "package:guess_who/widgets/game/qa_message_log.dart";
+import "package:provider/provider.dart";
 
 enum TurnPhase { asking, answering }
 
 class OnlineGameScreen extends StatefulWidget {
   final Room room;
   final String playerId;
+  final String playerName;
   final bool isHost;
   final Character selectedCharacter;
   final WebsocketService wsService;
@@ -27,6 +33,7 @@ class OnlineGameScreen extends StatefulWidget {
     super.key,
     required this.room,
     required this.playerId,
+    required this.playerName,
     required this.isHost,
     required this.selectedCharacter,
     required this.wsService,
@@ -43,7 +50,10 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
   TurnPhase _currentPhase = TurnPhase.asking;
   String? _currentQuestion;
+  String? _currentQuestionerName;
   bool _waitingForAnswer = false;
+
+  String? _opponentPlayerName;
 
   final List<Map<String, String>> _qaHistory = [];
   final ScrollController _scrollController = ScrollController();
@@ -66,7 +76,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     _gameState.initializeGame(
       mode: GameMode.online,
       characters: widget.room.characterSet!.characters,
-      playerId: widget.room.id,
+      playerId: widget.playerId,
       roomId: widget.room.id,
       roomCode: widget.room.roomCode,
       isHost: widget.isHost,
@@ -125,47 +135,74 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     debugPrint("Websocket listeners set up successfully");
   }
 
+  String _extractPlayerName(String message) {
+    final colonIndex = message.indexOf(":");
+    if (colonIndex != -1) {
+      return message.substring(0, colonIndex).trim();
+    }
+    return "Unknown";
+  }
+
   void _handleMessageDto(String messageText) {
     if (messageText.contains("joined")) {
       debugPrint("Player joined: $messageText");
     } else if (messageText.contains("ready") ||
         messageText.contains("not ready")) {
       debugPrint("Ready status changed: $messageText");
-    } else if (messageText.contains("asked:")) {
+    } else if (messageText.contains(" asked: ")) {
       final parts = messageText.split(" asked: ");
       if (parts.length < 2) return;
 
+      final questionerName = _extractPlayerName(parts[0]);
+      final question = parts[1];
+
+      final isMyQuestion = questionerName == widget.playerName;
+
+      debugPrint(
+        "questionerName: $questionerName, playerName: ${widget.playerName}",
+      );
+
+      if (!isMyQuestion && _opponentPlayerName == null) {
+        _opponentPlayerName = questionerName;
+      }
+
       if (!mounted) return;
 
       setState(() {
-        _currentQuestion = parts[1];
+        _currentQuestion = question;
+        _currentQuestionerName = questionerName;
         _currentPhase = TurnPhase.answering;
       });
-    } else if (messageText.contains("answered:")) {
+    } else if (messageText.contains(" answered: ")) {
       final parts = messageText.split(" answered: ");
       if (parts.length < 2) return;
 
-      final answererId = parts[0].replaceAll("guest-player-", "");
+      final answererName = _extractPlayerName(parts[0]);
       final answer = parts[1];
+
+      final isMyAnswer = answererName == widget.playerName;
+
+      if (!isMyAnswer && _opponentPlayerName == null) {
+        _opponentPlayerName = answererName;
+      }
 
       if (!mounted) return;
 
       setState(() {
-        if (_currentQuestion != null) {
-          final questionerId = _gameState.isMyTurn
-              ? widget.playerId.substring(0, 6)
-              : (answererId == widget.playerId.substring(0, 6)
-                    ? "Opponent"
-                    : answererId);
+        if (_currentQuestion != null && _currentQuestionerName != null) {
+          final isQuestionerMe = _currentQuestionerName == widget.playerName;
 
           _qaHistory.add({
             "question": _currentQuestion!,
-            "questionerId": questionerId,
+            "questionerName": _currentQuestionerName!,
+            "isMyQuestion": isQuestionerMe.toString(),
             "answer": answer,
-            "answererId": answererId,
+            "answererName": answererName,
+            "isMyAnswer": isMyAnswer.toString(),
           });
 
           _currentQuestion = null;
+          _currentQuestionerName = null;
         }
 
         _gameState.switchTurn();
@@ -200,6 +237,12 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   void _handleGameover(Map<String, dynamic> response) {
     final String winnerId = response["winnerId"];
     final isWinner = winnerId == widget.playerId;
+
+    if (isWinner) {
+      AudioManager().playGameWon();
+    } else {
+      AudioManager().playGameLost();
+    }
 
     showDialog(
       context: context,
@@ -291,6 +334,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
 
     debugPrint("Sending question: $question");
     widget.wsService.sendQuestion(question);
+    AudioManager().playButtonClickVariation();
     setState(() {
       _currentQuestion = question;
       _currentPhase = TurnPhase.answering;
@@ -339,7 +383,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     try {
       widget.wsService.sendGuess(guessedCharacter.id);
     } catch (e) {
-      debugPrint('Error finishing game: $e');
+      debugPrint("Error finishing game: $e");
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -353,6 +397,7 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
   }
 
   void _handleIncorrectGuess(Map<String, dynamic> response) {
+    AudioManager().wrongAnswerSfx();
     setState(() {
       _gameState.switchTurn();
       _currentPhase = TurnPhase.asking;
@@ -384,7 +429,73 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
     _gameState.dispose();
     _scrollController.dispose();
     _questionController.dispose();
+
+    AudioManager().playBackgroundMusic(
+      AudioAssets.menuMusic,
+      fadeDuration: const Duration(seconds: 3),
+    );
     super.dispose();
+  }
+
+  Future<void> _handleManualBack() async {
+    if (!mounted) return;
+    final ctx = context;
+
+    final shouldLeave = await showDialog<bool>(
+      context: ctx,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).colorScheme.tertiary,
+        title: Text(
+          "Leave Game?",
+          style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
+        ),
+        content: Text(
+          "Are you sure you want to leave this game?",
+          style: TextStyle(color: Theme.of(ctx).colorScheme.secondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              AudioManager().playButtonClick();
+              Navigator.pop(ctx, false);
+            },
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
+            ),
+          ),
+          // FilledButton(
+          //   onPressed: ,
+          //   style: ButtonStyle(
+          //     backgroundColor: WidgetStatePropertyAll(
+          //       Theme.of(ctx).colorScheme.error,
+          //     ),
+          //   ),
+          //   child: Text(
+          //     "Leave",
+          //     style: TextStyle(color: Theme.of(ctx).colorScheme.tertiary),
+          //   ),
+          // ),
+          RetroButton(
+            text: "Leave",
+            onPressed: () => Navigator.pop(ctx, true),
+            backgroundColor: Theme.of(ctx).colorScheme.error,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLeave == true && mounted) {
+      widget.wsService.disconnect();
+      if (ctx.mounted) {
+        AudioManager().playBackgroundMusic(
+          AudioAssets.menuMusic,
+          fadeDuration: const Duration(seconds: 3),
+        );
+        Navigator.pop(ctx);
+      }
+    }
   }
 
   @override
@@ -394,165 +505,169 @@ class _OnlineGameScreenState extends State<OnlineGameScreen> {
       onPopInvokedWithResult: (didPop, dynamic) async {
         if (didPop) return;
 
-        final shouldLeave = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(
-              "Leave Room?",
-              style: TextStyle(color: Theme.of(context).colorScheme.primary),
-            ),
-            content: Text(
-              "Are you sure you want to leave this room?",
-              style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(
-                  "Cancel",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(
-                    Theme.of(context).colorScheme.error,
-                  ),
-                ),
-                child: Text(
-                  "Leave",
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.tertiary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-
-        if (shouldLeave == true) {
-          widget.wsService.disconnect();
-
-          if (context.mounted) {
-            Navigator.pop(context);
-          }
-        }
+        _handleManualBack();
       },
       child: ChangeNotifierProvider.value(
         value: _gameState,
         child: Consumer<GameStateManager>(
           builder: (context, gameState, child) {
-            return Scaffold(
-              resizeToAvoidBottomInset: true,
-              appBar: AppBar(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                iconTheme: IconThemeData(
-                  color: Theme.of(context).colorScheme.tertiary,
-                ),
-                title: Column(
-                  children: [
-                    Text(
-                      gameState.isMyTurn ? "Your Turn" : "Opponent's Turn",
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.tertiary,
-                        fontSize: 20,
-                      ),
+            return Consumer<SettingsProvider>(
+              builder: (context, settingsProvider, _) {
+                return Scaffold(
+                  resizeToAvoidBottomInset: true,
+                  appBar: AppBar(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    iconTheme: IconThemeData(
+                      color: Theme.of(context).colorScheme.tertiary,
                     ),
-                    Text(
-                      _waitingForAnswer
-                          ? "Waiting for answer..."
-                          : (gameState.isMyTurn
-                                ? "Ask or Guess"
-                                : "Answer question"),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.tertiary,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              body: Column(
-                children: [
-                  Expanded(
-                    child: GameBoard(
-                      gameState: gameState,
-                      isCharacterNameRevealed: _isCharacterNameRevealed,
-                      onToggleCharacterNameReveal: () {
-                        setState(() {
-                          _isCharacterNameRevealed = !_isCharacterNameRevealed;
-                        });
-                      },
-                      onFlip: (character) => _toggleFlipCard(character.id),
-                      isSelectionMode: false,
-                    ),
-                  ),
-                ],
-              ),
-              bottomNavigationBar: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  QAMessageLog(
-                    qaHistory: _qaHistory,
-                    isExpanded: _isMessageLogExpanded,
-                    onToggleExpanded: () => {
-                      setState(() {
-                        _isMessageLogExpanded = !_isMessageLogExpanded;
-                      }),
-                    },
-                    scrollController: _scrollController,
-                    currentPlayerId: widget.playerId,
-                  ),
+                    leading: Navigator.canPop(context)
+                        ? RetroIconButton(
+                            icon: Icons.arrow_back_rounded,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            iconColor: Theme.of(context).colorScheme.tertiary,
+                            iconSize: 26,
 
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 100),
-                    padding: EdgeInsets.only(
-                      top: 15,
-                      bottom: MediaQuery.of(context).viewInsets.bottom > 0
-                          ? MediaQuery.of(context).viewInsets.bottom + 15
-                          : 45,
-                      left: 16,
-                      right: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      border: _isMessageLogExpanded
-                          ? Border(
-                              top: BorderSide(
-                                color: Theme.of(context).colorScheme.tertiary,
-                                width: 4,
-                              ),
-                            )
-                          : null,
-                      boxShadow: _isMessageLogExpanded
-                          ? [
-                              BoxShadow(
-                                color: Theme.of(context).colorScheme.shadow,
-                                blurRadius: 4,
-                                offset: const Offset(0, -2),
-                              ),
-                            ]
-                          : [],
-                    ),
-                    child: _currentPhase == TurnPhase.asking
-                        ? AskingPhaseUI(
-                            gameState: gameState,
-                            isWaitingForAnswer: _waitingForAnswer,
-                            questionController: _questionController,
-                            onSendQuestion: _sendQuestion,
-                            onMakeGuess: _makeGuess,
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 0,
+                            ),
+                            borderWidth: 2,
+
+                            onPressed: _handleManualBack,
+
+                            tooltip: "Go back home",
                           )
-                        : AnsweringPhaseUI(
-                            isMyTurn: gameState.isMyTurn,
-                            currentQuestion: _currentQuestion,
-                            onSendAnswer: _sendAnswer,
+                        : null,
+                    title: Column(
+                      children: [
+                        Text(
+                          gameState.isMyTurn ? "Your Turn" : "Opponent's Turn",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.tertiary,
+                            fontSize: 20,
                           ),
+                        ),
+                        Text(
+                          _waitingForAnswer
+                              ? "Waiting for answer..."
+                              : (gameState.isMyTurn
+                                    ? "Ask or Guess"
+                                    : "Answer question"),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.tertiary,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                  body: Stack(
+                    children: [
+                      Column(
+                        children: [
+                          Expanded(
+                            child: GameBoard(
+                              gameState: gameState,
+                              isCharacterNameRevealed: _isCharacterNameRevealed,
+                              onToggleCharacterNameReveal: () {
+                                AudioManager().playPopupSfx();
+                                setState(() {
+                                  _isCharacterNameRevealed =
+                                      !_isCharacterNameRevealed;
+                                });
+                              },
+                              onFlip: (character) =>
+                                  _toggleFlipCard(character.id),
+                              isSelectionMode: false,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (settingsProvider.isDarkMode)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withAlpha(25),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary.withAlpha(15),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  bottomNavigationBar: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      QAMessageLog(
+                        qaHistory: _qaHistory,
+                        isExpanded: _isMessageLogExpanded,
+                        onToggleExpanded: () => {
+                          AudioManager().playPopupSfx(),
+                          setState(() {
+                            _isMessageLogExpanded = !_isMessageLogExpanded;
+                          }),
+                        },
+                        scrollController: _scrollController,
+                        currentPlayerId: widget.playerId,
+                        myPlayerName: widget.playerName,
+                        opponentPlayerName: _opponentPlayerName,
+                      ),
+
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 100),
+                        padding: EdgeInsets.only(
+                          top: 15,
+                          bottom: MediaQuery.of(context).viewInsets.bottom > 0
+                              ? MediaQuery.of(context).viewInsets.bottom + 15
+                              : 45,
+                          left: 16,
+                          right: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          border: _isMessageLogExpanded
+                              ? Border(
+                                  top: BorderSide(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.tertiary,
+                                    width: 4,
+                                  ),
+                                )
+                              : null,
+                          boxShadow: _isMessageLogExpanded
+                              ? [
+                                  BoxShadow(
+                                    color: Theme.of(context).colorScheme.shadow,
+                                    blurRadius: 4,
+                                    offset: const Offset(0, -2),
+                                  ),
+                                ]
+                              : [],
+                        ),
+                        child: _currentPhase == TurnPhase.asking
+                            ? AskingPhaseUI(
+                                gameState: gameState,
+                                isWaitingForAnswer: _waitingForAnswer,
+                                questionController: _questionController,
+                                onSendQuestion: _sendQuestion,
+                                onMakeGuess: _makeGuess,
+                              )
+                            : AnsweringPhaseUI(
+                                isMyTurn: gameState.isMyTurn,
+                                currentQuestion: _currentQuestion,
+                                onSendAnswer: _sendAnswer,
+                              ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             );
           },
         ),

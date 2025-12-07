@@ -2,14 +2,22 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:guess_who/constants/assets/audio_assets.dart';
+import 'package:guess_who/screens/create_characterset_screen.dart';
 import 'package:guess_who/screens/local_game_screen.dart';
 import 'package:guess_who/screens/online_lobby_screen.dart';
+import 'package:guess_who/widgets/auth_popup.dart';
 import 'package:guess_who/services/api_service.dart';
-import 'package:guess_who/widgets/appbar.dart';
-import 'package:guess_who/widgets/popup_menu.dart';
-import 'package:guess_who/widgets/retro_button.dart';
-import 'package:guess_who/widgets/retro_icon_button.dart';
-import 'package:uuid/uuid.dart';
+import 'package:guess_who/services/audio_manager.dart';
+import 'package:guess_who/services/auth_service.dart';
+import 'package:guess_who/services/deep_link_service.dart';
+import 'package:guess_who/widgets/common/appbar.dart';
+import 'package:guess_who/widgets/common/inner_shadow_input.dart';
+import 'package:guess_who/widgets/common/popup_menu.dart';
+import 'package:guess_who/widgets/common/retro_button.dart';
+import 'package:guess_who/widgets/common/retro_icon_button.dart';
+import 'package:guess_who/providers/settings_provider.dart';
+import 'package:provider/provider.dart';
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -20,11 +28,78 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   final TextEditingController _roomCodeController = TextEditingController();
-  final String _playerId = const Uuid().v4();
+
+  String _playerId = "";
+  String _playerName = "";
+  bool _isAuthenticated = false;
+
+  bool _isJoining = false;
+  bool _dialogOpen = false;
+  bool _screenActive = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAudio();
+    _initialize();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.of(
+        context,
+        rootNavigator: true,
+      ).popUntil((route) => route.isFirst);
+    });
+
+    DeepLinkService().addListener(_checkPendingDeepLink);
+  }
+
+  Future<void> _initializeAudio() async {
+    await AudioManager().setMusicVolume(0.3);
+
+    await AudioManager().playBackgroundMusic(
+      AudioAssets.menuMusic,
+      fadeDuration: const Duration(seconds: 6),
+    );
+  }
+
+  Future<void> _initialize() async {
+    await _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final userId = await AuthService.getUserId();
+    final username = await AuthService.getUsername();
+    final isAuth = await AuthService.isAuthenticated();
+
+    setState(() {
+      _playerId = userId ?? "";
+      _playerName = username ?? "Guest";
+      _isAuthenticated = isAuth;
+    });
+
+    _checkPendingDeepLink();
+  }
+
+  void _checkPendingDeepLink() {
+    final deepLinkService = DeepLinkService();
+    final roomCode = deepLinkService.pendingRoomCode;
+
+    if (roomCode == null || roomCode.isEmpty) return;
+
+    deepLinkService.clearPendingRoomCode();
+    _roomCodeController.text = roomCode;
+
+    if (_playerId.isEmpty) return;
+
+    if (mounted) {
+      _joinWithCode();
+    }
+  }
 
   @override
   void dispose() {
     _roomCodeController.dispose();
+    _screenActive = false;
     super.dispose();
   }
 
@@ -59,6 +134,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Future<void> _joinWithCode() async {
+    if (!_screenActive) return;
+    if (_isJoining) return;
+    _isJoining = true;
+
     String code = _roomCodeController.text.trim().toUpperCase();
     if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -71,46 +150,60 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         ),
       );
 
+      _isJoining = false;
       return;
     }
 
-    //* LOADING
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(
-            Theme.of(context).colorScheme.primary,
+    if (mounted) {
+      _dialogOpen = true;
+
+      //* LOADING
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).colorScheme.primary,
+            ),
+            strokeCap: StrokeCap.round,
+            strokeWidth: 5,
           ),
-          strokeCap: StrokeCap.round,
-          strokeWidth: 5,
         ),
-      ),
-    );
+      ).then((_) {
+        _dialogOpen = false;
+      });
+    }
 
     try {
       final room = await ApiService.joinRoom(code, _playerId);
 
-      if (mounted) {
-        Navigator.pop(context);
+      if (!mounted) return;
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OnlineLobbyScreen(
-              room: room,
-              playerId: _playerId,
-              isHost: false,
-            ),
-          ),
-        );
+      if (_dialogOpen && _screenActive) {
+        Navigator.of(context, rootNavigator: true).pop();
+        _dialogOpen = false;
       }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OnlineLobbyScreen(
+            room: room,
+            playerId: _playerId,
+            playerName: _playerName,
+            isHost: false,
+          ),
+        ),
+      );
     } catch (e) {
       debugPrint("$e");
-      if (mounted) {
-        Navigator.pop(context);
+      if (mounted && _dialogOpen) {
+        Navigator.of(context, rootNavigator: true).pop(context);
+        _dialogOpen = true;
+      }
 
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Failed to join room: $e"),
@@ -118,6 +211,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           ),
         );
       }
+    } finally {
+      _isJoining = false;
     }
   }
 
@@ -157,9 +252,11 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           title: "Select Character Set",
           items: characterSets
               .map(
-                (characterSets) => RetroPopupMenuItem(
-                  text: characterSets.name,
-                  onTap: () => _createRoom(characterSets.id),
+                (characterSet) => RetroPopupMenuItem(
+                  text: characterSet.name,
+                  onTap: () {
+                    _createRoom(characterSet.id);
+                  },
                 ),
               )
               .toList(),
@@ -177,6 +274,49 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _showSignUpDialog() async {
+    final result = await AuthPopup.showSignUp(context);
+    if (result == true) {
+      await _loadUserData();
+    }
+  }
+
+  Future<void> _showLoginDialog() async {
+    final result = await AuthPopup.showLogin(context);
+    if (result == true) {
+      await _loadUserData();
+    }
+  }
+
+  Future<void> _logout() async {
+    AudioManager().playAlertSfx();
+    await AuthService.clearAuthData();
+
+    // Create new guest user
+    try {
+      final guestResponse = await ApiService.createGuestUser();
+      await AuthService.saveAuthData(
+        token: guestResponse["token"],
+        userId: guestResponse["userId"],
+        username: guestResponse["username"],
+        isGuest: true,
+      );
+    } catch (e) {
+      debugPrint("Failed to create guest user: $e");
+    }
+
+    await _loadUserData();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("Logged out successfully"),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+        ),
+      );
     }
   }
 
@@ -207,6 +347,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             builder: (context) => OnlineLobbyScreen(
               room: room,
               playerId: _playerId,
+              playerName: _playerName,
               isHost: true,
             ),
           ),
@@ -445,174 +586,141 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        playerName: "Guest Player",
-        playerId: "#${_playerId.substring(0, 6)}",
-        onSettingsPressed: () {},
-      ),
-      body: Stack(
-        children: [
-          SizedBox.expand(
-            child: Image(
-              image: AssetImage("assets/main_menu.png"),
-              fit: BoxFit.cover,
-            ),
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        return Scaffold(
+          appBar: CustomAppBar(
+            playerName: _playerName,
+            playerId:
+                "#${_playerId.isNotEmpty ? _playerId.substring(0, 6) : ""}",
+            onSettingsPressed: () {},
+            onSignUpPressed: _showSignUpDialog,
+            onLoginPressed: _showLoginDialog,
+            onLogoutPressed: _logout,
+            isAuthenticated: _isAuthenticated,
+            onCreateCharacterSetPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      CreateCharactersetScreen(playerId: _playerId),
+                ),
+              );
+            },
           ),
-
-          SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height - 90,
+          body: Stack(
+            children: [
+              SizedBox.expand(
+                child: Image.asset(
+                  "assets/main_menu.png",
+                  fit: BoxFit.cover,
+                  color: settings.isDarkMode ? Colors.black54 : null,
+                  colorBlendMode: settings.isDarkMode ? BlendMode.darken : null,
+                ),
               ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Image(
-                      image: AssetImage("assets/main_logo.png"),
-                      width: 300,
-                    ),
 
-                    const SizedBox(height: 100),
-
-                    RetroButton(
-                      text: "Play local",
-                      fontSize: 18,
-
-                      icon: Icons.videogame_asset,
-                      iconSize: 30,
-                      iconAtEnd: true,
-
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 25,
-                        vertical: 15,
-                      ),
-
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LocalGameScreen(),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 60),
-
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 30),
-                      padding: EdgeInsets.symmetric(vertical: 4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.rectangle,
-                        border: BoxBorder.all(
-                          color: Theme.of(context).colorScheme.primary,
-                          width: 4,
-                        ),
-                        borderRadius: BorderRadius.circular(100),
-                        color: Theme.of(context).colorScheme.tertiary,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Container(
-                              margin: EdgeInsets.only(left: 8),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(100),
-                                boxShadow: [
-                                  const BoxShadow(color: Color(0xFF5B7B76)),
-                                  BoxShadow(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.secondary,
-                                    blurRadius: 4,
-                                    spreadRadius: -2,
-                                  ),
-                                ],
-                              ),
-                              child: TextField(
-                                controller: _roomCodeController,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.tertiary,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: "Join with code...",
-                                  hintStyle: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.tertiary.withAlpha(150),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(width: 4),
-
-                          RetroIconButton(
-                            onPressed: _joinWithCode,
-                            tooltip: "Join with code",
-                            imagePath: "assets/icons/join_submit.png",
-                            iconSize: 65,
-                            padding: 0,
-                            margin: EdgeInsets.only(right: 5),
-
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.secondary,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    Row(
+              SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height - 90,
+                  ),
+                  child: Center(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        RetroButton(
-                          text: 'Create a room',
-                          fontSize: 18,
-
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 50,
-                            vertical: 20,
-                          ),
-
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          onPressed: _showCreateRoomMenu,
+                        Consumer<SettingsProvider>(
+                          builder: (context, settingsProvider, _) {
+                            return Image(
+                              image: AssetImage(
+                                settingsProvider.isDarkMode
+                                    ? "assets/dark_main_logo.png"
+                                    : "assets/main_logo.png",
+                              ),
+                              width: 300,
+                            );
+                          },
                         ),
 
-                        SizedBox(width: 8),
+                        const SizedBox(height: 100),
+                        RetroButton(
+                          text: "Play local",
+                          fontSize: 20,
 
-                        RetroIconButton(
-                          onPressed: _showFindRoomsMenu,
-                          tooltip: "Find rooms",
-                          imagePath: "assets/icons/find_room.png",
-                          iconSize: 55,
-                          padding: 6,
+                          icon: Icons.videogame_asset,
+                          iconSize: 34,
+                          iconAtEnd: true,
+
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 26,
+                            vertical: 16,
+                          ),
+
+                          onPressed: () {
+                            AudioManager().playGameStart();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LocalGameScreen(),
+                              ),
+                            );
+                          },
+
+                          playOnClick: false,
+                        ),
+
+                        const SizedBox(height: 60),
+
+                        InnerShadowInput(
+                          controller: _roomCodeController,
+                          onSubmit: () => _joinWithCode(),
+                          submitTooltip: "Join with code",
+                          hintText: "Join with code...",
+                          disableShadows: settings.isDarkMode,
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            RetroButton(
+                              text: 'Create a room',
+                              fontSize: 18,
+
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 40,
+                                vertical: 20,
+                              ),
+
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              onPressed: () {
+                                _showCreateRoomMenu();
+                              },
+                            ),
+
+                            SizedBox(width: 4),
+
+                            RetroIconButton(
+                              onPressed: _showFindRoomsMenu,
+                              tooltip: "Find rooms",
+                              imagePath: "assets/icons/find_room.png",
+                              iconSize: 55,
+                              padding: 6,
+                              borderWidth: 0,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:guess_who/widgets/retro_button.dart';
+import 'package:guess_who/services/audio_manager.dart';
+import 'package:guess_who/widgets/common/retro_button.dart';
 
 class PopupMenu extends StatelessWidget {
   final String title;
@@ -130,13 +131,16 @@ class PopupMenu extends StatelessWidget {
                   horizontal: 30,
                   vertical: 12,
                 ),
-                borderRadius: 10,
+                borderRadius: 30,
                 backgroundColor: Theme.of(context).colorScheme.error,
                 foregroundColor: Theme.of(context).colorScheme.tertiary,
                 onPressed: () {
+                  AudioManager().playAlertSfx();
                   Navigator.of(context).pop();
                   onClose?.call();
                 },
+
+                playOnClick: false,
               ),
             ],
           ],
@@ -171,6 +175,7 @@ class RetroPopupMenuItem extends StatelessWidget {
 
     return InkWell(
       onTap: () {
+        AudioManager().playButtonClickVariation();
         Navigator.of(context).pop();
         onTap();
       },

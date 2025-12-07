@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:guess_who/models/character.dart';
+import 'package:guess_who/services/auth_service.dart';
 import 'package:http/http.dart' as http;
 
 class GameData {
@@ -90,8 +92,16 @@ class GameData {
   }
 
   static Future<List<Character>> fetchCharacters() async {
+    final headers = {"Content-Type": "application/json"};
+    final token = await AuthService.getToken();
+
+    if (token != null && token.isNotEmpty) {
+      headers["Authorization"] = "Bearer $token";
+    }
+
     final response = await http.get(
       Uri.parse('https://guesswho.190304.xyz/api/character-sets'),
+      headers: headers,
     );
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
@@ -99,6 +109,8 @@ class GameData {
 
       return characterJson.map((json) => Character.fromJson(json)).toList();
     }
+
+    debugPrint(response.statusCode.toString());
     throw Exception('Failed to load characters');
   }
 }

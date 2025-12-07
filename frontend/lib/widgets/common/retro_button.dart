@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:guess_who/services/audio_manager.dart';
 
 class RetroButton extends StatelessWidget {
   final String text;
@@ -14,6 +15,7 @@ class RetroButton extends StatelessWidget {
   final EdgeInsets? padding;
   final double borderRadius;
   final double borderWidth;
+  final bool playOnClick;
 
   const RetroButton({
     super.key,
@@ -30,6 +32,7 @@ class RetroButton extends StatelessWidget {
     this.padding,
     this.borderRadius = 100,
     this.borderWidth = 4,
+    this.playOnClick = true,
   });
 
   @override
@@ -92,7 +95,10 @@ class RetroButton extends StatelessWidget {
         ),
         padding: padding ?? defaultPadding,
       ),
-      onPressed: onPressed,
+      onPressed: () {
+        playOnClick ? AudioManager().playButtonClickVariation() : null;
+        onPressed.call();
+      },
       child: content,
     );
   }
