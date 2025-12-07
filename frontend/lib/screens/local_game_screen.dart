@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:guess_who/constants/assets/audio_assets.dart';
 import 'package:guess_who/data/game_data.dart';
 import 'package:guess_who/models/character.dart';
+import 'package:guess_who/providers/settings_provider.dart';
 import 'package:guess_who/services/audio_manager.dart';
 import 'package:guess_who/services/game_state_manager.dart';
 import 'package:guess_who/widgets/common/retro_button.dart';
@@ -466,117 +467,184 @@ class _LocalGameScreenState extends State<LocalGameScreen> {
     }
   }
 
+  Future<void> _handleManualBack() async {
+    if (!mounted) return;
+    final ctx = context;
+
+    final shouldLeave = await showDialog<bool>(
+      context: ctx,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).colorScheme.tertiary,
+        title: Text(
+          "Leave Game?",
+          style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
+        ),
+        content: Text(
+          "Are you sure you want to leave this game?",
+          style: TextStyle(color: Theme.of(ctx).colorScheme.secondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              AudioManager().playButtonClick();
+              Navigator.pop(ctx, false);
+            },
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: Theme.of(ctx).colorScheme.primary),
+            ),
+          ),
+          RetroButton(
+            text: "Leave",
+            onPressed: () => Navigator.pop(ctx, true),
+            backgroundColor: Theme.of(ctx).colorScheme.error,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLeave == true && mounted) {
+      if (ctx.mounted) {
+        Navigator.pop(ctx);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: _gameState,
       child: Consumer<GameStateManager>(
         builder: (context, gameState, child) {
-          return Scaffold(
-            appBar: AppBar(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              iconTheme: IconThemeData(
-                color: Theme.of(context).colorScheme.tertiary,
-              ),
-              title: Text(
-                gameState.gamePhase == GamePhase.characterSelection
-                    ? "Select Your Character"
-                    : "${gameState.getCurrentPlayerName()}'s Turn",
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.tertiary,
-                  fontSize: 20,
-                ),
-              ),
-              leading: Navigator.canPop(context)
-                  ? RetroIconButton(
-                      icon: Icons.arrow_back_rounded,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      iconColor: Theme.of(context).colorScheme.tertiary,
-                      iconSize: 26,
-
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 0,
-                      ),
-                      borderWidth: 2,
-
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-
-                      tooltip: "Go back home",
-                    )
-                  : null,
-            ),
-            body: _buildBody(gameState),
-            bottomNavigationBar: gameState.gamePhase == GamePhase.playing
-                ? Container(
-                    padding: EdgeInsets.only(top: 15, bottom: 45),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      border: Border(
-                        top: BorderSide(
-                          color: Theme.of(context).colorScheme.tertiary,
-                          width: 5,
-                        ),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 4,
-                          offset: const Offset(0, -2),
-                        ),
-                      ],
+          return Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, _) {
+              return Scaffold(
+                appBar: AppBar(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  iconTheme: IconThemeData(
+                    color: Theme.of(context).colorScheme.tertiary,
+                  ),
+                  title: Text(
+                    gameState.gamePhase == GamePhase.characterSelection
+                        ? "Select Your Character"
+                        : "${gameState.getCurrentPlayerName()}'s Turn",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.tertiary,
+                      fontSize: 20,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        RetroButton(
-                          text: "Make Guess",
-                          onPressed: _makeGuess,
-                          fontSize: 16,
-                          iconSize: 30,
-                          iconAtEnd: false,
-
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.tertiary,
-
-                          icon: Icons.lightbulb_rounded,
-                        ),
-
-                        const SizedBox(width: 10),
-
-                        RetroButton(
-                          text: "End Turn",
-                          fontSize: 16,
-                          iconSize: 30,
-                          iconAtEnd: false,
-
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
-
-                          onPressed: _endTurn,
+                  ),
+                  leading: Navigator.canPop(context)
+                      ? RetroIconButton(
+                          icon: Icons.arrow_back_rounded,
                           backgroundColor: Theme.of(
                             context,
-                          ).colorScheme.secondary,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.tertiary,
-                          icon: Icons.swap_horiz_rounded,
+                          ).colorScheme.primary,
+                          iconColor: Theme.of(context).colorScheme.tertiary,
+                          iconSize: 26,
+
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 0,
+                          ),
+                          borderWidth: 2,
+
+                          onPressed: _handleManualBack,
+
+                          tooltip: "Go back home",
+                        )
+                      : null,
+                ),
+                body: Stack(
+                  children: [
+                    _buildBody(gameState),
+                    if (settingsProvider.isDarkMode)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(25),
                         ),
-                      ],
-                    ),
-                  )
-                : null,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withAlpha(15),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                bottomNavigationBar: gameState.gamePhase == GamePhase.playing
+                    ? Container(
+                        padding: EdgeInsets.only(top: 15, bottom: 45),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          border: Border(
+                            top: BorderSide(
+                              color: Theme.of(context).colorScheme.tertiary,
+                              width: 5,
+                            ),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 4,
+                              offset: const Offset(0, -2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            RetroButton(
+                              text: "Make Guess",
+                              onPressed: _makeGuess,
+                              fontSize: 16,
+                              iconSize: 30,
+                              iconAtEnd: false,
+
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.error,
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.tertiary,
+
+                              icon: Icons.lightbulb_rounded,
+                            ),
+
+                            const SizedBox(width: 10),
+
+                            RetroButton(
+                              text: "End Turn",
+                              fontSize: 16,
+                              iconSize: 30,
+                              iconAtEnd: false,
+
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+
+                              onPressed: _endTurn,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.secondary,
+                              foregroundColor: Theme.of(
+                                context,
+                              ).colorScheme.tertiary,
+                              icon: Icons.swap_horiz_rounded,
+                            ),
+                          ],
+                        ),
+                      )
+                    : null,
+              );
+            },
           );
         },
       ),

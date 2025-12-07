@@ -161,10 +161,6 @@ class _AuthPopupState extends State<AuthPopup> {
       padding: const EdgeInsets.symmetric(vertical: 2),
       decoration: BoxDecoration(
         shape: BoxShape.rectangle,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary,
-          width: 4,
-        ),
         borderRadius: BorderRadius.circular(100),
         color: Theme.of(context).colorScheme.tertiary,
       ),

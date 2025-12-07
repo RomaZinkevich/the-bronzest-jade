@@ -667,6 +667,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           onSubmit: () => _joinWithCode(),
                           submitTooltip: "Join with code",
                           hintText: "Join with code...",
+                          disableShadows: settings.isDarkMode,
                         ),
 
                         const SizedBox(height: 10),

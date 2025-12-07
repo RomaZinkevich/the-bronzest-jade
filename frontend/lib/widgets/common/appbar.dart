@@ -138,7 +138,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       playerId,
                       style: TextStyle(
                         fontSize: 14,
-                        color: const Color.fromARGB(125, 0, 0, 0),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.tertiary.withOpacity(0.7),
                       ),
                     ),
                   ],
@@ -158,10 +160,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   child: CircleAvatar(
                     radius: 30,
                     backgroundColor: Theme.of(context).colorScheme.tertiary,
-                    child: CircleAvatar(
-                      radius: 25,
-                      foregroundImage: AssetImage(profilePicture),
-                      backgroundColor: Colors.transparent,
+                    child: Icon(
+                      Icons.person_rounded,
+                      size: 35,
+                      color: Theme.of(context).colorScheme.secondary,
                     ),
                   ),
                 ),
