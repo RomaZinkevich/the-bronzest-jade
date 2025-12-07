@@ -322,21 +322,25 @@ class _AccountScreenState extends State<AccountScreen> {
                                     ),
                                   ),
                                 ] else ...[
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _isEditingUsername = true;
-                                      });
-                                    },
-                                    child: Text(
-                                      (_currentUsername ?? widget.playerName)
-                                          .toUpperCase(),
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.secondary,
+                                  Flexible(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _isEditingUsername = true;
+                                        });
+                                      },
+                                      child: Text(
+                                        (_currentUsername ?? widget.playerName)
+                                            .toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.secondary,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                       ),
                                     ),
                                   ),

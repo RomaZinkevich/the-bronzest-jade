@@ -74,19 +74,24 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      playerName,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: Theme.of(context).colorScheme.tertiary,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withAlpha(50),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 150),
+                      child: Text(
+                        playerName,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: Theme.of(context).colorScheme.tertiary,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withAlpha(50),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
                       ),
                     ),
                     Text(

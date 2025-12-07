@@ -548,9 +548,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             playerId:
                 "#${_playerId.isNotEmpty ? _playerId.substring(0, 6) : ""}",
             onSettingsPressed: () {},
-            onAccountPressed: () {
+            onAccountPressed: () async {
               AudioManager().playButtonClickVariation();
-              Navigator.push(
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => AccountScreen(
@@ -559,6 +559,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   ),
                 ),
               );
+              // Refresh username when returning from account screen
+              await _loadUserData();
             },
             onCreateCharacterSetPressed: () {
               Navigator.push(
