@@ -469,8 +469,8 @@ class _OnlineLobbyScreenState extends State<OnlineLobbyScreen> {
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,
                     childAspectRatio: 0.7,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
                   ),
                   itemCount: characters.length,
                   itemBuilder: (context, index) {

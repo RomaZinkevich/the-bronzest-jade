@@ -33,6 +33,7 @@ flutter:
     - assets/main_menu.png
     - assets/main_logo.png
     - assets/dark_main_logo.png
+    - assets/guesswhoiconbg.png
 
     - assets/music/background_loop.mp3
     - assets/music/lobby_loop.mp3

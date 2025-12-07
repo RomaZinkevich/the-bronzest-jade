@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:guess_who/models/character.dart';
 
@@ -5,6 +7,7 @@ class CharacterCard extends StatefulWidget {
   final Character character;
   final bool isFlipped;
   final bool isSelectionMode;
+  final bool doesFlipAnimation;
   final VoidCallback? onFlip;
   final VoidCallback? onSelect;
 
@@ -15,18 +18,36 @@ class CharacterCard extends StatefulWidget {
     required this.isSelectionMode,
     this.onFlip,
     this.onSelect,
+    this.doesFlipAnimation = false,
   });
 
   @override
   State<CharacterCard> createState() => _CharacterCardState();
 }
 
-class _CharacterCardState extends State<CharacterCard> {
-  final ScrollController _controller = ScrollController();
+class _CharacterCardState extends State<CharacterCard>
+    with TickerProviderStateMixin {
+  final ScrollController _scrollController = ScrollController();
+  late AnimationController _flipController;
+  late Animation<double> _flipAnimation;
 
   @override
   void initState() {
     super.initState();
+
+    _flipController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _flipAnimation = CurvedAnimation(
+      parent: _flipController,
+      curve: Curves.easeInOut,
+    );
+
+    if (widget.isFlipped) {
+      _flipController.value = 1;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startAutoScroll();
@@ -34,24 +55,55 @@ class _CharacterCardState extends State<CharacterCard> {
   }
 
   void _startAutoScroll() async {
-    if (!_controller.hasClients) return;
+    if (!_scrollController.hasClients) return;
+
+    // Wait for the first frame to ensure layout is complete
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    if (!mounted || !_scrollController.hasClients) return;
+
+    if (_scrollController.position.maxScrollExtent == 0) {
+      return;
+    }
 
     while (mounted) {
-      await _controller.animateTo(
-        _controller.position.maxScrollExtent,
-        duration: const Duration(seconds: 2),
-        curve: Curves.easeInOut,
-      );
+      if (_scrollController.hasClients &&
+          _scrollController.position.maxScrollExtent > 0) {
+        await _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(seconds: 2),
+          curve: Curves.easeInOut,
+        );
+      }
 
       await Future.delayed(const Duration(milliseconds: 300));
 
-      await _controller.animateTo(
-        0,
-        duration: const Duration(seconds: 2),
-        curve: Curves.easeInOut,
-      );
+      if (_scrollController.hasClients &&
+          _scrollController.position.maxScrollExtent > 0) {
+        await _scrollController.animateTo(
+          0,
+          duration: const Duration(seconds: 2),
+          curve: Curves.easeInOut,
+        );
+      }
 
       await Future.delayed(const Duration(milliseconds: 500));
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _flipController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(CharacterCard old) {
+    super.didUpdateWidget(old);
+
+    if (widget.isFlipped != old.isFlipped) {
+      widget.isFlipped ? _flipController.forward() : _flipController.reverse();
     }
   }
 
@@ -64,13 +116,42 @@ class _CharacterCardState extends State<CharacterCard> {
         if (widget.isSelectionMode) {
           widget.onSelect?.call();
         } else {
+          if (widget.doesFlipAnimation) {
+            widget.isFlipped
+                ? _flipController.reverse()
+                : _flipController.forward();
+          }
           widget.onFlip?.call();
         }
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+      child: widget.doesFlipAnimation
+          ? AnimatedBuilder(
+              animation: _flipAnimation,
+              builder: (context, child) {
+                final angle = _flipAnimation.value * pi;
+                final isBack = angle > pi / 2;
+
+                return Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.001)
+                    ..rotateY(angle),
+                  child: isBack
+                      ? _buildCardBack(colorScheme)
+                      : _buildCard(colorScheme),
+                );
+              },
+            )
+          : _buildCard(colorScheme),
+    );
+  }
+
+  Widget _buildCardBack(ColorScheme colorScheme) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
         decoration: BoxDecoration(
-          color: widget.isFlipped ? colorScheme.secondary : colorScheme.primary,
+          color: colorScheme.secondary,
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: colorScheme.secondary, width: 3),
           boxShadow: const [
@@ -81,77 +162,89 @@ class _CharacterCardState extends State<CharacterCard> {
             ),
           ],
         ),
-        child: AnimatedOpacity(
-          opacity: widget.isSelectionMode
-              ? (widget.isFlipped ? 1.0 : 0.3)
-              : (widget.isFlipped ? 0.3 : 1.0),
-          duration: const Duration(milliseconds: 150),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              //* CHARACTER IMAGE
-              AspectRatio(
-                aspectRatio: 0.85,
-                child: Container(
-                  color: colorScheme.secondary,
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
-                    clipBehavior: Clip.hardEdge,
-                    child: Image.network(
-                      widget.character.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        debugPrint(error.toString());
-                        return Container(
-                          color: colorScheme.secondary.withAlpha(100),
-                          child: Icon(
-                            Icons.person,
-                            size: 40,
-                            color: colorScheme.primary,
-                          ),
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: colorScheme.secondary.withAlpha(100),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                  : null,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.tertiary,
-                              ),
-                              strokeCap: StrokeCap.round,
-                              strokeWidth: 5,
-                            ),
-                          ),
-                        );
-                      },
+        child: Image.asset(
+          'assets/guesswhoiconbg.png',
+          fit: BoxFit.cover,
+          colorBlendMode: BlendMode.overlay,
+          color: Colors.black12,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard(ColorScheme colorScheme) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      decoration: BoxDecoration(
+        color: widget.isFlipped ? colorScheme.secondary : colorScheme.primary,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: colorScheme.secondary, width: 3),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      child: AnimatedOpacity(
+        opacity: widget.isSelectionMode
+            ? (widget.isFlipped ? 1.0 : 0.3)
+            : (widget.isFlipped ? 0.3 : 1.0),
+        duration: const Duration(milliseconds: 150),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AspectRatio(
+              aspectRatio: 0.85,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: SizedBox.expand(
+                  child: Image.network(
+                    widget.character.imageUrl,
+                    fit: BoxFit.cover,
+                    excludeFromSemantics: true,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: progress.expectedTotalBytes != null
+                              ? progress.cumulativeBytesLoaded /
+                                    progress.expectedTotalBytes!
+                              : null,
+                          strokeCap: StrokeCap.round,
+                          strokeWidth: 5,
+                        ),
+                      );
+                    },
+                    errorBuilder: (_, _, _) => Container(
+                      color: colorScheme.secondary.withAlpha(
+                        (255 * 0.3).toInt(),
+                      ),
+                      child: Icon(
+                        Icons.person,
+                        size: 40,
+                        color: colorScheme.primary,
+                      ),
                     ),
                   ),
                 ),
               ),
+            ),
 
-              //* CHARACTER NAME
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
-                child: SingleChildScrollView(
-                  controller: _controller,
-                  scrollDirection: Axis.horizontal,
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
                   child: Text(
                     widget.character.name,
                     style: TextStyle(fontSize: 14, color: colorScheme.tertiary),
                     softWrap: false,
-                    overflow: TextOverflow.visible,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
