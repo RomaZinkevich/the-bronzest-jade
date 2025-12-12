@@ -27,6 +27,11 @@ class AudioManager {
   double get sfxVolume => _sfxVolume;
 
   Future<void> init() async {
+    await initializeMusicPlayer();
+    await intializeSfxPlayer();
+  }
+
+  Future<void> initializeMusicPlayer() async {
     await _musicPlayer.setReleaseMode(ReleaseMode.loop);
     await _musicPlayer.setAudioContext(
       AudioContext(
@@ -43,7 +48,9 @@ class AudioManager {
         ),
       ),
     );
+  }
 
+  Future<void> intializeSfxPlayer() async {
     await _sfxPlayer.setReleaseMode(ReleaseMode.stop);
     await _sfxPlayer.setAudioContext(
       AudioContext(
@@ -173,10 +180,12 @@ class AudioManager {
     _musicEnabled = !_musicEnabled;
 
     if (!_musicEnabled) {
-      await _musicPlayer.pause();
+      await _musicPlayer.stop();
+      await _musicPlayer.release();
     } else {
       if (_currentMusicPath != null) {
-        await _musicPlayer.resume();
+        await initializeMusicPlayer();
+        await playBackgroundMusic(_currentMusicPath!);
       }
     }
   }
@@ -197,24 +206,5 @@ class AudioManager {
   Future<void> dispose() async {
     await _musicPlayer.dispose();
     await _sfxPlayer.dispose();
-  }
-}
-
-class SoundButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
-  final AudioManager _audioManager = AudioManager();
-
-  SoundButton({super.key, required this.text, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () {
-        _audioManager.playButtonClickVariation();
-        onPressed();
-      },
-      child: Text(text),
-    );
   }
 }
