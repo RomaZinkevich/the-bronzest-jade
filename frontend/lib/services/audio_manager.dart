@@ -37,7 +37,7 @@ class AudioManager {
       AudioContext(
         iOS: AudioContextIOS(
           category: AVAudioSessionCategory.playback,
-          options: {AVAudioSessionOptions.mixWithOthers},
+          options: {},
         ),
         android: AudioContextAndroid(
           isSpeakerphoneOn: false,
@@ -55,7 +55,7 @@ class AudioManager {
     await _sfxPlayer.setAudioContext(
       AudioContext(
         iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.ambient,
+          category: AVAudioSessionCategory.playback,
           options: {AVAudioSessionOptions.mixWithOthers},
         ),
         android: AudioContextAndroid(
