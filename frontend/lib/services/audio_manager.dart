@@ -27,8 +27,46 @@ class AudioManager {
   double get sfxVolume => _sfxVolume;
 
   Future<void> init() async {
+    await initializeMusicPlayer();
+    await intializeSfxPlayer();
+  }
+
+  Future<void> initializeMusicPlayer() async {
     await _musicPlayer.setReleaseMode(ReleaseMode.loop);
+    await _musicPlayer.setAudioContext(
+      AudioContext(
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.playback,
+          options: {},
+        ),
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: AndroidContentType.music,
+          usageType: AndroidUsageType.media,
+          audioFocus: AndroidAudioFocus.gain,
+        ),
+      ),
+    );
+  }
+
+  Future<void> intializeSfxPlayer() async {
     await _sfxPlayer.setReleaseMode(ReleaseMode.stop);
+    await _sfxPlayer.setAudioContext(
+      AudioContext(
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.playback,
+          options: {AVAudioSessionOptions.mixWithOthers},
+        ),
+        android: AudioContextAndroid(
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.game,
+          audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+        ),
+      ),
+    );
   }
 
   Future<void> playBackgroundMusic(
@@ -142,20 +180,18 @@ class AudioManager {
     _musicEnabled = !_musicEnabled;
 
     if (!_musicEnabled) {
-      await _musicPlayer.pause();
+      await _musicPlayer.stop();
+      await _musicPlayer.release();
     } else {
-      await _musicPlayer.resume();
+      if (_currentMusicPath != null) {
+        await initializeMusicPlayer();
+        await playBackgroundMusic(_currentMusicPath!);
+      }
     }
   }
 
   Future<void> toggleSfx() async {
     _sfxEnabled = !_sfxEnabled;
-
-    if (!_sfxEnabled) {
-      await _sfxPlayer.setVolume(0);
-    } else {
-      await _musicPlayer.setVolume(_sfxVolume);
-    }
   }
 
   Future<void> setMusicVolume(double volume) async {
@@ -170,24 +206,5 @@ class AudioManager {
   Future<void> dispose() async {
     await _musicPlayer.dispose();
     await _sfxPlayer.dispose();
-  }
-}
-
-class SoundButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
-  final AudioManager _audioManager = AudioManager();
-
-  SoundButton({super.key, required this.text, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () {
-        _audioManager.playButtonClickVariation();
-        onPressed();
-      },
-      child: Text(text),
-    );
   }
 }
