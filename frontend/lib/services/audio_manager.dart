@@ -175,18 +175,14 @@ class AudioManager {
     if (!_musicEnabled) {
       await _musicPlayer.pause();
     } else {
-      await _musicPlayer.resume();
+      if (_currentMusicPath != null) {
+        await _musicPlayer.resume();
+      }
     }
   }
 
   Future<void> toggleSfx() async {
     _sfxEnabled = !_sfxEnabled;
-
-    if (!_sfxEnabled) {
-      await _sfxPlayer.setVolume(0);
-    } else {
-      await _musicPlayer.setVolume(_sfxVolume);
-    }
   }
 
   Future<void> setMusicVolume(double volume) async {
